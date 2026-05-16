@@ -11,9 +11,21 @@ class POVComboBox(QComboBox):
         self.selected_pov = initial_pov
         self.event_bus = CompendiumEventBus.get_instance()
         self.compendium = CompendiumManager(project_name, event_bus=self.event_bus)
-        self.event_bus.add_updated_listener(self.on_compendium_updated)
+        self._setup_listener()
         self.populate_combo()
         self.set_to_selected_pov()
+
+    def _setup_listener(self):
+        """Register listener and ensure cleanup on destruction."""
+        self.event_bus.add_updated_listener(self.on_compendium_updated)
+        self.destroyed.connect(self._cleanup_listener)
+
+    def _cleanup_listener(self):
+        """Safely remove listener when widget is destroyed."""
+        try:
+            self.event_bus.remove_updated_listener(self.on_compendium_updated)
+        except Exception:
+            pass  # Best effort cleanup
 
     def populate_combo(self) -> None:
         self.clear()
@@ -44,27 +56,39 @@ class POVComboBox(QComboBox):
             self.selected_pov = value
 
     def on_compendium_updated(self, project_name):
-        if project_name == self.project_name:
-            previous_index = self.currentIndex()
-            self.blockSignals(True)
-            self.clear()
-            characters = self.compendium.get_characters()
-            if not characters:
-                characters = ["Alice", "Bob", "Charlie"]
-            characters.append(_("Custom..."))
-            self.addItems(characters)
+        """Safe handler that checks if widget still exists."""
+        if not self or self.parent() is None:  # Widget is being destroyed
+            return
+        if project_name != self.project_name:
+            return
+    
+        previous_index = self.currentIndex()
+        previous_text = self.selected_pov
+        
+        self.blockSignals(True)
+        try:
+            self.populate_combo()  # Rebuild list
+        finally:
             self.blockSignals(False)
-            self.set_to_selected_pov()
-            if self.currentIndex() < 0:
+            
+        self.set_to_selected_pov()
+        if self.currentIndex() < 0:
+            index = self.findText(previous_text)
+            if index >= 0:
+                self.setCurrentIndex(index)
+            else:
                 self.setCurrentIndex(min(previous_index, self.count() - 1))
 
     def set_to_selected_pov(self):
+        """Restore selection safely."""
+        if not self:
+            return
         index = self.findText(self.selected_pov)
         if index >= 0:
             self.blockSignals(True)
             self.setCurrentIndex(index)
             self.blockSignals(False)
-        else: # save whatever character is displayed as the selected pov
+        elif self.count() > 0:
             value = self.currentText()
             if (value and value != _("Custom...")):
                 self.selected_pov = value 
@@ -75,6 +99,10 @@ class POVComboBox(QComboBox):
         except Exception as e:
             print(f"Error saving compendium: {e}")
             QMessageBox.warning(self, _("Error"), _("Failed to save compendium: {}").format(str(e)))
+
+    def current_pov(self) -> str:
+        """Public API for other classes to get current selection."""
+        return self.selected_pov if self.selected_pov != _("Custom...") else self.currentText()
 
 class CustomPOVDialog(QDialog):
     """Dialog for entering a custom POV character name and description."""

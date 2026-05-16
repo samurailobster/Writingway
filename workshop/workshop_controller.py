@@ -2,6 +2,7 @@ import datetime
 import logging
 import re
 from PyQt5.QtGui import QCursor, QPixmap
+from PyQt5.QtWidgets import QMessageBox
 from muse.prompt_preview_dialog import PromptPreviewDialog
 from settings.llm_worker import LLMWorker
 from settings.llm_api_aggregator import WWApiAggregator
@@ -17,7 +18,9 @@ class WorkshopController:
         self.view = WorkshopView(parent, self)
         self.parent_controller = parent
         self.current_session = None
+        self.char_name = "Coach"
         self.worker = None
+        self.current_assistant_response = ""
         self.is_streaming = False
         self.pre_stream_cursor_pos = None
         self.waiting_cursor = QCursor(QPixmap("assets/icons/clock.svg"))
@@ -53,15 +56,54 @@ class WorkshopController:
             self.view.add_conversation_item(name, icon_path)
 
     def on_conversation_selection_changed(self):
+        # 1. Save the previous session's context before switching
+        if hasattr(self, '_current_chat_name') and self._current_chat_name:
+            self.save_context_to_manager(self._current_chat_name)
+        
         name = self.view.get_selected_conversation()
         if name:
+            self._current_chat_name = name # Track current name for lifecycle
             conv = self.model.conversation_manager.get_conversation(name)
+            selections = self.model.conversation_manager.get_context_selections(name)
+            
+            # Determine mandatory items (POV Character)
+            mandatory = []
+            self.char_name = "Coach"
+            if conv.get("mode") == "Role Play" and conv.get("pov_character"):
+                # Note: This assumes we can find which category the character is in, 
+                # or we store the full path. If POV is just a name, we find the first match.
+                self.char_name = conv["pov_character"]
+                mandatory = self._find_compendium_path_by_name(self.char_name)
+
+            self.view.context_panel.set_selections(
+                selections["project"], 
+                selections["compendium"],
+                mandatory_compendium_paths=mandatory
+            )
+
             self.current_session = self.create_session(conv["mode"], conv["messages"])
             self.model.conversation_manager.set_last_viewed(name)
-            self.update_chat_log()
+            self.update_chat_log(self.char_name)
             category = "Roleplay" if conv["mode"] == "Role Play" else "Workshop"
             self.view.prompt_panel.set_category(category)
             self.model.conversation_manager.save()
+
+    def save_context_to_manager(self, chat_name):
+        """Helper to pull state from UI into the data manager."""
+        project_uuids, comp_paths = self.view.context_panel.get_selections()
+        self.model.conversation_manager.update_context_selections(
+            chat_name, project_uuids, comp_paths
+        )
+
+    def _find_compendium_path_by_name(self, name):
+        """Helper to turn a POV character name into a 'Category/Name' path."""
+        root = self.view.context_panel.compendium_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            cat_item = root.child(i)
+            for j in range(cat_item.childCount()):
+                if cat_item.child(j).text(0) == name:
+                    return [f"{cat_item.text(0)}/{name}"]
+        return []
 
     def create_session(self, mode, messages):
         if mode == "Writing Coach":
@@ -70,15 +112,29 @@ class WorkshopController:
             return RolePlaySession(messages, self.view.context_panel, self.view.prompt_panel, self.model.embedding_index)
         raise ValueError(f"Unknown mode: {mode}")
 
-    def update_chat_log(self):
+    def update_chat_log(self, char_name="Coach"):
         self.view.clear_chat_log()
-        for msg in self.current_session.messages:
+        messages = self.current_session.messages
+        n = len(messages)
+        
+        for idx, msg in enumerate(messages):
             role = msg.get("role", "Unknown").capitalize()
             content = msg.get("content", "")
-            self.view.append_to_chat_log(f"{role}: {content}\n")
+            is_edited = msg.get("edited", False)
+            speaker = char_name if role == "Assistant" else "User"
+            is_last_user = (role.lower() == "user" and idx == len(messages) - 2)  # Before last assistant
+            self.view.append_to_chat_log(speaker, content, is_last_user=is_last_user, is_edited=is_edited)
         self.view.format_chat_log_html()
+        
+        # Ensure scroll to bottom
+        scrollbar = self.view.chat_log.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def new_conversation(self):
+        # Save current before creating new
+        if self.model.conversation_manager.last_viewed_chat:
+            self.save_context_to_manager(self.model.conversation_manager.last_viewed_chat)
+
         mode, name, pov = self.view.show_new_chat_dialog()
         if mode and name:
             try:
@@ -137,18 +193,103 @@ class WorkshopController:
         else:
             self.send_message()
 
+    def edit_last_user_message(self):
+        """Handle Edit for last user message."""
+        if not self.current_session or not self.current_session.messages:
+            return
+        
+        # Find last user message
+        messages = self.current_session.messages
+        last_user_idx = None
+        for i in range(len(messages)-1, -1, -1):
+            if messages[i].get("role") == "user":
+                last_user_idx = i
+                break
+
+        if last_user_idx is None:
+            return
+        
+        last_user_msg = messages[last_user_idx]["content"]
+        # Confirm
+        confirm = QMessageBox.question(
+            self.view, 
+            _("Edit Message"), 
+            _("This will replace the current chat input with the previous prompt.\n"
+            "The last User + Assistant exchange will be marked as edited (struck out).\n"
+            "They will be removed only after you send a new message.\n\n"
+            "Continue?"),
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.Yes:
+            self.current_session.mark_last_exchange_as_edited()
+            self.view.chat_input.setPlainText(last_user_msg)
+            self.update_chat_log(self.char_name)
+            # Strike out last exchange in UI
+            # self._strike_last_exchange_in_log()
+        return
+
+    def delete_last_exchange(self):
+        """Permanently delete last User + Assistant pair."""
+        if not self.current_session or len(self.current_session.messages) < 2:
+            return
+        
+        confirm = QMessageBox.question(
+            self.view, 
+            _("Delete Exchange"), 
+            _("Permanently delete the last User message and Assistant response?\n"
+            "This cannot be undone."),
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if confirm == QMessageBox.Yes:
+            # Remove last two messages (user + assistant)
+            self.current_session.messages = self.current_session.messages[:-2]
+            # Update model
+            current_chat = self.model.conversation_manager.last_viewed_chat
+            self.model.conversation_manager.update_messages(current_chat, self.current_session.messages)
+            self.model.conversation_manager.save()
+            # Refresh UI
+            self.update_chat_log(self.char_name)
+
+    def _strike_last_exchange_in_log(self):
+        """Visually strike out last User + Assistant."""
+        # Re-render chat log with strike-through for last messages
+        self.update_chat_log(self.char_name)  # For now, full refresh; enhance later with <del>
+        # TODO: Implement specific strike by modifying last HTML entries if needed
+        
     def send_message(self):
         user_input = self.view.chat_input.toPlainText().strip()
         if not user_input or not self.current_session.validate():
             if not self.current_session.validate():
                 self.view.show_message_box(_("Error"), _("Role Play mode requires at least one compendium character to be selected."))
             return
+
+        self._remove_edited_messages()
+                    
+        self.current_assistant_response = ""
         payload = self.current_session.construct_message(user_input)
         if payload:
             self.current_session.append_message("user", user_input)
-            self.view.append_to_chat_log(f"User: {user_input}\n")
+            self.view.append_to_chat_log("User", user_input, is_last_user=True)
+            self.view.start_new_streaming_message(self.char_name)
             self.view.chat_input.clear()
             self.start_llm(payload)
+            
+    def _remove_edited_messages(self):
+        """Remove any messages marked as edited before adding a new user message."""
+        if not self.current_session:
+            return
+        
+        # Keep only messages that are NOT marked as edited
+        cleaned_messages = [
+            msg for msg in self.current_session.messages 
+            if not msg.get("edited", False)
+        ]
+        
+        self.current_session.messages = cleaned_messages
+        
+        # Also clear the 'edited' flag from any remaining messages (defensive)
+        for msg in self.current_session.messages:
+            msg.pop("edited", None)
 
     def start_llm(self, payload):
         overrides = self.view.prompt_panel.get_overrides()
@@ -162,22 +303,31 @@ class WorkshopController:
         self.pre_stream_cursor_pos = self.view.chat_log.textCursor().position()
 
     def handle_stream_data(self, data):
-        cursor = self.view.chat_log.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.insertText(data)
-        self.view.chat_log.setTextCursor(cursor)
-        self.view.chat_log.ensureCursorVisible()
-
+        """Accumulate streaming chunks and display them."""
+        if not data:
+            return
+        self.current_assistant_response += data
+        self.view.append_to_chat_log(self.char_name, self.current_assistant_response, is_streaming=True)
+        
     def handle_stream_finished(self):
-        if self.current_session:
-            # Assume response is collected; in actual, collect from stream
-            pass  # Placeholder for collecting full response
-        self.cleanup_worker()
+        if self.current_session and self.current_assistant_response:
+            self.current_session.append_message("assistant", self.current_assistant_response)
+            
+            current_chat = self.model.conversation_manager.last_viewed_chat
+            self.model.conversation_manager.update_messages(current_chat, self.current_session.messages)
+            self.model.conversation_manager.save()
+        
+        self.view.finalize_streaming_message()
+        self.update_chat_log(self.char_name)
+        self._reset_stream_state()
+        
+    def _reset_stream_state(self):
+        """Clean up after streaming ends."""
+        self.current_assistant_response = ""
         self.is_streaming = False
         self.view.set_send_button_icon("assets/icons/send.svg")
         self.view.format_chat_log_html()
-        self.model.conversation_manager.update_messages(self.model.conversation_manager.last_viewed_chat, self.current_session.messages)
-        self.model.conversation_manager.save()
+        self.cleanup_worker()
 
     def handle_token_limit(self):
         self.view.show_message_box(_("Token Limit"), _("Token limit exceeded."))
@@ -185,10 +335,16 @@ class WorkshopController:
     def stop_llm(self):
         if self.worker:
             self.worker.stop()
-        self.cleanup_worker()
-        self.is_streaming = False
-        self.view.set_send_button_icon("assets/icons/send.svg")
-        self.view.format_chat_log_html()
+            
+        # Save partial response if any
+        if self.current_assistant_response and self.current_session:
+            self.current_session.append_message("assistant", self.current_assistant_response + " [Response stopped by user]")
+            current_chat = self.model.conversation_manager.last_viewed_chat
+            self.model.conversation_manager.update_messages(current_chat, self.current_session.messages)
+            self.model.conversation_manager.save()
+        
+        self.view.finalize_streaming_message()
+        self._reset_stream_state()
 
     def cleanup_worker(self):
         if self.worker:
@@ -203,7 +359,7 @@ class WorkshopController:
 
     def preview_prompt(self):
         if self.current_session:
-            payload = self.current_session.get_preview_payload()
+            payload = self.current_session.get_preview_payload(self.view)
             if payload:
                 dialog = PromptPreviewDialog(controller=self.parent_controller, conversation_payload=payload, parent=self.view)
                 dialog.exec_()
@@ -290,6 +446,10 @@ class WorkshopController:
             self.view.show_message_box(_("Transcription Error"), text)
 
     def close_event_handler(self, event):
+        # Final save of context selections
+        if self.model.conversation_manager.last_viewed_chat:
+            self.save_context_to_manager(self.model.conversation_manager.last_viewed_chat)
+
         self.stop_llm()
         self.model.conversation_manager.save()
         self.view.write_settings()

@@ -31,6 +31,13 @@ class SettingsManager:
             "text_size": 12
         },
         "llm_configs": {
+            "Gemini": {
+                "provider": "Gemini",
+                "endpoint": "",
+                "model": "models/gemini-3-flash-preview",
+                "api_key": "",
+                "timeout": 30
+            },
             "OpenAI": {
                 "provider": "OpenAI",
                 "endpoint": "https://api.openai.com/v1",
@@ -59,7 +66,7 @@ class SettingsManager:
                 "timeout": 30
             }
         },
-        "active_llm_config": "OpenAI"
+        "active_llm_config": "LMStudio"
     }
 
     def __init__(self, file_path: Union[str, Path] = "settings.json"):

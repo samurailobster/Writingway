@@ -10,39 +10,64 @@ class ConversationManager:
         self.load()
 
     def load(self):
-        if os.path.exists(self.file_path):
-            try:
-                with open(self.file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                version = data.get("version", 0)
-                if version == 0:
-                    if isinstance(data, dict) and all(isinstance(k, str) and isinstance(v, list) for k, v in data.items()):
-                        # Old format
-                        self.conversations = {k: {"mode": "Writing Coach", "messages": v, "pov_character": None} for k, v in data.items()}
-                        self.last_viewed_chat = list(data.keys())[0] if data else "Chat 1"
-                    else:
-                        self.conversations = data.get("conversations", {"Chat 1": {"mode": "Writing Coach", "messages": [], "pov_character": None}})
-                        self.last_viewed_chat = data.get("last_viewed_chat", "Chat 1")
-                        for conv in self.conversations.values():
-                            if "pov_character" not in conv:
-                                conv["pov_character"] = None
-                elif version == 1:
-                    self.conversations = data.get("conversations", {"Chat 1": {"mode": "Writing Coach", "messages": [], "pov_character": None}})
-                    self.last_viewed_chat = data.get("last_viewed_chat", "Chat 1")
-                self._ensure_default_conversation()
-            except Exception as e:
-                logging.error(f"Error loading conversations: {e}", exc_info=True)
-                self._initialize_default()
-        else:
+        if not os.path.exists(self.file_path):
+            self._initialize_default()
+            return
+        
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            version = data.get("version", 0)
+            if version == 0:
+                if isinstance(data, dict) and all(isinstance(k, str) and isinstance(v, list) for k, v in data.items()):
+                    self.conversations = {k: {"mode": "Writing Coach", "messages": v, "pov_character": None} for k, v in data.items()}
+                    self.last_viewed_chat = list(data.keys())[0] if data else "Chat 1"
+                else:
+                    self._load_v1_format(data) # V1 format will handle basic initialization
+            elif version == 1:
+                self._load_v1_format(data)
+            self._ensure_default_conversation()
+        except Exception as e:
+            logging.error(f"Error loading conversations: {e}", exc_info=True)
             self._initialize_default()
 
+    def _load_v1_format(self, data):
+        self.conversations = data.get("conversations", {})
+        self.last_viewed_chat = data.get("last_viewed_chat", "Chat 1")
+        # Normalize all messages to ensure 'preserve' key exists
+        for conv in self.conversations.values():
+            if "messages" in conv:
+                conv["messages"] = self._normalize_messages(conv["messages"])
+            if "pov_character" not in conv:
+                conv["pov_character"] = None
+    
+    def _normalize_messages(self, messages):
+        """Ensure messages are in clean dict format."""
+        normalized = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                normalized.append({
+                    "role": msg.get("role", "unknown"),
+                    "content": msg.get("content", "")
+                })
+            else:
+                # Fallback for very old malformed data
+                normalized.append({
+                    "role": "unknown",
+                    "content": str(msg)
+                })
+        return normalized
+    
     def _ensure_default_conversation(self):
         if not self.conversations:
-            self.conversations = {"Chat 1": {"mode": "Writing Coach", "messages": [], "pov_character": None}}
-            self.last_viewed_chat = "Chat 1"
+            self._initialize_default()
 
     def _initialize_default(self):
-        self.conversations = {"Chat 1": {"mode": "Writing Coach", "messages": [], "pov_character": None}}
+        self.conversations = {"Chat 1": {
+            "mode": "Writing Coach", 
+            "messages": [], 
+            "pov_character": None
+            }}
         self.last_viewed_chat = "Chat 1"
 
     def save(self):
@@ -101,3 +126,15 @@ class ConversationManager:
     def set_last_viewed(self, name):
         if name in self.conversations:
             self.last_viewed_chat = name
+            
+    def update_context_selections(self, name, project_uuids, compendium_paths):
+        if name in self.conversations:
+            self.conversations[name]["context_selections"] = {
+                "project": project_uuids,
+                "compendium": compendium_paths
+            }
+
+    def get_context_selections(self, name):
+        conv = self.get_conversation(name)
+        # Default to empty lists if not present
+        return conv.get("context_selections", {"project": [], "compendium": []})

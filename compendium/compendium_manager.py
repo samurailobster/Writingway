@@ -3,6 +3,7 @@ from uuid import uuid4
 import json
 import os
 import re
+import weakref
 from settings.settings_manager import WWSettingsManager
 
 class CompendiumEventBus:
@@ -10,6 +11,7 @@ class CompendiumEventBus:
 
     def __init__(self):
         self.updated_listeners: List[Callable[[str], None]] = []
+        self._weak_refs: weakref.WeakSet = weakref.WeakSet()
 
     @classmethod
     def get_instance(cls):
@@ -19,11 +21,31 @@ class CompendiumEventBus:
 
     def add_updated_listener(self, callback: Callable[[str], None]):
         self.updated_listeners.append(callback)
+        if hasattr(callback, '__self__'):
+                self._weak_refs.add(callback.__self__)
+
+    def remove_updated_listener(self, callback: Callable[[str], None]):
+        """Safely remove a listener."""
+        if callback in self.updated_listeners:
+            self.updated_listeners.remove(callback)
 
     def notify_updated(self, project_name: str):
+        self._cleanup_dead_listeners()
         for callback in self.updated_listeners:
-            callback(project_name)
+            try:
+                callback(project_name)
+            except Exception as e:
+                print(f"Error in compendium updated listener: {e}")
+                self.remove_updated_listener(callback)
 
+    def _cleanup_dead_listeners(self):
+        """Remove listeners whose objects have been garbage collected."""
+        to_remove = []
+        for cb in self.updated_listeners:
+            if hasattr(cb, '__self__') and cb.__self__ is None:
+                to_remove.append(cb)
+        for cb in to_remove:
+            self.remove_updated_listener(cb)
 
 class CompendiumManager:
     """Manages compendium data loading, retrieval, and reference parsing for a project."""

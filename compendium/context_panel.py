@@ -232,6 +232,62 @@ class ContextPanel(QWidget):
             self._traverse_project_item(root.child(i), texts, temp_editor)
         return "\n\n".join(texts) if texts else ""
 
+    def get_selections(self):
+        """Returns current UI state as (project_uuids, compendium_paths)."""
+        project_uuids = []
+        for uuid, item in self.uuid_map.items():
+            if item.checkState(0) == Qt.Checked:
+                project_uuids.append(uuid)
+        
+        compendium_paths = []
+        root = self.compendium_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            cat_item = root.child(i)
+            for j in range(cat_item.childCount()):
+                entry_item = cat_item.child(j)
+                if entry_item.checkState(0) == Qt.Checked:
+                    compendium_paths.append(f"{cat_item.text(0)}/{entry_item.text(0)}")
+        return project_uuids, compendium_paths
+
+    def set_selections(self, project_uuids, compendium_paths, mandatory_compendium_paths=None):
+        """
+        Updates the UI state. 
+        mandatory_compendium_paths: list of "Category/Name" strings to lock.
+        """
+        self._building_tree = True # Use existing flag to block internal signals
+        mandatory = mandatory_compendium_paths or []
+
+        # 1. Update Project Tree
+        for uuid, item in self.uuid_map.items():
+            if item.flags() & Qt.ItemIsUserCheckable:
+                state = Qt.Checked if uuid in project_uuids else Qt.Unchecked
+                item.setCheckState(0, state)
+
+        # 2. Update Compendium Tree
+        root = self.compendium_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            cat_item = root.child(i)
+            cat_name = cat_item.text(0)
+            for j in range(cat_item.childCount()):
+                entry_item = cat_item.child(j)
+                path = f"{cat_name}/{entry_item.text(0)}"
+                
+                if path in mandatory:
+                    entry_item.setCheckState(0, Qt.Checked)
+                    entry_item.setFlags(entry_item.flags() & ~Qt.ItemIsEnabled)
+                    font = entry_item.font(0)
+                    font.setBold(True)
+                    entry_item.setFont(0, font)
+                else:
+                    state = Qt.Checked if path in compendium_paths else Qt.Unchecked
+                    entry_item.setCheckState(0, state)
+                    entry_item.setFlags(entry_item.flags() | Qt.ItemIsEnabled)
+                    font = entry_item.font(0)
+                    font.setBold(False)
+                    entry_item.setFont(0, font)
+        
+        self._building_tree = False
+        
     def _load_content(self, data_type, data, hierarchy):
         """Helper method to load content consistently for summaries and scenes."""
         if data_type == "summary":

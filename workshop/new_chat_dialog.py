@@ -92,5 +92,5 @@ class NewChatDialog(QDialog):
 
     def get_pov(self):
         if self.role_play_radio.isChecked():
-            return getattr(self, '_pov', self.pov_combo.currentText())
+            return getattr(self, '_pov', self.pov_combo.current_pov())
         return None

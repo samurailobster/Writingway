@@ -34,3 +34,4 @@ spylls
 ebooklib
 beautifulsoup4
 python-docx
+markdown
