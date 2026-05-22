@@ -22,8 +22,8 @@ openai-whisper
 pydub
 moviepy
 internetarchive
-PyMuPDF
-pymupdf4llm
+PyMuPDF~=1.25.5
+pymupdf4llm~=0.0.22
 pillow
 demucs
 soundfile
