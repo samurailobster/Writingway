@@ -33,6 +33,7 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
+    copy_metadata=['imageio'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
