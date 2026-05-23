@@ -310,6 +310,8 @@ class EmbeddedPromptsPanel(QWidget):
         for cat in sorted(self.prompts_data.keys()):
             parent = QTreeWidgetItem(self.tree, [cat])
             parent.setData(0, Qt.UserRole, {"type": "category", "name": cat})
+            parent.setData(0, Qt.ItemDataRole.UserRole + 1, "true")  # Custom property for is-category
+            parent.setBackground(0, QBrush(ThemeManager.get_category_background_color()))
             parent.setFont(0, bold_font)
             parent.setFlags(parent.flags() & ~Qt.ItemIsSelectable)
             plus_button = QPushButton(self.tree)
@@ -688,6 +690,9 @@ class EmbeddedPromptsPanel(QWidget):
             return
         
         new_name = new_name.strip()
+        new_prompt = data.copy()
+        new_prompt.update({"name": new_name, "default": False, "id": str(uuid.uuid4())})
+
         parent_item = self.current_prompt_item.parent()
         if parent_item:
             category = parent_item.text(0)

@@ -1,5 +1,5 @@
 faiss-cpu
-langchain
+langchain==0.3.27
 langchain-core
 langchain-openai
 langchain-anthropic
@@ -18,13 +18,13 @@ textstat
 tiktoken
 noisereduce
 pyaudio
-whisper
 openai-whisper
 pydub
 moviepy
+imageio
 internetarchive
-PyMuPDF
-pymupdf4llm
+PyMuPDF~=1.25.5
+pymupdf4llm~=0.0.22
 pillow
 demucs
 soundfile
@@ -34,3 +34,4 @@ spylls
 ebooklib
 beautifulsoup4
 python-docx
+markdown

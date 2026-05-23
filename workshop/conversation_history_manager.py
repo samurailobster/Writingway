@@ -17,36 +17,52 @@ def estimate_conversation_tokens(conversation_history):
         total += estimate_tokens(message.get("content", ""))
     return total
 
-def should_preserve(text):
+def should_preserve(message: dict) -> bool:
     """
-    Check if a message contains protected text.
-    For example, any text wrapped in asterisks (*) is marked as protected.
-    You can enhance this function with a more complex tagging logic if needed.
+    Check if a message should be preserved (not summarized).
+    Currently based on explicit flag. Ready for UI integration.
     """
-    return "*" in text
+    if isinstance(message, dict):
+        return message.get("preserve", False)
+    return False
 
-def summarize_conversation(conversation_history, max_tokens=500, overrides=None):
+def summarize_conversation(conversation_history, max_tokens=5000, overrides=None):
     """
     Summarize the conversation using ChatPromptTemplate and final_prompt to ensure the LLM treats the task as summarization.
     """
-    # Build the conversation text while preserving protected messages
-    filtered_messages = []
+    if not conversation_history:
+        return "No previous conversation."
+    
+    # Separate preserved and summarizable messages
+    to_summarize = []
+    
     for msg in conversation_history:
-        content = msg.get("content", "")
-        if should_preserve(content):
-            filtered_messages.append(f'{msg["role"]}: {content}')
-        else:
-            filtered_messages.append(f'{msg["role"]}: {content}')
-    conversation_text = "\n".join(filtered_messages)
+        content = msg.get("content", "").strip()
+        if not content:
+            continue
+            
+        to_summarize.append(f"{msg['role']}: {content}")
+            
+    # Build summary text
+    summary_parts = []
+    if to_summarize:
+        summary_parts.append("Recent Conversation:\n" + "\n".join(to_summarize))
 
+    conversation_text = "\n\n".join(summary_parts)
+
+    system_prompt = (
+        "You are an expert summarizer for creative writing and roleplay sessions. "
+        "Create a concise but detailed summary that captures essential context, "
+        "plot points, character development, tone, and key events.\n"
+    )
+    
     # Create ChatPromptTemplate for the conversation history
     template = ChatPromptTemplate.from_messages([
-        SystemMessagePromptTemplate.from_template(
-            "You are a summarization assistant. Your task is to summarize the conversation provided below. "
-            "Do not respond to the conversation content or generate new dialogue. "
-            "Provide only a summary of the conversation in up to {max_tokens} tokens."
-        ),
-        HumanMessagePromptTemplate.from_template("Conversation to summarize:\n{conversation_text}")
+        SystemMessagePromptTemplate.from_template(system_prompt),
+        HumanMessagePromptTemplate.from_template(
+            "Conversation to summarize:\n{conversation_text}"
+            "Provide a clear, narrative summary in under {max_tokens} tokens."
+        )
     ])
 
     # Format the prompt with the conversation text and max_tokens
@@ -59,11 +75,7 @@ def summarize_conversation(conversation_history, max_tokens=500, overrides=None)
     ]
 
     # Define the final_prompt to reinforce the summarization task
-    final_prompt = (
-        f"Summarize the following conversation in up to {max_tokens} tokens. "
-        "Do not respond to the conversation content or generate new dialogue. "
-        "Provide only a concise summary."
-    )
+    final_prompt = "Summarize the conversation above while preserving all key context and tone."
 
     if not overrides:
         overrides = {}
@@ -77,7 +89,7 @@ def summarize_conversation(conversation_history, max_tokens=500, overrides=None)
         overrides=overrides,
         conversation_history=conversation_payload
     )
-    return summary
+    return summary.strip() or "Previous creative writing/roleplay session."
 
 def prune_conversation_history(conversation_history, token_limit):
     """
