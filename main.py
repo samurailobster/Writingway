@@ -1,22 +1,53 @@
 import sys
+import logging
 import importlib.metadata
 
 # Save the original metadata function
 _orig_version = importlib.metadata.version
 
+def _is_frozen():
+    """True when running inside a PyInstaller (or similar) bundle."""
+    return getattr(sys, "frozen", False) or hasattr(sys, "_MEIPASS")
+
+
 def hooked_version(distribution_name):
+    """
+    Wrapper around importlib.metadata.version that logs a diagnostic when a package's metadata is missing.
+
+    For a pyinstaller build, you can fix this in the .spec file by adding a call to `_collect('<package>')`
+    or at minimum `copy_metadata('<package>')`, then rebuild.
+    """
     try:
         return _orig_version(distribution_name)
     except importlib.metadata.PackageNotFoundError:
-        # If PyInstaller stripped imageio's metadata, fake it
-        if distribution_name == "imageio":
-            return "2.37.3"
+        # These packages also throw PackageNotFoundError's when running for the development venv. Ignore them.
+        ignore_missing_packages = ("optree", "google.protobuf")
+        if distribution_name in ignore_missing_packages:
+            raise # Re-raise so the original failure semantics are preserved.
+
+        frozen = _is_frozen()
+        msg = (
+            "WARNING: Missing package metadata for: '{pkg}'\n"
+            "         Add the package metadata to the pyinstaller .spec file using:\n"
+            "            copy_metadata('{pkg}')\n"
+            "         or\n"
+            "            _collect)all(pkg)\n"
+        ) if frozen else  (
+            "WARNING: Missing package metadata for: '{pkg}'\n"
+        )
+
+        # Log message to stderr and log
+        msg=msg.format(pkg=distribution_name)
+        print(msg , file=sys.stderr)
+        logging.error(msg)
+
+        # Re-raise so the original failure semantics are preserved.
         raise
+
 
 # Overwrite the built-in method before moviepy can call it
 importlib.metadata.version = hooked_version
 
-import logging
 import whisper
 from settings.translation_manager import TranslationManager
 from settings.settings_manager import WWSettingsManager
