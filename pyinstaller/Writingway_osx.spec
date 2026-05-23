@@ -8,7 +8,6 @@
 # 4. Run pyinstaller: pyinstaller Writingway.spec
 # 5. The output is in the dist folder.
 import shutil
-import importlib.metadata
 
 from PyInstaller.building.api import COLLECT
 from PyInstaller.building.datastruct import Tree
@@ -23,20 +22,9 @@ datas = [
 ]
 
 binaries = []
-hiddenimports = ['tiktoken_ext.openai_public', 'tiktoken_ext', 'pyaudio', 'imageio']
+hiddenimports = ['tiktoken_ext.openai_public', 'tiktoken_ext', 'pyaudio']
 tmp_ret = collect_all('cmudict')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-
-# Manually locate the imageio metadata path on the build machine
-try:
-    imageio_dist = importlib.metadata.distribution('imageio')
-    imageio_meta_dir = imageio_dist._path
-    # This creates a tuple: ('/path/to/site-packages/imageio-X.X.X.dist-info', 'imageio-X.X.X.dist-info')
-    imageio_data = [(str(imageio_meta_dir), os.path.basename(imageio_meta_dir))]
-except Exception:
-    imageio_data = []
-
-datas += imageio_data
 
 a = Analysis(
     ['../main.py'],

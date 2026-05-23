@@ -1,4 +1,21 @@
 import sys
+import importlib.metadata
+
+# Save the original metadata function
+_orig_version = importlib.metadata.version
+
+def hooked_version(distribution_name):
+    try:
+        return _orig_version(distribution_name)
+    except importlib.metadata.PackageNotFoundError:
+        # If PyInstaller stripped imageio's metadata, fake it
+        if distribution_name == "imageio":
+            return "2.37.3"
+        raise
+
+# Overwrite the built-in method before moviepy can call it
+importlib.metadata.version = hooked_version
+
 import logging
 import whisper
 from settings.translation_manager import TranslationManager
