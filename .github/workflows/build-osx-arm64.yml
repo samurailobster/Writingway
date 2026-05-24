@@ -8,6 +8,11 @@ on:
     tags:
       - '*'
 
+env:
+  # Opt in to the new GitHub Action node24 runners that will be
+  # the default from June 2nd, 2026
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: macos-latest
