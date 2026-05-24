@@ -1,0 +1,18 @@
+# Dependabot configuration
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Let Dependabot create PRs for GitHub Actions used in workflows to keep them up to date.
+  - package-ecosystem: "github-actions"
+    # Look for workflow files in .github/workflows
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
