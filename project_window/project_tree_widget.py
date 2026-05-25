@@ -154,7 +154,25 @@ class ProjectTreeWidget(QWidget):
         """Create the drop-indicator overlay widget."""
         vp = self.tree.viewport()
         self._overlay = _DropIndicatorOverlay(vp)
-        self._overlay.resize(vp.size())
+        self._dnd_sync_overlay_geometry()
+
+        # Keep overlay pinned to viewport origin while the view scrolls.
+        v_scroll = self.tree.verticalScrollBar()
+        assert v_scroll is not None
+        h_scroll = self.tree.horizontalScrollBar()
+        assert h_scroll is not None
+        v_scroll.valueChanged.connect(self._dnd_sync_overlay_geometry)
+        h_scroll.valueChanged.connect(self._dnd_sync_overlay_geometry)
+
+    def _dnd_sync_overlay_geometry(self, *_args):
+        """Pin overlay to viewport so internal scrolling does not shift it."""
+        if not self._overlay:
+            return
+        viewport = self.tree.viewport()
+        assert viewport is not None
+        self._overlay.setGeometry(viewport.rect())
+        if self._dragging:
+            self._overlay.raise_()
 
     def eventFilter(self, obj, event):
         """unified event filter for tree viewport (hover button + drag-drop)"""
@@ -163,8 +181,7 @@ class ProjectTreeWidget(QWidget):
 
             # keep overlay the same size when viewport is resized
             if etype == QEvent.Type.Resize:
-                if self._overlay:
-                    self._overlay.resize(event.size())
+                self._dnd_sync_overlay_geometry()
 
             # mouse press: record potential drag origin
             elif etype == QEvent.Type.MouseButtonPress:
@@ -239,7 +256,7 @@ class ProjectTreeWidget(QWidget):
         # Activate the overlay.
         if self._overlay is None:
             self._overlay = _DropIndicatorOverlay(self.tree.viewport())
-        self._overlay.resize(self.tree.viewport().size())
+        self._dnd_sync_overlay_geometry()
         self._overlay.show()
         self._overlay.raise_()
 
@@ -271,6 +288,7 @@ class ProjectTreeWidget(QWidget):
         self._drop_target = target
         viewport = self.tree.viewport()
         assert viewport is not None
+        self._dnd_sync_overlay_geometry()
         if target:
             viewport.unsetCursor()
             _, _, ly, lx = target
@@ -328,14 +346,6 @@ class ProjectTreeWidget(QWidget):
             self.controller.load_current_item_content()
 
     ## drop-target computation ##
-
-    def _dnd_row_height(self):
-        root = self.tree.invisibleRootItem()
-        for i in range(root.childCount()):
-            r = self.tree.visualItemRect(root.child(i))
-            if r.height() > 0:
-                return r.height()
-        return 24
 
     def _dnd_last_visible(self, item):
         """Return the last visible descendant of *item* (item itself if collapsed)."""
