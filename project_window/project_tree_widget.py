@@ -62,6 +62,7 @@ class ProjectTreeWidget(QWidget):
     _DND_SCROLL_MARGIN  = 30  # px from edge of viewport that triggers auto-scroll
     _DND_SCROLL_SPEED   = 10  # px per timer tick
     _DND_SCROLL_INTERVAL = 50  # ms
+    _DND_EXTRA_DROP_ROWS = 1  # allow ~1 extra row of empty bottom drag space
 
     def __init__(self, controller, model):
         super().__init__()
@@ -373,8 +374,8 @@ class ProjectTreeWidget(QWidget):
         if item:
             return item
         rh = self._dnd_row_height()
-        # Search upward within ~1 row height of empty space.
-        for dy in range(1, rh + 4):
+        # Search upward within a small extra bottom drop zone.
+        for dy in range(1, self._DND_EXTRA_DROP_ROWS * rh + 4):
             item = self.tree.itemAt(QPoint(pos.x(), pos.y() - dy))
             if item:
                 return item
@@ -465,6 +466,22 @@ class ProjectTreeWidget(QWidget):
                     line_x       = self.tree.visualItemRect(act_item.child(0)).left()
                 else:
                     return None   # Collapsed non-empty act
+            elif level == 2:
+                ch_item = item.parent()
+                if ch_item is None:
+                    return None
+                # Allow dropping below scenes only at the end of a chapter,
+                # which maps to inserting after that chapter in its act.
+                if item is self._dnd_last_visible(ch_item) and not upper_half:
+                    act_item = ch_item.parent()
+                    if act_item is None:
+                        return None
+                    parent = act_item
+                    insert_index = act_item.indexOfChild(ch_item) + 1
+                    line_y = rect.bottom()
+                    line_x = self.tree.visualItemRect(ch_item).left()
+                else:
+                    return None
             else:
                 return None   # Scene level – invalid for chapter drag
 
