@@ -353,6 +353,20 @@ class ProjectTreeWidget(QWidget):
             return item
         return self._dnd_last_visible(item.child(item.childCount() - 1))
 
+    def _dnd_row_height(self):
+        """Best-effort row height for drag hit-testing around empty viewport areas."""
+        first = self.tree.topLevelItem(0)
+        if first is not None:
+            rect = self.tree.visualItemRect(first)
+            if rect.isValid() and rect.height() > 0:
+                return rect.height()
+
+        hint = self.tree.sizeHintForRow(0)
+        if hint > 0:
+            return hint
+
+        return max(16, self.tree.fontMetrics().height() + 8)
+
     def _dnd_item_at_or_near(self, pos):
         """Return the tree item at *pos*, or the nearest one just above it."""
         item = self.tree.itemAt(pos)
