@@ -634,11 +634,16 @@ class ProjectTreeWidget(QWidget):
                 parent = item.parent() or root
                 parent.removeChild(item)
         else:
+            expanded_states = self._save_expanded_states()
             self.populate()
+            self._restore_expanded_states(expanded_states)
             new_item = self.find_item_by_hierarchy(hierarchy)
             if new_item:
                 self.tree.setCurrentItem(new_item)
                 self.tree.scrollToItem(new_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+                parent = new_item.parent()
+                if parent and parent != root:
+                    parent.setExpanded(True)
 
     def find_item_by_hierarchy(self, hierarchy):
         """Find a tree item by its hierarchy path."""
@@ -657,6 +662,54 @@ class ProjectTreeWidget(QWidget):
             current = found
         return current
 
+    def _save_expanded_states(self):
+        """Save the expanded/collapsed state of ALL acts and chapters."""
+        expanded = set()
+
+        def collect_expanded(item, hierarchy=()):
+            if item.childCount() == 0:
+                return
+
+            # Save state for this item
+            if item.isExpanded():
+                expanded.add(hierarchy)
+            # else: collapsed - we just don't add it
+
+            # Always recurse to capture nested states
+            for i in range(item.childCount()):
+                child = item.child(i)
+                child_hierarchy = hierarchy + (child.text(0),)
+                collect_expanded(child, child_hierarchy)
+
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            act = root.child(i)
+            act_hierarchy = (act.text(0),)
+            collect_expanded(act, act_hierarchy)
+
+        return expanded
+
+    def _restore_expanded_states(self, expanded_hierarchies):
+        """Restore all expanded/collapsed states."""
+        def restore_recursively(item, hierarchy=()):
+            # Explicitly set expanded or collapsed
+            if hierarchy in expanded_hierarchies:
+                item.setExpanded(True)
+            else:
+                item.setExpanded(False)
+
+            # Always recurse to restore nested states
+            for i in range(item.childCount()):
+                child = item.child(i)
+                child_hierarchy = hierarchy + (child.text(0),)
+                restore_recursively(child, child_hierarchy)
+
+        root = self.tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            act = root.child(i)
+            act_hierarchy = (act.text(0),)
+            restore_recursively(act, act_hierarchy)
+            
     def assign_item_icon(self, item, level):
         """Assign an icon to a tree item based on its level and status."""
         tint = self.controller.icon_tint
