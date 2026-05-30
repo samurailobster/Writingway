@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 
