@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QHBoxLayout, QMessageBox
 from PyQt5.QtCore import Qt, pyqtSignal
 import tiktoken

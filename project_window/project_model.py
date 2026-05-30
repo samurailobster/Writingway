@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import os
 import time
 import uuid

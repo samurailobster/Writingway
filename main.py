@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import sys
 import logging
 import importlib.metadata

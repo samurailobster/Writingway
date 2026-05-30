@@ -1,4 +1,4 @@
-# prompt_handler.py
+from gettext import gettext as _
 import json
 import os
 

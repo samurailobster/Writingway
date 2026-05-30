@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 

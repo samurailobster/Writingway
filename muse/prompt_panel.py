@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from typing import Dict, List
 from PyQt5.QtWidgets import QFormLayout, QGroupBox, QComboBox
 from PyQt5.QtCore import QFileSystemWatcher

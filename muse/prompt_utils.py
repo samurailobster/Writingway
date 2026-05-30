@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import json
 import os
 from typing import Dict, List, Optional, Union, Any

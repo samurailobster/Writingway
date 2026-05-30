@@ -1,3 +1,4 @@
+from gettext import gettext as _
 # ai_compendium_dialog.py
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QPushButton, QTextEdit, QMessageBox, QTreeWidget, QTreeWidgetItem, 
                              QSplitter, QMenu, QWidget, QInputDialog, QSizePolicy, QShortcut, QLabel)

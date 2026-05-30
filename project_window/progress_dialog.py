@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QApplication
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import Qt

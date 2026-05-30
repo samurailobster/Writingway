@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from PyQt5.QtCore import Qt, QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from .summary_service import SummaryService

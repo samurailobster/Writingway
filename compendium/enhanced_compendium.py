@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import re
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QToolBar, QSplitter, QTreeWidget, QTextEdit, QVBoxLayout, QHBoxLayout, QLabel, 
                              QLineEdit, QComboBox, QPushButton, QListWidget, QTabWidget, QFileDialog, QMessageBox, QTreeWidgetItem,

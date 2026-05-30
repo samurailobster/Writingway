@@ -1,3 +1,4 @@
+from gettext import gettext as _
 import urllib
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QGroupBox, QFormLayout,

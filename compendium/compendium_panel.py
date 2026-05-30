@@ -1,3 +1,4 @@
+from gettext import gettext as _
 from PyQt5.QtWidgets import QWidget, QTreeWidget, QVBoxLayout, QMenu, QTreeWidgetItem, QMessageBox, QDialog
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QFont, QBrush

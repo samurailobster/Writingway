@@ -1,3 +1,4 @@
+from gettext import gettext as _
 # rewrite_feature.py
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QComboBox,
