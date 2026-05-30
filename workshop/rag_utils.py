@@ -627,7 +627,7 @@ class HistoryDialog(QDialog):
         layout.addWidget(self.search_field)
 
         self.history_list = QListWidget()
-        self.history_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.history_list.customContextMenuRequested.connect(self.show_context_menu)
         self.history_list.itemDoubleClicked.connect(self.load_article)
         layout.addWidget(self.history_list)
@@ -805,11 +805,11 @@ class HistoryDialog(QDialog):
                 return
             flags = QTextDocument.FindFlags()
             if case_checkbox.isChecked():
-                flags |= QTextDocument.FindCaseSensitively
+                flags |= QTextDocument.FindFlag.FindCaseSensitively
             if whole_words_checkbox.isChecked():
-                flags |= QTextDocument.FindWholeWords
+                flags |= QTextDocument.FindFlag.FindWholeWords
             if direction < 0:
-                flags |= QTextDocument.FindBackward
+                flags |= QTextDocument.FindFlag.FindBackward
 
             cursor = editor.textCursor()
             if direction < 0 and cursor.hasSelection():
@@ -822,9 +822,9 @@ class HistoryDialog(QDialog):
                 temp_cursor = editor.textCursor()
                 cursor = editor.textCursor()
                 if direction > 0:
-                    cursor.movePosition(QTextCursor.Start)
+                    cursor.movePosition(QTextCursor.MoveOperation.Start)
                 else:
-                    cursor.movePosition(QTextCursor.End)
+                    cursor.movePosition(QTextCursor.MoveOperation.End)
                 editor.setTextCursor(cursor)
                 found = editor.find(search_text, flags)
                 if not found:

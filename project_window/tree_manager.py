@@ -100,15 +100,15 @@ def populate_tree(tree, structure):
     for act in structure.get("acts", []):
         act = ensure_dict(act)
         act_item = QTreeWidgetItem(tree, [act.get("name", "Unnamed Act")])
-        act_item.setData(0, Qt.UserRole, act)
+        act_item.setData(0, Qt.ItemDataRole.UserRole, act)
         for chapter in act.get("chapters", []):
             chapter = ensure_dict(chapter)
             chapter_item = QTreeWidgetItem(act_item, [chapter.get("name", "Unnamed Chapter")])
-            chapter_item.setData(0, Qt.UserRole, chapter)
+            chapter_item.setData(0, Qt.ItemDataRole.UserRole, chapter)
             for scene in chapter.get("scenes", []):
                 scene = ensure_dict(scene)
                 scene_item = QTreeWidgetItem(chapter_item, [scene.get("name", "Unnamed Scene")])
-                scene_item.setData(0, Qt.UserRole, scene)
+                scene_item.setData(0, Qt.ItemDataRole.UserRole, scene)
     tree.expandAll()
 
 def update_structure_from_tree(tree, project_name):
@@ -120,15 +120,15 @@ def update_structure_from_tree(tree, project_name):
     root = tree.invisibleRootItem()
     for i in range(root.childCount()):
         act_item = root.child(i)
-        act = act_item.data(0, Qt.UserRole)
+        act = act_item.data(0, Qt.ItemDataRole.UserRole)
         chapters = []
         for j in range(act_item.childCount()):
             chapter_item = act_item.child(j)
-            chapter = chapter_item.data(0, Qt.UserRole)
+            chapter = chapter_item.data(0, Qt.ItemDataRole.UserRole)
             scenes = []
             for k in range(chapter_item.childCount()):
                 scene_item = chapter_item.child(k)
-                scene = scene_item.data(0, Qt.UserRole)
+                scene = scene_item.data(0, Qt.ItemDataRole.UserRole)
                 scenes.append(scene)
             chapter["scenes"] = scenes
             chapters.append(chapter)

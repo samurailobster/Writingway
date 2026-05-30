@@ -692,7 +692,7 @@ class StatisticsChart(QChartView):
         self.chart.setAnimationOptions(QChart.SeriesAnimations)
         self.chart.legend().setVisible(True)
         self.chart.setTheme(QChart.ChartThemeLight)
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
     
     def create_bar_chart(self, title, data, horizontal=False):
         """
@@ -800,7 +800,7 @@ class StatisticsDialog(QDialog):
 
         self.setWindowTitle(f"Statistics - {self.project_name}")
         # Enable minimize and maximize buttons on the dialog
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
         self.resize(900, 700)
         self.init_ui()
         
@@ -834,7 +834,7 @@ class StatisticsDialog(QDialog):
             self.logger.warning(f"Warning: Icon file not found: {refresh_icon_path}")
         
         refresh_button.clicked.connect(self.load_data)
-        header_layout.addWidget(refresh_button, alignment=Qt.AlignRight)
+        header_layout.addWidget(refresh_button, alignment=Qt.AlignmentFlag.AlignRight)
         
         layout.addLayout(header_layout)
         
@@ -942,7 +942,7 @@ class StatisticsDialog(QDialog):
         self.sessions_table = QTableWidget()
         self.sessions_table.setColumnCount(4)
         self.sessions_table.setHorizontalHeaderLabels(["Date", "Time", "Words Added", "Scene"])
-        self.sessions_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.sessions_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.sessions_table)
         
         self.tabs.addTab(tab, "Overview")
@@ -958,7 +958,7 @@ class StatisticsDialog(QDialog):
         layout.addWidget(structure_label)
         
         # Create a splitter for charts
-        charts_splitter = QSplitter(Qt.Horizontal)
+        charts_splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # Acts chart
         self.acts_chart = StatisticsChart()
@@ -978,7 +978,7 @@ class StatisticsDialog(QDialog):
         self.scenes_table = QTableWidget()
         self.scenes_table.setColumnCount(5)
         self.scenes_table.setHorizontalHeaderLabels(["Act", "Chapter", "Scene", "Word Count", "Last Updated"])
-        self.scenes_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.scenes_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.scenes_table)
         
         self.tabs.addTab(tab, "Word Count")
@@ -989,7 +989,7 @@ class StatisticsDialog(QDialog):
         layout = QVBoxLayout(tab)
         
         # Create a splitter
-        splitter = QSplitter(Qt.Vertical)
+        splitter = QSplitter(Qt.Orientation.Vertical)
         
         # Top panel - Character mentions chart
         top_panel = QWidget()
@@ -1015,7 +1015,7 @@ class StatisticsDialog(QDialog):
         self.character_table = QTableWidget()
         self.character_table.setColumnCount(4)
         self.character_table.setHorizontalHeaderLabels(["Character", "Total Mentions", "Scenes", "In Compendium"])
-        self.character_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.character_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         bottom_layout.addWidget(self.character_table)
         
         splitter.addWidget(bottom_panel)
@@ -1044,7 +1044,7 @@ class StatisticsDialog(QDialog):
         self.location_table = QTableWidget()
         self.location_table.setColumnCount(3)
         self.location_table.setHorizontalHeaderLabels(["Location", "Total Mentions", "Scenes"])
-        self.location_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.location_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.location_table)
         
         self.tabs.addTab(tab, "Locations")
@@ -1083,7 +1083,7 @@ class StatisticsDialog(QDialog):
         self.issues_table = QTableWidget()
         self.issues_table.setColumnCount(3)
         self.issues_table.setHorizontalHeaderLabels(["Issue Type", "Count", "Per 1000 Words"])
-        self.issues_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.issues_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.issues_table)
         
         # Scene quality details
@@ -1096,7 +1096,7 @@ class StatisticsDialog(QDialog):
         self.scene_quality_table.setHorizontalHeaderLabels([
             "Scene", "Readability Score", "Dialogue %", "Issue Count", "Notes"
         ])
-        self.scene_quality_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.scene_quality_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.scene_quality_table)
         
         self.tabs.addTab(tab, "Text Quality")
@@ -1119,7 +1119,7 @@ class StatisticsDialog(QDialog):
         self.compendium_table = QTableWidget()
         self.compendium_table.setColumnCount(4)
         self.compendium_table.setHorizontalHeaderLabels(["Category", "Total Entries", "Used in Story", "Usage %"])
-        self.compendium_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.compendium_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.compendium_table)
         
         # Unused entries
@@ -1130,7 +1130,7 @@ class StatisticsDialog(QDialog):
         self.unused_table = QTableWidget()
         self.unused_table.setColumnCount(2)
         self.unused_table.setHorizontalHeaderLabels(["Category", "Unused Entries"])
-        self.unused_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.unused_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.unused_table)
         
         # Potential orphaned references
@@ -1141,7 +1141,7 @@ class StatisticsDialog(QDialog):
         self.orphaned_table = QTableWidget()
         self.orphaned_table.setColumnCount(4)
         self.orphaned_table.setHorizontalHeaderLabels(["Reference", "Occurrences", "Category", "Scenes"])
-        self.orphaned_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.orphaned_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.orphaned_table)
         
         self.tabs.addTab(tab, "Compendium")
@@ -1296,7 +1296,7 @@ class StatisticsDialog(QDialog):
                 row += 1
             
             # Sort by mentions
-            self.character_table.sortItems(1, Qt.DescendingOrder)
+            self.character_table.sortItems(1, Qt.SortOrder.DescendingOrder)
         except Exception as e:
             self.logger.error(f"Error updating characters tab: {e}")
             QMessageBox.warning(self, "Error", f"Could not update characters tab: {e}")
@@ -1332,7 +1332,7 @@ class StatisticsDialog(QDialog):
             row += 1
         
         # Sort by mentions
-        self.location_table.sortItems(1, Qt.DescendingOrder)
+        self.location_table.sortItems(1, Qt.SortOrder.DescendingOrder)
     
     def update_text_quality_tab(self):
         """Update the text quality tab with current statistics."""

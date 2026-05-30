@@ -232,9 +232,9 @@ class ManageTab(QWidget):
                 self,
                 "Large Upload",
                 "You have selected files with a total size over 100GB. According to Archive.org recommendations, items should not exceed 100GB. Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if response == QMessageBox.No:
+            if response == QMessageBox.StandardButton.No:
                 return
                 
         if len(self.upload_file_paths) > 10000:
@@ -242,9 +242,9 @@ class ManageTab(QWidget):
                 self,
                 "Too Many Files",
                 "You have selected over 10,000 files. According to Archive.org recommendations, items should not contain more than 10,000 files. Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if response == QMessageBox.No:
+            if response == QMessageBox.StandardButton.No:
                 return
         
         try:
@@ -337,10 +337,10 @@ class ManageTab(QWidget):
             self,
             "Delete Confirmation",
             f"Are you sure you want to delete the file '{filename}' from item '{identifier}'?",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
-        if response == QMessageBox.No:
+        if response == QMessageBox.StandardButton.No:
             return
             
         try:

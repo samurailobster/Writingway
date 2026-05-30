@@ -44,7 +44,7 @@ class FocusMode(QMainWindow):
     def __init__(self, image_dir, scene_text="", parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Focus Mode"))
-        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.showFullScreen()
         # NEW: Callback attribute to be set by the parent window
         self.on_close = None
@@ -68,13 +68,13 @@ class FocusMode(QMainWindow):
 
         # Background label to display the image (fills the entire window)
         self.bg_label = QLabel(central_widget)
-        self.bg_label.setAlignment(Qt.AlignCenter)
+        self.bg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.bg_label.setScaledContents(True)
         layout.addWidget(self.bg_label, 0, 0)
 
         # Foreground widget: container for the "A4 page"
         self.fg_widget = QWidget(central_widget)
-        self.fg_widget.setAttribute(Qt.WA_TranslucentBackground)
+        self.fg_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         fg_layout = QVBoxLayout(self.fg_widget)
         fg_layout.setContentsMargins(0, 0, 0, 0)
         fg_layout.setSpacing(0)
@@ -102,7 +102,7 @@ class FocusMode(QMainWindow):
         )
         page_layout.addWidget(self.editor)
 
-        fg_layout.addWidget(self.page_widget, alignment=Qt.AlignCenter)
+        fg_layout.addWidget(self.page_widget, alignment=Qt.AlignmentFlag.AlignCenter)
         fg_layout.addStretch()
 
         layout.addWidget(self.fg_widget, 0, 0)
@@ -150,9 +150,9 @@ class FocusMode(QMainWindow):
         self.load_current_image()
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() in (Qt.Key_F11, Qt.Key_Escape):
+        if event.key() in (Qt.Key.Key_F11, Qt.Key.Key_Escape):
             self.close()
-        elif event.key() == Qt.Key_F12:
+        elif event.key() == Qt.Key.Key_F12:
             self.cycle_image()
         else:
             super().keyPressEvent(event)

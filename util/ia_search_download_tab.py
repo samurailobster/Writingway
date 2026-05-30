@@ -111,7 +111,7 @@ class ProgressDialog(QProgressDialog):
     def __init__(self, title, message, cancel_button_text, parent=None):
         super().__init__(message, cancel_button_text, 0, 0, parent)
         self.setWindowTitle(title)
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setMinimumDuration(0)
         self.setCancelButton(None)  # Remove default cancel button
         self.setAutoClose(False)
@@ -234,10 +234,10 @@ class SearchDownloadTab(QWidget):
         self.collection_description_link.setStyleSheet(
             "border: none; text-decoration: underline; color: blue; text-align: left;"
         )
-        self.collection_description_link.setCursor(QCursor(Qt.PointingHandCursor))
+        self.collection_description_link.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.collection_description_link.clicked.connect(self.open_collection_description)
         self.collection_description_link.setSizePolicy(
-            QSizePolicy.Fixed, QSizePolicy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )  # Fixed size policy
         about_layout.addWidget(self.collection_description_link)
         about_layout.addStretch(1)
@@ -296,13 +296,13 @@ class SearchDownloadTab(QWidget):
         """Select all items in the search results list."""
         for i in range(self.search_results.count()):
             item = self.search_results.item(i)
-            item.setCheckState(Qt.Checked)
+            item.setCheckState(Qt.CheckState.Checked)
 
     def deselect_all_items(self):
         """Deselect all items in the search results list."""
         for i in range(self.search_results.count()):
             item = self.search_results.item(i)
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
 
     def get_mediatype_icon(self, mediatype):
         """Get an appropriate icon for the media type."""
@@ -312,7 +312,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.cyan)
+            pixmap.fill(Qt.GlobalColor.cyan)
             return QIcon(pixmap)
 
         # Texts
@@ -321,7 +321,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.green)
+            pixmap.fill(Qt.GlobalColor.green)
             return QIcon(pixmap)
 
         # Image
@@ -330,7 +330,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.yellow)
+            pixmap.fill(Qt.GlobalColor.yellow)
             return QIcon(pixmap)
 
         # Movies
@@ -339,7 +339,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.red)
+            pixmap.fill(Qt.GlobalColor.red)
             return QIcon(pixmap)
 
         # Software
@@ -348,7 +348,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.magenta)
+            pixmap.fill(Qt.GlobalColor.magenta)
             return QIcon(pixmap)
 
         # Web archives
@@ -357,7 +357,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.blue)
+            pixmap.fill(Qt.GlobalColor.blue)
             return QIcon(pixmap)
 
         # Live Music Archive
@@ -366,7 +366,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.darkYellow)
+            pixmap.fill(Qt.GlobalColor.darkYellow)
             return QIcon(pixmap)
 
         # Data sets
@@ -375,7 +375,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.darkCyan)
+            pixmap.fill(Qt.GlobalColor.darkCyan)
             return QIcon(pixmap)
 
         # Collections
@@ -384,7 +384,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.darkGray)
+            pixmap.fill(Qt.GlobalColor.darkGray)
             return QIcon(pixmap)
 
         # Other or unknown
@@ -393,7 +393,7 @@ class SearchDownloadTab(QWidget):
             if not icon.isNull():
                 return icon
             pixmap = QPixmap(16, 16)
-            pixmap.fill(Qt.gray)
+            pixmap.fill(Qt.GlobalColor.gray)
             return QIcon(pixmap)
 
     def perform_search(self):
@@ -465,8 +465,8 @@ class SearchDownloadTab(QWidget):
             mediatype = result.get('mediatype', '')
             
             item = QListWidgetItem(f"{title} ({identifier})")
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Unchecked)
             
             # Set an icon based on mediatype
             item.setIcon(self.get_mediatype_icon(mediatype))
@@ -510,7 +510,7 @@ class SearchDownloadTab(QWidget):
         selected_items = []
         for i in range(self.search_results.count()):
             item = self.search_results.item(i)
-            if item.checkState() == Qt.Checked:
+            if item.checkState() == Qt.CheckState.Checked:
                 identifier = item.text().split(' (')[-1][:-1]
                 selected_items.append(identifier)
 

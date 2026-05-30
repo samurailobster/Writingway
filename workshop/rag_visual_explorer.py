@@ -108,7 +108,7 @@ class VisualExplorerWidget(QWidget):
 
     def init_vl_tab(self):
         main_layout = QHBoxLayout(self)
-        self.main_splitter = QSplitter(Qt.Horizontal)
+        self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
 
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
@@ -204,7 +204,7 @@ class VisualExplorerWidget(QWidget):
         preview_container = QWidget()
         preview_container_layout = QVBoxLayout(preview_container)
         self.lbl_preview = QLabel("No item selected")
-        self.lbl_preview.setAlignment(Qt.AlignCenter)
+        self.lbl_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         preview_container_layout.addWidget(self.lbl_preview)
         preview_container_layout.addStretch()
         scroll_area.setWidget(preview_container)
@@ -323,19 +323,19 @@ class VisualExplorerWidget(QWidget):
     def select_all_items(self):
         for i in range(self.list_items.count()):
             item = self.list_items.item(i)
-            item.setCheckState(Qt.Checked)
+            item.setCheckState(Qt.CheckState.Checked)
         if self.cb_individual_prompts.isChecked():
             self.update_individual_prompts()
 
     def deselect_all_items(self):
         for i in range(self.list_items.count()):
             item = self.list_items.item(i)
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
         if self.cb_individual_prompts.isChecked():
             self.update_individual_prompts()
 
     def vl_toggle_individual_prompts(self, state):
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.prompt_stack.setCurrentIndex(1)
             self.btn_copy_to_all.setVisible(True)
             default_txt = self.te_default_prompt.toPlainText().strip()
@@ -465,7 +465,7 @@ class VisualExplorerWidget(QWidget):
     def get_selected_indices(self):
         selected = []
         for i in range(self.list_items.count()):
-            if self.list_items.item(i).checkState() == Qt.Checked:
+            if self.list_items.item(i).checkState() == Qt.CheckState.Checked:
                 selected.append(i)
         return selected
 
@@ -526,7 +526,7 @@ class VisualExplorerWidget(QWidget):
         self.processing_thread.start()
 
     def toggle_preview_panel(self, state):
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.middle_panel.show()
         else:
             self.middle_panel.hide()
@@ -562,8 +562,8 @@ class VisualExplorerWidget(QWidget):
                 for i in range(pdf_doc.page_count):
                     item_name = f"{os.path.basename(path)} - Page {i+1}"
                     item = QListWidgetItem(item_name)
-                    item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-                    item.setCheckState(Qt.Unchecked)
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                    item.setCheckState(Qt.CheckState.Unchecked)
                     self.list_items.addItem(item)
                     self.vl_items.append({
                         'type': 'pdf_page',
@@ -576,8 +576,8 @@ class VisualExplorerWidget(QWidget):
             elif file_ext in ['.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tif', '.tiff']:
                 item_name = os.path.basename(path)
                 item = QListWidgetItem(item_name)
-                item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-                item.setCheckState(Qt.Unchecked)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Unchecked)
                 self.list_items.addItem(item)
                 self.vl_items.append({
                     'type': 'image',
@@ -605,7 +605,7 @@ class VisualExplorerWidget(QWidget):
         if item['type'] == 'pdf_page':
             page = item['doc'][item['page_num']]
             pix = page.get_pixmap(dpi=75)
-            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888)
             pixmap = QPixmap.fromImage(img)
             
             width_pt = page.rect.width
@@ -629,7 +629,7 @@ class VisualExplorerWidget(QWidget):
                 max(min(pixmap.height(), self.sb_max_height.maximum()), self.sb_max_height.minimum())
             )
         
-        self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.lbl_preview.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.lbl_preview.setScaledContents(False)
         self.lbl_preview.setPixmap(pixmap)
         self.lbl_preview.adjustSize()
@@ -707,7 +707,7 @@ class VisualExplorerWidget(QWidget):
         # Gather indices of checked items
         checked_indices = []
         for i in range(self.list_items.count()):
-            if self.list_items.item(i).checkState() == Qt.Checked:
+            if self.list_items.item(i).checkState() == Qt.CheckState.Checked:
                 checked_indices.append(i)
 
         if not checked_indices:

@@ -71,7 +71,7 @@ class SummaryModel:
         
         # Scene-level or no summary available, gather scene content
         if item.childCount() == 0:
-            data = item.data(0, Qt.UserRole)
+            data = item.data(0, Qt.ItemDataRole.UserRole)
             if len(hierarchy) < 2:  # Only gather content for scenes
                 return scene_data
             text = load_latest_autosave(self.project_name, hierarchy) or data.get("content", "")

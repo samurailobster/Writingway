@@ -23,7 +23,7 @@ class ProgressDialog(QDialog):
 
     def append_message(self, message):
         cursor = self.text_edit.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         self.text_edit.setTextCursor(cursor)
         self.text_edit.insertPlainText(message + "\n")
         self.text_edit.ensureCursorVisible()

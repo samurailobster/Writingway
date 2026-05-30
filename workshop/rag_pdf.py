@@ -88,7 +88,7 @@ class PdfRagApp(QtWidgets.QWidget):
         
     def load_custom_cursor(self, path):
         pixmap = QPixmap(path)
-        return QCursor(pixmap) if not pixmap.isNull() else QCursor(Qt.WaitCursor)
+        return QCursor(pixmap) if not pixmap.isNull() else QCursor(Qt.CursorShape.WaitCursor)
 
     def set_busy_cursor(self):
         self.active_workers += 1
@@ -220,7 +220,7 @@ class PdfRagApp(QtWidgets.QWidget):
         scroll.setWidgetResizable(True)
 
         content = QLabel()
-        content.setTextFormat(Qt.RichText)
+        content.setTextFormat(Qt.TextFormat.RichText)
         content.setText(html)
         content.setWordWrap(True)
         content.setOpenExternalLinks(True)
@@ -232,7 +232,7 @@ class PdfRagApp(QtWidgets.QWidget):
         close_btn = QPushButton("Close")
         close_btn.setObjectName("close-btn")
         close_btn.clicked.connect(dialog.accept)
-        layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         dialog.exec_()
 
@@ -244,8 +244,8 @@ class PdfRagApp(QtWidgets.QWidget):
     def clear_history(self):
         r = QMessageBox.question(self, "Clear History",
                                  "Clear all history?", 
-                                 QMessageBox.Yes|QMessageBox.No, QMessageBox.No)
-        if r == QMessageBox.Yes:
+                                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if r == QMessageBox.StandardButton.Yes:
             for title, _ in self.search_history:
                 file_path = os.path.join(self.history_dir, title)
                 if os.path.exists(file_path):

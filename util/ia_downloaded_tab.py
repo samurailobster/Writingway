@@ -46,7 +46,7 @@ class DocumentRenderer(QObject):
             pix = page.get_pixmap(matrix=matrix)
             
             # Convert to QImage and then to QPixmap
-            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888)
             pixmap = QPixmap.fromImage(img)
             
             # Emit the rendered page
@@ -145,17 +145,17 @@ class DownloadedTab(QWidget):
         self.downloaded_tree.setModel(self.downloaded_model)
         self.downloaded_tree.setRootIndex(self.downloaded_model.index(str(self.download_dir)))
         self.downloaded_tree.setSortingEnabled(True)
-        self.downloaded_tree.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.downloaded_tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.downloaded_tree.doubleClicked.connect(self.open_downloaded_file)
         
         # Set the Name column width to be wider than others
         self.downloaded_tree.header().setStretchLastSection(False)
-        self.downloaded_tree.header().setSectionResizeMode(0, QHeaderView.Stretch)  # Make Name column stretch
+        self.downloaded_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Make Name column stretch
         for i in range(1, self.downloaded_model.columnCount()):
-            self.downloaded_tree.header().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+            self.downloaded_tree.header().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
 
         # Set up context menu for the tree view
-        self.downloaded_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.downloaded_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.downloaded_tree.customContextMenuRequested.connect(self.show_context_menu)
 
         # File management buttons
@@ -396,7 +396,7 @@ class DownloadedTab(QWidget):
                     file_path = os.path.join(root, file)
                     if not filters or any(fnmatch.fnmatch(file, f) for f in filters):
                         index = self.downloaded_model.index(file_path)
-                        self.downloaded_tree.selectionModel().select(index, QItemSelectionModel.Select)
+                        self.downloaded_tree.selectionModel().select(index, QItemSelectionModel.SelectionFlag.Select)
 
             QMessageBox.information(self, "Selection", "All visible files have been selected.")
         except Exception as e:
@@ -422,10 +422,10 @@ class DownloadedTab(QWidget):
             self,
             "Confirm Deletion",
             f"Are you sure you want to delete {len(file_paths)} file(s)?",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
-        if confirmation == QMessageBox.Yes:
+        if confirmation == QMessageBox.StandardButton.Yes:
             success_count = 0
             failed_files = []
 
@@ -503,7 +503,7 @@ class DownloadedTab(QWidget):
                 self.open_downloaded_file(index)
             elif action == delete_action:
                 if len(self.downloaded_tree.selectionModel().selectedIndexes()) <= 1:
-                    self.downloaded_tree.selectionModel().select(index, QItemSelectionModel.ClearAndSelect)
+                    self.downloaded_tree.selectionModel().select(index, QItemSelectionModel.SelectionFlag.ClearAndSelect)
                 self.delete_selected_files()
             elif os.path.isfile(file_path) and action == open_pymupdf_action:
                 self.open_file_with_pymupdf(file_path)
@@ -564,7 +564,7 @@ class DownloadedTab(QWidget):
         editor = QTextEdit()
         editor.setPlainText(text)
         editor.setReadOnly(True)
-        editor.setLineWrapMode(QTextEdit.NoWrap)
+        editor.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         editor.setStyleSheet("""
             QTextEdit {
                 font-family: monospace;
@@ -597,7 +597,7 @@ class DownloadedTab(QWidget):
         dlg.setMinimumSize(400, 300)
         
         # Add keyboard shortcut for F11
-        QShortcut(Qt.Key_F11, dlg).activated.connect(
+        QShortcut(Qt.Key.Key_F11, dlg).activated.connect(
             lambda: self.toggle_fullscreen(dlg, btn_fullscreen)
         )
         
@@ -617,11 +617,11 @@ class DownloadedTab(QWidget):
             # Set search options
             flags = QTextDocument.FindFlags()
             if case_sensitive.isChecked():
-                flags |= QTextDocument.FindCaseSensitively
+                flags |= QTextDocument.FindFlag.FindCaseSensitively
             if whole_words.isChecked():
-                flags |= QTextDocument.FindWholeWords
+                flags |= QTextDocument.FindFlag.FindWholeWords
             if direction < 0:
-                flags |= QTextDocument.FindBackward
+                flags |= QTextDocument.FindFlag.FindBackward
             
             # Perform search
             cursor = editor.textCursor()
@@ -640,9 +640,9 @@ class DownloadedTab(QWidget):
                 # Move to beginning/end based on direction
                 cursor = editor.textCursor()
                 if direction > 0:
-                    cursor.movePosition(QTextCursor.Start)
+                    cursor.movePosition(QTextCursor.MoveOperation.Start)
                 else:
-                    cursor.movePosition(QTextCursor.End)
+                    cursor.movePosition(QTextCursor.MoveOperation.End)
                 editor.setTextCursor(cursor)
                 
                 # Try search again
@@ -722,7 +722,7 @@ class DownloadedTab(QWidget):
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             image_label = QLabel()
-            image_label.setAlignment(Qt.AlignCenter)
+            image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             scroll_area.setWidget(image_label)
             layout.addWidget(scroll_area)
 

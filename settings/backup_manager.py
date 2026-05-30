@@ -39,14 +39,14 @@ class BackupDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # Splitter for list and diff viewer
-        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # Left panel: Backup file list
         self.list_widget = QListWidget()
         self.list_widget.setMaximumWidth(200)
         self.list_widget.setSelectionMode(QListWidget.ExtendedSelection)  # Allow multiple selection
         self.list_widget.currentItemChanged.connect(self.update_diff_view)
-        self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
         self.splitter.addWidget(self.list_widget)
 
@@ -88,13 +88,13 @@ class BackupDialog(QDialog):
         button_layout.addWidget(self.zoom_out_button)
 
         self.reset_zoom_button = QPushButton()
-        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
+        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
         self.reset_zoom_button.setToolTip(_("Reset diff viewer zoom"))
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         button_layout.addWidget(self.reset_zoom_button)
 
         button_layout.addStretch()
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_layout.addWidget(self.button_box)
         
         layout.addLayout(button_layout)
@@ -105,12 +105,12 @@ class BackupDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle CMD++ and CMD+- shortcuts for zooming."""
-        if event.modifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
                 self.zoom_in()
                 event.accept()
                 return
-            elif event.key() == Qt.Key_Minus:
+            elif event.key() == Qt.Key.Key_Minus:
                 self.zoom_out()
                 event.accept()
                 return
@@ -207,7 +207,7 @@ class BackupDialog(QDialog):
                 formatted_timestamp = creation_time
             item = self.list_widget.addItem(formatted_timestamp)
             item = self.list_widget.item(self.list_widget.count() - 1)
-            item.setData(Qt.UserRole, filename)
+            item.setData(Qt.ItemDataRole.UserRole, filename)
             
             # Set icon based on protected status
             backup_path = WWSettingsManager.get_project_relpath(self.project_name, filename)
@@ -251,7 +251,7 @@ class BackupDialog(QDialog):
             self.diff_viewer.setHtml("<p>Select a backup file to view differences.</p>")
             return
         
-        backup_filename = current.data(Qt.UserRole)
+        backup_filename = current.data(Qt.ItemDataRole.UserRole)
         backup_dir = os.path.join(os.getcwd(), "Projects", WWSettingsManager.sanitize(self.project_name))
         backup_path = os.path.join(backup_dir, backup_filename)
         
@@ -338,7 +338,7 @@ class BackupDialog(QDialog):
         current_item = self.list_widget.currentItem()
         is_protected = False
         if current_item:
-            backup_filename = current_item.data(Qt.UserRole)
+            backup_filename = current_item.data(Qt.ItemDataRole.UserRole)
             backup_path = os.path.join(os.getcwd(), "Projects", WWSettingsManager.sanitize(self.project_name), backup_filename)
             is_protected = self.is_protected_backup(backup_path)
         
@@ -354,7 +354,7 @@ class BackupDialog(QDialog):
         if not current_item:
             return
         
-        backup_filename = current_item.data(Qt.UserRole)
+        backup_filename = current_item.data(Qt.ItemDataRole.UserRole)
         backup_path = os.path.join(os.getcwd(), "Projects", WWSettingsManager.sanitize(self.project_name), backup_filename)
         
         try:
@@ -416,7 +416,7 @@ class BackupDialog(QDialog):
         modified_files = []
         
         for item in selected_items:
-            backup_filename = item.data(Qt.UserRole)
+            backup_filename = item.data(Qt.ItemDataRole.UserRole)
             backup_path = os.path.join(backup_dir, backup_filename)
             if not self.is_protected_backup(backup_path):
                 try:
@@ -448,7 +448,7 @@ class BackupDialog(QDialog):
         modified_files = []
         
         for item in selected_items:
-            backup_filename = item.data(Qt.UserRole)
+            backup_filename = item.data(Qt.ItemDataRole.UserRole)
             backup_path = os.path.join(backup_dir, backup_filename)
             if self.is_protected_backup(backup_path):
                 try:
@@ -478,7 +478,7 @@ class BackupDialog(QDialog):
         unprotected_files = []
         
         for item in selected_items:
-            backup_filename = item.data(Qt.UserRole)
+            backup_filename = item.data(Qt.ItemDataRole.UserRole)
             backup_path = os.path.join(backup_dir, backup_filename)
             if self.is_protected_backup(backup_path):
                 protected_files.append(backup_filename)
@@ -490,20 +490,20 @@ class BackupDialog(QDialog):
             if unprotected_files:
                 message += _("\n\nThe following unprotected backup files will also be deleted:\n{}").format("\n".join(unprotected_files))
             response = QMessageBox.question(
-                self, _("Confirm Delete Protected Backup"), message, QMessageBox.Yes | QMessageBox.No
+                self, _("Confirm Delete Protected Backup"), message, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
         elif unprotected_files:
             message = _("Are you sure you want to delete the following backup files?\n{}\nThis action cannot be undone.").format("\n".join(unprotected_files))
             response = QMessageBox.question(
-                self, _("Confirm Delete"), message, QMessageBox.Yes | QMessageBox.No
+                self, _("Confirm Delete"), message, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
         else:
             return
         
-        if response == QMessageBox.Yes:
+        if response == QMessageBox.StandardButton.Yes:
             deleted_files = []
             for item in selected_items:
-                backup_filename = item.data(Qt.UserRole)
+                backup_filename = item.data(Qt.ItemDataRole.UserRole)
                 backup_path = os.path.join(backup_dir, backup_filename)
                 try:
                     os.remove(backup_path)
@@ -521,7 +521,7 @@ class BackupDialog(QDialog):
     def on_accept(self):
         """Handle OK button click."""
         if self.list_widget.currentItem() is not None:
-            self.selected_file = self.list_widget.currentItem().data(Qt.UserRole)
+            self.selected_file = self.list_widget.currentItem().data(Qt.ItemDataRole.UserRole)
             self.write_settings()
             self.accept()
 
@@ -541,7 +541,7 @@ def show_backup_dialog(parent, project_name, item_name, hierarchy, is_scene=True
     """
     dialog = BackupDialog(parent, project_name, item_name, hierarchy, is_scene)
     result = dialog.exec_()
-    if result == QDialog.Accepted and dialog.selected_file:
+    if result == QDialog.DialogCode.Accepted and dialog.selected_file:
         return os.path.join(
             os.getcwd(),
             "Projects",

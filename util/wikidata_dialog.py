@@ -48,7 +48,7 @@ class HistoryDialog(QDialog):
         
         # History list with custom context menu
         self.history_list = QListWidget()
-        self.history_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.history_list.customContextMenuRequested.connect(self.show_context_menu)
         self.history_list.itemDoubleClicked.connect(self.load_article)
         layout.addWidget(self.history_list)
@@ -123,8 +123,8 @@ class WikidataDialog(QDialog):
         self.setGeometry(100, 100, 1000, 800)
         
         # Set window flags 
-        self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
-        self.setWindowModality(Qt.NonModal)
+        self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint | Qt.WindowType.WindowCloseButtonHint)
+        self.setWindowModality(Qt.WindowModality.NonModal)
 
         # Initialize search and article history
         self.search_history = []  # Persistent history of saved articles
@@ -198,13 +198,13 @@ class WikidataDialog(QDialog):
         main_layout.addLayout(top_bar_layout)
 
         # Main vertical splitter
-        self.main_splitter = QSplitter(Qt.Vertical)
+        self.main_splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Top section: Article image and text
-        self.wiki_splitter = QSplitter(Qt.Vertical)
+        self.wiki_splitter = QSplitter(Qt.Orientation.Vertical)
         
         self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMaximumHeight(300)
         self.image_label.setScaledContents(False)
         self.wiki_splitter.addWidget(self.image_label)
@@ -215,8 +215,8 @@ class WikidataDialog(QDialog):
         self.result_display.anchorClicked.connect(self.handle_link_click)
         
         palette = self.result_display.palette()
-        palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor("yellow"))
-        palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor("black"))
+        palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Highlight, QColor("yellow"))
+        palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.HighlightedText, QColor("black"))
         self.result_display.setPalette(palette)
         
         self.wiki_splitter.setStretchFactor(0, 1)
@@ -280,9 +280,9 @@ class WikidataDialog(QDialog):
         reply = QMessageBox.question(
             self, "Clear History",
             "Are you sure you want to clear the search history?",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.search_history = []
             self.save_history()
             QMessageBox.information(self, "History Cleared", "Search history has been cleared.")
@@ -313,7 +313,7 @@ class WikidataDialog(QDialog):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("About")
         msg_box.setText(about_text)
-        msg_box.setTextFormat(Qt.RichText)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.exec_()
     
     def load_history(self):
@@ -441,7 +441,7 @@ class WikidataDialog(QDialog):
                 pixmap = QPixmap()
                 pixmap.loadFromData(response.content)
                 if pixmap.height() > 300:
-                    pixmap = pixmap.scaledToHeight(300, Qt.SmoothTransformation)
+                    pixmap = pixmap.scaledToHeight(300, Qt.TransformationMode.SmoothTransformation)
                 self.image_label.setPixmap(pixmap)
             else:
                 self.image_label.clear()

@@ -30,7 +30,7 @@ class ProviderInfoDialog(QDialog):
 
     def init_ui(self):
         main_layout = QVBoxLayout()
-        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self.provider_tree = QTreeWidget()
         self.provider_tree.setHeaderLabels([_("Provider")])
@@ -75,7 +75,7 @@ class ProviderInfoDialog(QDialog):
                 padding: 5px;
             }}
         """)
-        self.model_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.model_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.model_table.verticalHeader().setVisible(False)
         right_layout.addWidget(self.model_table)
 
@@ -87,7 +87,7 @@ class ProviderInfoDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
         self.collapse_button = QPushButton()
-        self.collapse_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowUp))
+        self.collapse_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowUp))
         self.collapse_button.setToolTip(_("Collapse all providers"))
         self.collapse_button.clicked.connect(self.collapse_tree)
         button_layout.addWidget(self.collapse_button)
@@ -106,14 +106,14 @@ class ProviderInfoDialog(QDialog):
         button_layout.addWidget(self.zoom_out_button)
 
         self.reset_zoom_button = QPushButton()
-        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
+        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
         self.reset_zoom_button.setToolTip(_("Reset table content zoom"))
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         button_layout.addWidget(self.reset_zoom_button)
 
         button_layout.addStretch()
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.on_close_clicked)
         button_layout.addWidget(button_box)
         main_layout.addLayout(button_layout)
@@ -122,12 +122,12 @@ class ProviderInfoDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle CMD++ and CMD+- shortcuts for zooming."""
-        if event.modifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
                 self.zoom_in()
                 event.accept()
                 return
-            elif event.key() == Qt.Key_Minus:
+            elif event.key() == Qt.Key.Key_Minus:
                 self.zoom_out()
                 event.accept()
                 return
@@ -273,7 +273,7 @@ class ProviderInfoDialog(QDialog):
                     self,
                     _("API Key Required"),
                     _("An API key is required for ") + provider_name + _(". Please enter it:"),
-                    echo=QLineEdit.Password
+                    echo=QLineEdit.EchoMode.Password
                 )
                 if ok and api_key:
                     config["api_key"] = api_key

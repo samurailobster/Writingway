@@ -105,9 +105,9 @@ class ModelDownloadDialog(QDialog):
         reply = QMessageBox.question(
             self, "Confirm Download",
             f"Are you sure you want to download the '{model_name}' model? This may take some time.",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.start_download_thread(model_name)
 
     def start_download_thread(self, model_name):
@@ -175,7 +175,7 @@ class TranscriptionHistoryDialog(QDialog):
             
             # Create list widget item with checkbox
             list_item = QListWidgetItem()
-            list_item.setData(Qt.UserRole, idx)
+            list_item.setData(Qt.ItemDataRole.UserRole, idx)
             
             # Create widget for the item with checkbox and label
             item_widget = QWidget()
@@ -196,7 +196,7 @@ class TranscriptionHistoryDialog(QDialog):
             self.history_list.setItemWidget(list_item, item_widget)
             
             # Store the checkbox reference in the item's data for later access
-            list_item.setData(Qt.UserRole + 1, checkbox)
+            list_item.setData(Qt.ItemDataRole.UserRole + 1, checkbox)
     
     def load_transcription(self):
         selected_item = None
@@ -204,7 +204,7 @@ class TranscriptionHistoryDialog(QDialog):
         # Find the first selected item (with checkbox or directly selected)
         for i in range(self.history_list.count()):
             item = self.history_list.item(i)
-            checkbox = item.data(Qt.UserRole + 1)
+            checkbox = item.data(Qt.ItemDataRole.UserRole + 1)
             
             if checkbox.isChecked() or item.isSelected():
                 selected_item = item
@@ -213,7 +213,7 @@ class TranscriptionHistoryDialog(QDialog):
         if not selected_item:
             return
             
-        idx = selected_item.data(Qt.UserRole)
+        idx = selected_item.data(Qt.ItemDataRole.UserRole)
         sorted_history = sorted(self.history_data, key=lambda x: x.get('timestamp', ''), reverse=True)
         selected_item = sorted_history[idx]
         self.transcription_selected.emit(selected_item)
@@ -224,10 +224,10 @@ class TranscriptionHistoryDialog(QDialog):
         
         for i in range(self.history_list.count()):
             item = self.history_list.item(i)
-            checkbox = item.data(Qt.UserRole + 1)
+            checkbox = item.data(Qt.ItemDataRole.UserRole + 1)
             
             if checkbox.isChecked():
-                idx = item.data(Qt.UserRole)
+                idx = item.data(Qt.ItemDataRole.UserRole)
                 selected_indices.append(idx)
                 
         return selected_indices
@@ -243,10 +243,10 @@ class TranscriptionHistoryDialog(QDialog):
         reply = QMessageBox.question(
             self, "Confirm Deletion",
             message,
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             sorted_history = sorted(self.history_data, key=lambda x: x.get('timestamp', ''), reverse=True)
             
             # Delete items in reverse order to avoid index shifting issues
@@ -586,7 +586,7 @@ class WhisperApp(QMainWindow):
         player_layout = QVBoxLayout(self.frame_audio_player)
         time_layout = QHBoxLayout()
         self.current_time_label = QLabel("0:00")
-        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider = QSlider(Qt.Orientation.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
         self.duration_label = QLabel("0:00")
@@ -596,12 +596,12 @@ class WhisperApp(QMainWindow):
         player_layout.addLayout(time_layout)
         controls_layout = QHBoxLayout()
         self.btn_play = QPushButton()
-        self.btn_play.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.btn_play.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
         self.btn_play.clicked.connect(self.toggle_playback)
         self.btn_play.setEnabled(False)
         controls_layout.addWidget(self.btn_play)
         self.btn_stop = QPushButton()
-        self.btn_stop.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
+        self.btn_stop.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaStop))
         self.btn_stop.clicked.connect(self.stop_playback)
         controls_layout.addWidget(self.btn_stop)
         controls_layout.addStretch()
@@ -609,7 +609,7 @@ class WhisperApp(QMainWindow):
         volume_layout = QHBoxLayout()
         volume_label = QLabel("Volume:")
         volume_layout.addWidget(volume_label)
-        self.volume_slider = QSlider(Qt.Horizontal)
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(50)
         self.volume_slider.setToolTip("Adjust volume")
@@ -619,7 +619,7 @@ class WhisperApp(QMainWindow):
         main_layout.addWidget(self.frame_audio_player)
         
         # Logs and transcription result in a splitter
-        splitter = QSplitter(Qt.Vertical)
+        splitter = QSplitter(Qt.Orientation.Vertical)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
         self.log_text.setPlaceholderText("Logs and status messages...")
@@ -749,7 +749,7 @@ class WhisperApp(QMainWindow):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("About Whisper Audio to Text Converter")
         msg_box.setText(about_text)
-        msg_box.setTextFormat(Qt.RichText)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.exec_()
     
     def show_model_manager(self):
@@ -819,7 +819,7 @@ class WhisperApp(QMainWindow):
     
     def toggle_playback(self):
         """Toggle between play and pause states."""
-        if self.player.state() == QMediaPlayer.PlayingState:
+        if self.player.state() == QMediaPlayer.PlaybackState.PlayingState:
             self.player.pause()
         else:
             self.player.play()
@@ -844,10 +844,10 @@ class WhisperApp(QMainWindow):
     
     def handle_player_state_changed(self, state):
         """Update the play button icon based on media state."""
-        if state == QMediaPlayer.PlayingState:
-            self.btn_play.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
+        if state == QMediaPlayer.PlaybackState.PlayingState:
+            self.btn_play.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPause))
         else:
-            self.btn_play.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+            self.btn_play.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay))
     
     def set_volume(self, value):
         """Set the volume of the media player."""

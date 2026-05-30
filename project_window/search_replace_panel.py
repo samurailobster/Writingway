@@ -133,7 +133,7 @@ class SearchReplacePanel(QWidget):
         self.menu.addAction(self.replace_action)
         
         self.menu_button.setMenu(self.menu)
-        self.menu_button.setPopupMode(QToolButton.InstantPopup)
+        self.menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         search_layout.addWidget(self.menu_button)
 
         # Replace section (collapsed by default)
@@ -173,7 +173,7 @@ class SearchReplacePanel(QWidget):
         self.results_tree = QTreeWidget()
         self.results_tree.setHeaderLabels([_("Search Results")])
         self.results_tree.itemClicked.connect(self.on_result_clicked)
-        self.results_tree.setFocusPolicy(Qt.StrongFocus)
+        self.results_tree.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.results_tree.keyPressEvent = self.keyPressEvent
         self.results_tree.setIndentation(2)  # Reduced indentation for left-justified appearance
 
@@ -189,7 +189,7 @@ class SearchReplacePanel(QWidget):
 
     def keyPressEvent(self, event):
         """Handle keyboard navigation for the results tree."""
-        if event.key() == Qt.Key_Up:
+        if event.key() == Qt.Key.Key_Up:
             current_item = self.results_tree.currentItem()
             if current_item:
                 current_index = self.results_tree.indexOfTopLevelItem(current_item) if current_item.parent() is None else current_item.parent().indexOfChild(current_item)
@@ -206,10 +206,10 @@ class SearchReplacePanel(QWidget):
                         prev_item = None
                 if prev_item and prev_item.childCount() > 0:
                     prev_item = prev_item.child(prev_item.childCount() - 1)
-                if prev_item and prev_item.data(0, Qt.UserRole):
+                if prev_item and prev_item.data(0, Qt.ItemDataRole.UserRole):
                     self.results_tree.setCurrentItem(prev_item)
                     self.on_result_clicked(prev_item, 0)
-        elif event.key() == Qt.Key_Down:
+        elif event.key() == Qt.Key.Key_Down:
             current_item = self.results_tree.currentItem()
             if current_item:
                 if current_item.childCount() > 0:
@@ -226,7 +226,7 @@ class SearchReplacePanel(QWidget):
                     else:
                         next_index = current_index + 1
                         next_item = self.results_tree.topLevelItem(next_index) if next_index < self.results_tree.topLevelItemCount() else None
-                if next_item and next_item.data(0, Qt.UserRole):
+                if next_item and next_item.data(0, Qt.ItemDataRole.UserRole):
                     self.results_tree.setCurrentItem(next_item)
                     self.on_result_clicked(next_item, 0)
         else:
@@ -359,7 +359,7 @@ class SearchReplacePanel(QWidget):
                             # Get single-line context around the match
                             context = self.get_single_line_context(plain_content, pos, len(match))
                             match_item = QTreeWidgetItem(scene_item, [""])  # Empty text; widget will set content
-                            match_item.setData(0, Qt.UserRole, {
+                            match_item.setData(0, Qt.ItemDataRole.UserRole, {
                                 "hierarchy": hierarchy,
                                 "position": pos,
                                 "match_text": match,
@@ -388,7 +388,7 @@ class SearchReplacePanel(QWidget):
             return
         # Sync current_match with the selected tree item
         current_item = self.results_tree.currentItem()
-        if current_item and current_item.data(0, Qt.UserRole):
+        if current_item and current_item.data(0, Qt.ItemDataRole.UserRole):
             for i, (scene_item, match_item) in enumerate(self.matches):
                 if match_item == current_item:
                     self.current_match = (scene_item, match_item)
@@ -403,7 +403,7 @@ class SearchReplacePanel(QWidget):
             return
         # Sync current_match with the selected tree item
         current_item = self.results_tree.currentItem()
-        if current_item and current_item.data(0, Qt.UserRole):
+        if current_item and current_item.data(0, Qt.ItemDataRole.UserRole):
             for i, (scene_item, match_item) in enumerate(self.matches):
                 if match_item == current_item:
                     self.current_match = (scene_item, match_item)
@@ -420,9 +420,9 @@ class SearchReplacePanel(QWidget):
         self.current_match = self.matches[index]
         scene_item, match_item = self.current_match
         self.results_tree.setCurrentItem(match_item)
-        hierarchy = match_item.data(0, Qt.UserRole)["hierarchy"]
-        position = match_item.data(0, Qt.UserRole)["position"]
-        stored_match_text = match_item.data(0, Qt.UserRole)["match_text"]
+        hierarchy = match_item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
+        position = match_item.data(0, Qt.ItemDataRole.UserRole)["position"]
+        stored_match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["match_text"]
         self._programmatic_change = True
 
         try:
@@ -470,11 +470,11 @@ class SearchReplacePanel(QWidget):
                     context = self.get_single_line_context(plain_text, closest_pos, len(closest_match))
                     match_widget = MatchItemWidget(context, match_item, self.tint_color, show_undo=is_replaced)
                     self.results_tree.setItemWidget(match_item, 0, match_widget)
-                    match_item.setData(0, Qt.UserRole, {
+                    match_item.setData(0, Qt.ItemDataRole.UserRole, {
                         "hierarchy": hierarchy,
                         "position": closest_pos,
                         "match_text": closest_match,
-                        "original_match_text": match_item.data(0, Qt.UserRole).get("original_match_text", closest_match)
+                        "original_match_text": match_item.data(0, Qt.ItemDataRole.UserRole).get("original_match_text", closest_match)
                     })
                 else:
                     # No match found, use stored position with zero-length highlight
@@ -487,7 +487,7 @@ class SearchReplacePanel(QWidget):
             if match_length > 0:
                 selection = QTextEdit.ExtraSelection()
                 selection.cursor = QTextCursor(cursor)
-                selection.cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, match_length)
+                selection.cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, match_length)
                 selection.format.setBackground(QColor("yellow"))
                 self.extra_selections.append(selection)
                 editor.setExtraSelections(self.extra_selections)
@@ -502,10 +502,10 @@ class SearchReplacePanel(QWidget):
             self.controller.statusBar().showMessage(_("Please select a match to replace"), 5000)
             return
         scene_item, match_item = self.current_match
-        hierarchy = match_item.data(0, Qt.UserRole)["hierarchy"]
-        position = match_item.data(0, Qt.UserRole)["position"]
-        match_text = match_item.data(0, Qt.UserRole)["match_text"]
-        original_match_text = match_item.data(0, Qt.UserRole)["original_match_text"]
+        hierarchy = match_item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
+        position = match_item.data(0, Qt.ItemDataRole.UserRole)["position"]
+        match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["match_text"]
+        original_match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["original_match_text"]
         content = self.model.load_scene_content(hierarchy)
         if content is None:
             return
@@ -531,7 +531,7 @@ class SearchReplacePanel(QWidget):
         replace_text = self.replace_input.text()
         cursor = QTextCursor(doc)
         cursor.setPosition(position)
-        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(match_text))
+        cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
         
         # Check if the match is in CJK text
         is_cjk = is_cjk_text(match_text)
@@ -552,13 +552,13 @@ class SearchReplacePanel(QWidget):
             # Clean up spaces and punctuation
             if before_char.isspace() and after_char.isspace():
                 # Remove one space to avoid double spaces
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                 cursor.removeSelectedText()
                 space_removed = True
             elif after_char in ",.!?;" and before_char.isspace():
                 # Remove space before punctuation
                 cursor.setPosition(position - 1 if position > 0 else position)
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                 if cursor.selectedText().isspace():
                     cursor.removeSelectedText()
                     space_removed = True
@@ -569,14 +569,14 @@ class SearchReplacePanel(QWidget):
                 next_char_pos = find_next_non_space_char(plain_content, position + len(match_text))
                 if next_char_pos != -1 and plain_content[next_char_pos].isalpha():
                     cursor.setPosition(next_char_pos)
-                    cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                    cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                     next_char = cursor.selectedText()
                     cursor.removeSelectedText()
                     cursor.insertText(next_char.upper())
                 # Remove trailing punctuation if present
                 if after_char in ",.!?;" and position + len(match_text) < len(plain_content):
                     cursor.setPosition(position)
-                    cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                    cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                     if cursor.selectedText() in ",.!?;":
                         cursor.removeSelectedText()
                         punctuation_removed = True
@@ -604,7 +604,7 @@ class SearchReplacePanel(QWidget):
                 context = self.get_single_line_context(new_plain_content, new_position, len(replace_text))
                 match_widget = MatchItemWidget(context, match_item, self.tint_color, show_undo=True)
                 self.results_tree.setItemWidget(match_item, 0, match_widget)
-                match_item.setData(0, Qt.UserRole, {
+                match_item.setData(0, Qt.ItemDataRole.UserRole, {
                     "hierarchy": hierarchy,
                     "position": new_position,
                     "match_text": replace_text,
@@ -635,10 +635,10 @@ class SearchReplacePanel(QWidget):
         scenes_to_update = {}
         modified_hierarchies = set()  # Track modified scenes
         for scene_item, match_item in self.matches:
-            hierarchy = match_item.data(0, Qt.UserRole)["hierarchy"]
-            position = match_item.data(0, Qt.UserRole)["position"]
-            match_text = match_item.data(0, Qt.UserRole)["match_text"]
-            original_match_text = match_item.data(0, Qt.UserRole)["original_match_text"]
+            hierarchy = match_item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
+            position = match_item.data(0, Qt.ItemDataRole.UserRole)["position"]
+            match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["match_text"]
+            original_match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["original_match_text"]
             hierarchy_key = tuple(hierarchy)  # Convert to tuple for hashable dictionary key
             if hierarchy_key not in scenes_to_update:
                 scenes_to_update[hierarchy_key] = []
@@ -677,7 +677,7 @@ class SearchReplacePanel(QWidget):
                 # Check if the match is in CJK text
                 is_cjk = is_cjk_text(match_text)
                 cursor.setPosition(pos)
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(match_text))
+                cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
                 
                 space_removed = False
                 punctuation_removed = False
@@ -696,14 +696,14 @@ class SearchReplacePanel(QWidget):
                     # Clean up spaces and punctuation
                     if before_char.isspace() and after_char.isspace():
                         # Remove one space to avoid double spaces
-                        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                        cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                         cursor.removeSelectedText()
                         space_removed = True
                         position_adjustment = -1
                     elif after_char in ",.!?;" and before_char.isspace():
                         # Remove space before punctuation
                         cursor.setPosition(pos - 1 if pos > 0 else pos)
-                        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                        cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                         if cursor.selectedText().isspace():
                             cursor.removeSelectedText()
                             space_removed = True
@@ -715,14 +715,14 @@ class SearchReplacePanel(QWidget):
                         next_char_pos = find_next_non_space_char(plain_content, pos + len(match_text))
                         if next_char_pos != -1 and plain_content[next_char_pos].isalpha():
                             cursor.setPosition(next_char_pos)
-                            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                            cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                             next_char = cursor.selectedText()
                             cursor.removeSelectedText()
                             cursor.insertText(next_char.upper())
                         # Remove trailing punctuation if present
                         if after_char in ",.!?;" and pos + len(match_text) < len(plain_content):
                             cursor.setPosition(pos)
-                            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                            cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                             if cursor.selectedText() in ",.!?;":
                                 cursor.removeSelectedText()
                                 punctuation_removed = True
@@ -751,9 +751,9 @@ class SearchReplacePanel(QWidget):
                 # Update match items for this scene
                 new_plain_content = doc.toPlainText()
                 for scene_item, match_item in self.matches:
-                    if match_item.data(0, Qt.UserRole)["hierarchy"] == hierarchy:
-                        pos = match_item.data(0, Qt.UserRole)["position"]
-                        original_match_text = match_item.data(0, Qt.UserRole)["original_match_text"]
+                    if match_item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"] == hierarchy:
+                        pos = match_item.data(0, Qt.ItemDataRole.UserRole)["position"]
+                        original_match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["original_match_text"]
                         # Adjust position based on cumulative shifts
                         new_pos = pos
                         for orig_pos, adj in position_adjustments.items():
@@ -763,7 +763,7 @@ class SearchReplacePanel(QWidget):
                         match_widget = MatchItemWidget(context, match_item, self.tint_color, show_undo=True)
                         self.results_tree.setItemWidget(match_item, 0, match_widget)
                         match_widget.undo_button.clicked_with_item.connect(self.undo_replacement)
-                        match_item.setData(0, Qt.UserRole, {
+                        match_item.setData(0, Qt.ItemDataRole.UserRole, {
                             "hierarchy": hierarchy,
                             "position": new_pos,
                             "match_text": replace_text,
@@ -790,15 +790,15 @@ class SearchReplacePanel(QWidget):
 
     def undo_replacement(self, match_item):
         """Revert a single replacement to the original text, preserving formatting and context."""
-        hierarchy = match_item.data(0, Qt.UserRole)["hierarchy"]
-        position = match_item.data(0, Qt.UserRole)["position"]
-        match_text = match_item.data(0, Qt.UserRole)["match_text"]
-        original_match_text = match_item.data(0, Qt.UserRole)["original_match_text"]
-        space_removed = match_item.data(0, Qt.UserRole).get("space_removed", False)
-        punctuation_removed = match_item.data(0, Qt.UserRole).get("punctuation_removed", False)
-        before_char = match_item.data(0, Qt.UserRole).get("before_char", "")
-        after_char = match_item.data(0, Qt.UserRole).get("after_char", "")
-        space_after = match_item.data(0, Qt.UserRole).get("space_after", False)
+        hierarchy = match_item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
+        position = match_item.data(0, Qt.ItemDataRole.UserRole)["position"]
+        match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["match_text"]
+        original_match_text = match_item.data(0, Qt.ItemDataRole.UserRole)["original_match_text"]
+        space_removed = match_item.data(0, Qt.ItemDataRole.UserRole).get("space_removed", False)
+        punctuation_removed = match_item.data(0, Qt.ItemDataRole.UserRole).get("punctuation_removed", False)
+        before_char = match_item.data(0, Qt.ItemDataRole.UserRole).get("before_char", "")
+        after_char = match_item.data(0, Qt.ItemDataRole.UserRole).get("after_char", "")
+        space_after = match_item.data(0, Qt.ItemDataRole.UserRole).get("space_after", False)
         content = self.model.load_scene_content(hierarchy)
         if content is None:
             return
@@ -830,7 +830,7 @@ class SearchReplacePanel(QWidget):
         
         # Remove the current text (empty for "" replacements)
         if match_text:
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, len(match_text))
+            cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
             cursor.removeSelectedText()
         
         # Insert original match text
@@ -849,7 +849,7 @@ class SearchReplacePanel(QWidget):
             next_char_pos = find_next_non_space_char(plain_content, position + len(original_match_text))
             if next_char_pos != -1 and plain_content[next_char_pos].isupper():
                 cursor.setPosition(next_char_pos)
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 1)
+                cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, 1)
                 next_char = cursor.selectedText()
                 cursor.removeSelectedText()
                 cursor.insertText(next_char.lower())
@@ -866,7 +866,7 @@ class SearchReplacePanel(QWidget):
             context = self.get_single_line_context(new_plain_content, new_position, len(original_match_text))
             match_widget = MatchItemWidget(context, match_item, self.tint_color, show_undo=False)
             self.results_tree.setItemWidget(match_item, 0, match_widget)
-            match_item.setData(0, Qt.UserRole, {
+            match_item.setData(0, Qt.ItemDataRole.UserRole, {
                 "hierarchy": hierarchy,
                 "position": new_position,
                 "match_text": original_match_text,
@@ -894,15 +894,15 @@ class SearchReplacePanel(QWidget):
 
     def on_result_clicked(self, item, column):
         """Handle clicking a result item."""
-        if item.data(0, Qt.UserRole):
+        if item.data(0, Qt.ItemDataRole.UserRole):
             # Save unsaved changes before switching scenes
             self.controller.check_unsaved_changes()
             self._programmatic_change = True
             
             try:
-                hierarchy = item.data(0, Qt.UserRole)["hierarchy"]
-                position = item.data(0, Qt.UserRole)["position"]
-                stored_match_text = item.data(0, Qt.UserRole)["match_text"]
+                hierarchy = item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
+                position = item.data(0, Qt.ItemDataRole.UserRole)["position"]
+                stored_match_text = item.data(0, Qt.ItemDataRole.UserRole)["match_text"]
                 self.controller.load_scene_from_hierarchy(hierarchy)
                 editor = self.controller.scene_editor.editor
                 # Clear previous extra selections
@@ -949,11 +949,11 @@ class SearchReplacePanel(QWidget):
                         self.results_tree.setItemWidget(item, 0, match_widget)
                         if is_replaced:
                             match_widget.undo_button.clicked_with_item.connect(self.undo_replacement)
-                        item.setData(0, Qt.UserRole, {
+                        item.setData(0, Qt.ItemDataRole.UserRole, {
                             "hierarchy": hierarchy,
                             "position": closest_pos,
                             "match_text": closest_match,
-                            "original_match_text": item.data(0, Qt.UserRole).get("original_match_text", closest_match)
+                            "original_match_text": item.data(0, Qt.ItemDataRole.UserRole).get("original_match_text", closest_match)
                         })
                     else:
                         # No match found, use stored position with zero-length highlight
@@ -966,7 +966,7 @@ class SearchReplacePanel(QWidget):
                 if match_length > 0:
                     selection = QTextEdit.ExtraSelection()
                     selection.cursor = QTextCursor(cursor)
-                    selection.cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, match_length)
+                    selection.cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, match_length)
                     selection.format.setBackground(QColor("yellow"))
                     self.extra_selections.append(selection)
                     editor.setExtraSelections(self.extra_selections)

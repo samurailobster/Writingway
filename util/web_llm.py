@@ -115,7 +115,7 @@ class ConversationHistoryDialog(QDialog):
         
         layout.addWidget(self.history_list)
         
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
@@ -168,7 +168,7 @@ class MainWindow(QWidget):
         self.web_view.loadStarted.connect(self._clear_find_highlight)
 
         self.shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
-        self.shortcut_find.setContext(Qt.ApplicationShortcut)
+        self.shortcut_find.setContext(Qt.ShortcutContext.ApplicationShortcut)
         self.shortcut_find.activated.connect(self.open_find_dialog)
 
     def check_dependencies(self):
@@ -357,7 +357,7 @@ class MainWindow(QWidget):
 
         llm_group.setLayout(llm_layout)
 
-        splitter = QSplitter(Qt.Vertical)
+        splitter = QSplitter(Qt.Orientation.Vertical)
         splitter.addWidget(self.web_view)
         splitter.addWidget(llm_group)
         splitter.setStretchFactor(0, 3)
@@ -428,7 +428,7 @@ class MainWindow(QWidget):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("About")
         msg_box.setText(about_text)
-        msg_box.setTextFormat(Qt.RichText)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.exec_()
 
     def toggle_offline_mode(self, state):
@@ -437,7 +437,7 @@ class MainWindow(QWidget):
         otherwise re-enable JavaScript and use in-memory cache.
         """
         settings = self.web_view.page().settings()
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             # Disable JS and persist cache to disk
             settings.setAttribute(QWebEngineSettings.JavascriptEnabled, False)
             self.web_profile.setHttpCacheType(QWebEngineProfile.DiskHttpCache)
@@ -519,13 +519,13 @@ class MainWindow(QWidget):
         layout.addWidget(delete_btn)
 
         # 7) OK / Cancel
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
         # 8) Execute and load or delete
-        if dialog.exec_() == QDialog.Accepted and list_widget.currentRow() >= 0:
+        if dialog.exec_() == QDialog.DialogCode.Accepted and list_widget.currentRow() >= 0:
             sel = filtered[list_widget.currentRow()]
             self.load_from_cache(sel['filepath'])
 
@@ -877,13 +877,13 @@ class MainWindow(QWidget):
         layout.addWidget(delete_btn)
 
         # 5) OK / Cancel buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
         # 6) Execute and, if accepted, restore the chosen item
-        if dialog.exec_() == QDialog.Accepted and history_list.currentRow() >= 0:
+        if dialog.exec_() == QDialog.DialogCode.Accepted and history_list.currentRow() >= 0:
             idx = history_list.currentRow()
             selected = sorted_history[idx]
 
@@ -904,9 +904,9 @@ class MainWindow(QWidget):
             reply = QMessageBox.question(
                 self, 'Clear History',
                 'Are you sure you want to clear the conversation history?',
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
             )
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 self.conversation_history = []
                 self.save_conversation_history()
                 self.update_total_tokens()
@@ -1044,7 +1044,7 @@ class MainWindow(QWidget):
         layout.addWidget(token_label)
 
         # OK/Cancel buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -1052,13 +1052,13 @@ class MainWindow(QWidget):
         # highlighting/matching function
         def on_search(text):
             cursor = text_edit.textCursor()
-            cursor.movePosition(QTextCursor.Start)
+            cursor.movePosition(QTextCursor.MoveOperation.Start)
             text_edit.setTextCursor(cursor)
             if text:
                 text_edit.find(text)
         search_input.textChanged.connect(on_search)
 
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             # update prompt based on edits
             edited = text_edit.toPlainText().split('\nUser: ', 1)
             if len(edited) > 1:
@@ -1096,7 +1096,7 @@ class MainWindow(QWidget):
         layout.addWidget(token_label)
 
         # OK/Cancel buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -1104,13 +1104,13 @@ class MainWindow(QWidget):
         # search function
         def on_search(text):
             cursor = text_edit.textCursor()
-            cursor.movePosition(QTextCursor.Start)
+            cursor.movePosition(QTextCursor.MoveOperation.Start)
             text_edit.setTextCursor(cursor)
             if text:
                 text_edit.find(text)
         search_input.textChanged.connect(on_search)
 
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             new_text = text_edit.toPlainText()
             if self.use_original_checkbox.isChecked():
                 self.original_content = new_text

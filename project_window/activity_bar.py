@@ -21,7 +21,7 @@ class ActivityBar(QWidget):
         layout.addWidget(self.toolbar)
         layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar.setStyleSheet("QToolBar#ActivityBar { border: 0px; }")
-        self.toolbar.setOrientation(Qt.Vertical)
+        self.toolbar.setOrientation(Qt.Orientation.Vertical)
         self.toolbar.setFixedWidth(50)  # Fixed width for icons
 
         # Actions

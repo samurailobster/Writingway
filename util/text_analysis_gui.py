@@ -134,7 +134,7 @@ class ComprehensiveAnalysisWorker(QThread):
 class TextAnalysisApp(QWidget):
     def __init__(self, parent=None, initial_text="", save_callback=None):
         super().__init__(parent)
-        self.setWindowFlags(self.windowFlags() | Qt.Window)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.Window)
         self.setWindowTitle("Writingway Text Analysis Editor")
         self.resize(1000, 800)
         self.save_callback = save_callback
@@ -188,7 +188,7 @@ class TextAnalysisApp(QWidget):
         analysis_layout = QVBoxLayout(analysis_tab)
     
         # Create the main splitter for the analysis tab.
-        self.main_splitter = QSplitter(Qt.Vertical)
+        self.main_splitter = QSplitter(Qt.Orientation.Vertical)
     
         # Top section - Legend and instructions.
         top_widget = QWidget()
@@ -280,7 +280,7 @@ class TextAnalysisApp(QWidget):
 
         # Results summary label.
         self.results_label = QLabel("")
-        self.results_label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.results_label.setFrameStyle(QFrame.Shape.Panel | QFrame.Shadow.Sunken)
         self.results_label.setLineWidth(1)
         self.results_label.setWordWrap(True)
         bottom_layout.addWidget(self.results_label)
@@ -659,7 +659,7 @@ class TextAnalysisApp(QWidget):
             formats[issue_type].setBackground(QBrush(color))
         
         cursor.setPosition(0)
-        cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+        cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
         cursor.setCharFormat(QTextCharFormat())
         
         stats = {key: 0 for key in ["complex_sentences", "weak_formulations", "nonstandard_speech", "filter_words", "telling_not_showing", "weak_verbs", "overused_words", "pronoun_clarity", "repetitive_starts"]}
@@ -668,68 +668,68 @@ class TextAnalysisApp(QWidget):
             for sent in results["sentence_analysis"]:
                 if sent["complex"]:
                     cursor.setPosition(sent["start"])
-                    cursor.setPosition(sent["end"], QTextCursor.KeepAnchor)
+                    cursor.setPosition(sent["end"], QTextCursor.MoveMode.KeepAnchor)
                     cursor.mergeCharFormat(formats["complex"])
                     stats["complex_sentences"] += 1
         
         if enabled_analyses.get("weak_formulations", False):
             for start, end in results["weak_formulations"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["weak"])
                 stats["weak_formulations"] += 1
             for start, end in results["passive_voice"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["weak"])
                 stats["weak_formulations"] += 1
         
         if enabled_analyses.get("speech_verbs", False):
             for start, end, unused in results["nonstandard_speech"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["nonstandard"])
                 stats["nonstandard_speech"] += 1
         
         if enabled_analyses.get("filter_words", False):
             for start, end, unused in results["filter_words"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["filter"])
                 stats["filter_words"] += 1
         
         if enabled_analyses.get("telling", False):
             for start, end, unused in results["telling_not_showing"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["telling"])
                 stats["telling_not_showing"] += 1
         
         if enabled_analyses.get("weak_verbs", False):
             for start, end, unused, unused in results["weak_verbs"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["weak_verb"])
                 stats["weak_verbs"] += 1
         
         if enabled_analyses.get("overused", False):
             for start, end, unused, unused in results["overused_words"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["overused"])
                 stats["overused_words"] += 1
         
         if enabled_analyses.get("pronoun_clarity", False):
             for start, end, unused in results["pronoun_clarity"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["pronoun"])
                 stats["pronoun_clarity"] += 1
         
         if enabled_analyses.get("repetitive", False):
             for start, end, unused in results["repeated_sentence_starts"]:
                 cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.KeepAnchor)
+                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(formats["repetitive"])
                 stats["repetitive_starts"] += 1
         

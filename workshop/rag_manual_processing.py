@@ -37,7 +37,7 @@ class ManualProcessingWidget(QWidget):
 
     def init_manual_tab(self):
         layout = QVBoxLayout(self)
-        splitter = QSplitter(Qt.Vertical)
+        splitter = QSplitter(Qt.Orientation.Vertical)
 
         upper_widget = QWidget()
         upper_layout = QVBoxLayout(upper_widget)
@@ -127,7 +127,7 @@ class ManualProcessingWidget(QWidget):
 
         self.manual_prompts_container = QWidget()
         self.manual_prompts_layout = QVBoxLayout(self.manual_prompts_container)
-        self.manual_prompts_layout.setAlignment(Qt.AlignTop)
+        self.manual_prompts_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.manual_prompts_container)
@@ -356,9 +356,9 @@ class ManualProcessingWidget(QWidget):
             preview = QLabel(f"Preview: {text}")
             preview.setWordWrap(True)
             preview.setTextInteractionFlags(
-                Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+                Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard
             )
-            preview.setFocusPolicy(Qt.StrongFocus)
+            preview.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             chunk_layout.addWidget(preview)
             
             if self.individual_prompts_checkbox.isChecked():
@@ -369,7 +369,7 @@ class ManualProcessingWidget(QWidget):
                     
                     copy_to_all_btn = QPushButton("Copy to all")
                     copy_to_all_btn.clicked.connect(self.copy_prompt_to_all)
-                    prompt_header_layout.addWidget(copy_to_all_btn, alignment=Qt.AlignRight)
+                    prompt_header_layout.addWidget(copy_to_all_btn, alignment=Qt.AlignmentFlag.AlignRight)
                     chunk_layout.addLayout(prompt_header_layout)
                 else:
                     chunk_layout.addWidget(QLabel("Prompt:"))

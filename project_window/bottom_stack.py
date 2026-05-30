@@ -47,7 +47,7 @@ class BottomStack(QWidget):
         layout = QHBoxLayout(panel)
 
         self.summary_prompt_panel = PromptPanel("Summary")
-        self.summary_prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.summary_prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.summary_prompt_panel.setMaximumWidth(300)
         layout.addWidget(self.summary_prompt_panel)
 
@@ -133,7 +133,7 @@ class BottomStack(QWidget):
 
         buttons_layout = QHBoxLayout()
         self.prose_prompt_panel = PromptPanel("Prose")
-        self.prose_prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.prose_prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.prose_prompt_panel.setMaximumWidth(300)
         buttons_layout.addWidget(self.prose_prompt_panel)
 
@@ -166,7 +166,7 @@ class BottomStack(QWidget):
         pulldown_widget = QWidget()
         pulldown_layout = QFormLayout(pulldown_widget)
         pulldown_layout.setContentsMargins(0, 0, 20, 0)
-        pulldown_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        pulldown_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
 
         self.pov_character_combo = POVComboBox(self.model.project_name, initial_pov=self.model.settings.get("global_pov_character", "Character"))
         self.pov_character_combo.currentTextChanged.connect(self.handle_pov_character_change)
@@ -176,7 +176,7 @@ class BottomStack(QWidget):
         buttons_layout.addWidget(pulldown_widget)
 
         left_layout.addLayout(buttons_layout)
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_container)
 
         self.context_panel = ContextPanel(self.model.structure, self.model.project_name, self.controller, enhanced_window=self.controller.enhanced_window)
@@ -184,7 +184,7 @@ class BottomStack(QWidget):
         splitter.addWidget(self.context_panel)
         splitter.setSizes([500, 300])
 
-        left_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        left_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         action_layout.addWidget(splitter)
 
         layout.addWidget(self.preview_text)

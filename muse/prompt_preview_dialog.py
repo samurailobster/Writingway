@@ -57,7 +57,7 @@ class PromptPreviewDialog(QDialog):
         # Token count label (centered)
         self.token_count_label = QLabel(_("Token Count: 0"))
         self.token_count_label.setFont(QFont("Arial", self.font_size))
-        self.token_count_label.setAlignment(Qt.AlignCenter)  # Center the text
+        self.token_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the text
         button_layout.addStretch()  # Add stretch before to push label to center
         button_layout.addWidget(self.token_count_label)
         button_layout.addStretch()  # Add stretch after to center the label
@@ -89,7 +89,7 @@ class PromptPreviewDialog(QDialog):
             # Create a top-level item for the header
             header_item = QTreeWidgetItem(self.tree)
             header_item.setText(0, header)
-            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Bold))
+            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Weight.Bold))
 
             # Create a child item to hold the QTextEdit
             content_item = QTreeWidgetItem(header_item)
@@ -176,7 +176,7 @@ class PromptPreviewDialog(QDialog):
         """Apply the current font size to all tree items and widgets."""
         for i in range(self.tree.topLevelItemCount()):
             header_item = self.tree.topLevelItem(i)
-            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Bold))
+            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Weight.Bold))
             content_widget = self.tree.itemWidget(header_item.child(0), 1)
             if content_widget:
                 content_widget.setFont(QFont("Arial", self.font_size))

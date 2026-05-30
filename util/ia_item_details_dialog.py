@@ -124,7 +124,7 @@ class PageRenderer(QThread):
                         pix.width,
                         pix.height,
                         pix.stride,
-                        QImage.Format_RGB888
+                        QImage.Format.Format_RGB888
                     )
                     pixmap = QPixmap.fromImage(img)
                     self.page_rendered.emit(pixmap, page_num)
@@ -242,7 +242,7 @@ class ProgressDialog(QProgressDialog):
     def __init__(self, title, message, cancel_button_text, parent=None):
         super().__init__(message, cancel_button_text, 0, 0, parent)
         self.setWindowTitle(title)
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setMinimumDuration(0)
         self.setCancelButton(None)
         self.setAutoClose(False)
@@ -296,11 +296,11 @@ class ItemDetailsDialog(QDialog):
 
         lbl_title = QLabel(f"<b>Title:</b> {title}")
         lbl_title.setWordWrap(True)
-        lbl_title.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        lbl_title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         lbl_desc = QLabel(f"<b>Description:</b> {desc}")
         lbl_desc.setWordWrap(True)
-        lbl_desc.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        lbl_desc.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         content_layout.addWidget(lbl_title)
         content_layout.addWidget(lbl_desc)
@@ -342,14 +342,14 @@ class ItemDetailsDialog(QDialog):
         self.files_model = QStandardItemModel()
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.files_model)
-        self.proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
         self.files_list = QListView()
         self.files_list.setModel(self.proxy_model)
-        self.files_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.files_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.files_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.files_list.customContextMenuRequested.connect(self.show_context_menu)
-        self.files_list.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.files_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         self.files_data = []
 
@@ -357,8 +357,8 @@ class ItemDetailsDialog(QDialog):
             for file_info in self.item.files:
                 item = QStandardItem(file_info['name'])
                 item.setCheckable(True)
-                item.setCheckState(Qt.Unchecked)
-                item.setData(file_info.get('size', 0), Qt.UserRole)
+                item.setCheckState(Qt.CheckState.Unchecked)
+                item.setData(file_info.get('size', 0), Qt.ItemDataRole.UserRole)
                 self.files_model.appendRow(item)
                 self.files_data.append({
                     'name': file_info['name'],
@@ -470,8 +470,8 @@ class ItemDetailsDialog(QDialog):
         for file_data in self.files_data:
             item = QStandardItem(file_data['name'])
             item.setCheckable(True)
-            item.setCheckState(check_states.get(file_data['name'], Qt.Unchecked))
-            item.setData(file_data['size'], Qt.UserRole)
+            item.setCheckState(check_states.get(file_data['name'], Qt.CheckState.Unchecked))
+            item.setData(file_data['size'], Qt.ItemDataRole.UserRole)
             self.files_model.appendRow(item)
             
     def update_model_from_filtered_data(self):
@@ -487,23 +487,23 @@ class ItemDetailsDialog(QDialog):
         for file_data in self.filtered_files_data:
             item = QStandardItem(file_data['name'])
             item.setCheckable(True)
-            item.setCheckState(check_states.get(file_data['name'], Qt.Unchecked))
-            item.setData(file_data['size'], Qt.UserRole)
+            item.setCheckState(check_states.get(file_data['name'], Qt.CheckState.Unchecked))
+            item.setData(file_data['size'], Qt.ItemDataRole.UserRole)
             model.appendRow(item)
 
     def select_all_files(self):
         """Check all files in the list."""
         for i in range(self.files_model.rowCount()):
-            self.files_model.item(i).setCheckState(Qt.Checked)
+            self.files_model.item(i).setCheckState(Qt.CheckState.Checked)
 
     def select_no_files(self):
         """Uncheck all files in the list."""
         for i in range(self.files_model.rowCount()):
-            self.files_model.item(i).setCheckState(Qt.Unchecked)
+            self.files_model.item(i).setCheckState(Qt.CheckState.Unchecked)
 
     def download_selected_files(self):
         """Initiate download of selected files."""
-        selected = [self.files_model.item(i).text() for i in range(self.files_model.rowCount()) if self.files_model.item(i).checkState() == Qt.Checked]
+        selected = [self.files_model.item(i).text() for i in range(self.files_model.rowCount()) if self.files_model.item(i).checkState() == Qt.CheckState.Checked]
         if not selected:
             QMessageBox.warning(self, "Warning", "No files selected for download")
             return
@@ -672,8 +672,8 @@ class ItemDetailsDialog(QDialog):
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             image_label = QLabel()
-            image_label.setAlignment(Qt.AlignCenter)
-            image_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+            image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            image_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
             scroll_area.setWidget(image_label)
             layout.addWidget(scroll_area)
 
@@ -692,7 +692,7 @@ class ItemDetailsDialog(QDialog):
             def update_image():
                 new_width = int(original_pixmap.width() * zoom_level)
                 new_height = int(original_pixmap.height() * zoom_level)
-                scaled_pixmap = original_pixmap.scaled(new_width, new_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                scaled_pixmap = original_pixmap.scaled(new_width, new_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                 image_label.setPixmap(scaled_pixmap)
                 image_label.resize(scaled_pixmap.size())
 
@@ -734,7 +734,7 @@ class ItemDetailsDialog(QDialog):
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             image_label = QLabel()
-            image_label.setAlignment(Qt.AlignCenter)
+            image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             scroll_area.setWidget(image_label)
             layout.addWidget(scroll_area)
 
@@ -898,7 +898,7 @@ class ItemDetailsDialog(QDialog):
         editor = QTextEdit()
         editor.setPlainText(text)
         editor.setReadOnly(True)
-        editor.setLineWrapMode(QTextEdit.NoWrap)
+        editor.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         editor.setStyleSheet("""
             QTextEdit {
                 font-family: monospace;
@@ -930,7 +930,7 @@ class ItemDetailsDialog(QDialog):
         dlg.setMinimumSize(400, 300)
         
         # Keyboard shortcut for fullscreen
-        QShortcut(Qt.Key_F11, dlg).activated.connect(
+        QShortcut(Qt.Key.Key_F11, dlg).activated.connect(
             lambda: self.toggle_fullscreen(dlg, btn_fullscreen)
         )
         
@@ -994,7 +994,7 @@ class ItemDetailsDialog(QDialog):
             layout.addLayout(time_layout)
             
             # Add progress slider
-            progress_slider = QSlider(Qt.Horizontal)
+            progress_slider = QSlider(Qt.Orientation.Horizontal)
             progress_slider.setRange(0, 0)
             
             # Connect slider position change with specific function
@@ -1038,7 +1038,7 @@ class ItemDetailsDialog(QDialog):
             # Volume control
             volume_layout = QHBoxLayout()
             volume_label = QLabel("Volume:")
-            volume_slider = QSlider(Qt.Horizontal)
+            volume_slider = QSlider(Qt.Orientation.Horizontal)
             volume_slider.setRange(0, 100)
             volume_slider.setValue(70)  # Default volume at 70%
             player.setVolume(70)
@@ -1079,11 +1079,11 @@ class ItemDetailsDialog(QDialog):
             def handle_state_changed(state):
                 # Only update if dialog is still visible
                 if dialog.isVisible() and status_label.isVisible():
-                    if state == QMediaPlayer.PlayingState:
+                    if state == QMediaPlayer.PlaybackState.PlayingState:
                         status_label.setText("Playing")
-                    elif state == QMediaPlayer.PausedState:
+                    elif state == QMediaPlayer.PlaybackState.PausedState:
                         status_label.setText("Paused")
-                    elif state == QMediaPlayer.StoppedState:
+                    elif state == QMediaPlayer.PlaybackState.StoppedState:
                         status_label.setText("Stopped")
                     
             def handle_error():

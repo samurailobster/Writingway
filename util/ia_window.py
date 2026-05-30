@@ -169,7 +169,7 @@ class IAWindow(QWidget):
 
         label = QLabel(about_text)
         label.setWordWrap(True)
-        label.setTextFormat(Qt.RichText)
+        label.setTextFormat(Qt.TextFormat.RichText)
         label.setOpenExternalLinks(True)
 
         layout.addWidget(label)

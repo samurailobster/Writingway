@@ -26,7 +26,7 @@ class PromptPanel(QGroupBox):
     def init_ui(self):
         # LLM Settings Group
         llm_settings_layout = QFormLayout()
-        llm_settings_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        llm_settings_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         llm_settings_layout.setContentsMargins(0, 0, 0, 0)
 
         tip = _("Select a {} Prompt").format(self.prompt_style)

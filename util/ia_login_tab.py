@@ -27,12 +27,12 @@ class LoginTab(QWidget):
         # Title and header
         title_label = QLabel("Internet Archive Login")
         title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(title_label)
         
         # Information and warning in a framed box
         info_frame = QFrame()
-        info_frame.setFrameShape(QFrame.StyledPanel)
+        info_frame.setFrameShape(QFrame.Shape.StyledPanel)
         info_frame.setStyleSheet("background-color: #F5F5F5; border-radius: 5px;")
         info_layout = QVBoxLayout(info_frame)
         
@@ -50,8 +50,8 @@ class LoginTab(QWidget):
         
         # Form layout for credentials
         form_layout = QFormLayout()
-        form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        form_layout.setLabelAlignment(Qt.AlignRight)
+        form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         
         # Email input with validation
         self.username_input = QLineEdit()
@@ -61,7 +61,7 @@ class LoginTab(QWidget):
         
         # Password input
         self.password_input = QLineEdit()
-        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setPlaceholderText("Enter your password")
         self.password_input.returnPressed.connect(self.perform_login)
         form_layout.addRow("Password:", self.password_input)
@@ -94,7 +94,7 @@ class LoginTab(QWidget):
         
         self.login_btn = QPushButton("Log In")
         self.login_btn.setMinimumHeight(35)
-        self.login_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.login_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.login_btn.setStyleSheet("background-color: #2196F3; color: white; font-weight: bold; border-radius: 5px;")
         self.login_btn.clicked.connect(self.perform_login)
         button_layout.addWidget(self.login_btn)
@@ -104,20 +104,20 @@ class LoginTab(QWidget):
         # Account links layout (forgot password & register) in horizontal layout
         account_links_frame = QFrame()
         account_links_layout = QHBoxLayout(account_links_frame)
-        account_links_layout.setAlignment(Qt.AlignCenter)
+        account_links_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         account_links_layout.setContentsMargins(0, 0, 0, 0)
         
         # Forgot password link
         self.forgot_password_btn = QPushButton("Forgot Password?")
         self.forgot_password_btn.setStyleSheet("border: none; text-decoration: underline; color: blue;")
-        self.forgot_password_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.forgot_password_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.forgot_password_btn.clicked.connect(self.open_forgot_password)
         account_links_layout.addWidget(self.forgot_password_btn)
         
         # Registration link
         self.register_btn = QPushButton("Register")
         self.register_btn.setStyleSheet("border: none; text-decoration: underline; color: blue;")
-        self.register_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        self.register_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.register_btn.clicked.connect(self.open_registration)
         account_links_layout.addWidget(self.register_btn)
         
@@ -126,7 +126,7 @@ class LoginTab(QWidget):
         # Status label at the bottom
         self.status_label = QLabel("")
         self.status_label.setWordWrap(True)
-        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.status_label)
         
         # Add stretch at the end to push all content up
@@ -182,7 +182,7 @@ class LoginTab(QWidget):
             return
             
         # Change cursor to indicate processing
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         
         try:
             # Attempt to log in

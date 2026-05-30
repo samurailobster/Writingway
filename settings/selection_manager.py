@@ -49,10 +49,10 @@ class SelectionManager:
         def traverse_item(item: QTreeWidgetItem, parent_path: str = ""):
             item_text = item.text(0)
             current_path = f"{parent_path}/{item_text}" if parent_path else item_text
-            if item.flags() & Qt.ItemIsUserCheckable:
+            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
                 selections.append({
                     "path": current_path,
-                    "checked": item.checkState(0) == Qt.Checked
+                    "checked": item.checkState(0) == Qt.CheckState.Checked
                 })
             for i in range(item.childCount()):
                 traverse_item(item.child(i), current_path)

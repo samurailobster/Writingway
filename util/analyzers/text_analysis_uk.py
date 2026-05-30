@@ -112,8 +112,8 @@ class UkrainianTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("Не знайдено модель 'uk_core_news_sm'. Бажаєте завантажити її?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """

@@ -123,7 +123,7 @@ class SettingsDialog(QDialog):
 
         self.sample_group_box = QGroupBox()
         sample_layout = QHBoxLayout()
-        sample_layout.setAlignment(Qt.AlignCenter)
+        sample_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sample_text_label = QLabel(_("Sample Text"))
         sample_layout.addWidget(self.sample_text_label)
         self.sample_group_box.setLayout(sample_layout)
@@ -173,10 +173,10 @@ class SettingsDialog(QDialog):
                 font = item.font()
                 font.setBold(True)
                 item.setFont(font)
-                item.setData(Qt.UserRole, {"name": provider_name, "is_default": True})
+                item.setData(Qt.ItemDataRole.UserRole, {"name": provider_name, "is_default": True})
                 item.setText(f"{provider_name} ({_('Default Provider')})")
             else:
-                item.setData(Qt.UserRole, {"name": provider_name, "is_default": False})
+                item.setData(Qt.ItemDataRole.UserRole, {"name": provider_name, "is_default": False})
             
             self.providers_list.addItem(item)
 
@@ -184,7 +184,7 @@ class SettingsDialog(QDialog):
         """Handle provider item selection"""
         self.edit_provider_button.setEnabled(True)
         
-        provider_data = item.data(Qt.UserRole)
+        provider_data = item.data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
         is_default_provider = provider_data["is_default"]
         
@@ -229,7 +229,7 @@ class SettingsDialog(QDialog):
         if not self.providers_list.currentItem():
             return
             
-        provider_data = self.providers_list.currentItem().data(Qt.UserRole)
+        provider_data = self.providers_list.currentItem().data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
         
         if provider_name not in self.llm_configs:
@@ -270,7 +270,7 @@ class SettingsDialog(QDialog):
         if not self.providers_list.currentItem():
             return
             
-        provider_data = self.providers_list.currentItem().data(Qt.UserRole)
+        provider_data = self.providers_list.currentItem().data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
         
         if provider_data["is_default"]:
@@ -281,11 +281,11 @@ class SettingsDialog(QDialog):
             self, 
             _("Confirm Deletion"),
             _("Are you sure you want to delete the selected provider?"),
-            QMessageBox.Yes | QMessageBox.No, 
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             if provider_name in self.llm_configs:
                 del self.llm_configs[provider_name]
                 
@@ -390,12 +390,12 @@ class SettingsDialog(QDialog):
         """Check for unsaved changes and show a warning dialog if there are any."""
         if self.unsaved_changes:
             msg_box = QMessageBox(self)
-            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.setWindowTitle(_("Unsaved Changes"))
             msg_box.setText(_("You have unsaved changes. Do you want to save them before closing?"))
-            save_button = msg_box.addButton(_("Save"), QMessageBox.AcceptRole)
-            discard_button = msg_box.addButton(_("Discard"), QMessageBox.DestructiveRole)
-            cancel_button = msg_box.addButton(_("Cancel"), QMessageBox.RejectRole)
+            save_button = msg_box.addButton(_("Save"), QMessageBox.ButtonRole.AcceptRole)
+            discard_button = msg_box.addButton(_("Discard"), QMessageBox.ButtonRole.DestructiveRole)
+            cancel_button = msg_box.addButton(_("Cancel"), QMessageBox.ButtonRole.RejectRole)
             msg_box.setDefaultButton(cancel_button)
             msg_box.exec_()
 

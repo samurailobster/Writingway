@@ -100,10 +100,10 @@ class ProjectPostIt(QToolButton):
         if self.project["cover"]:
             pixmap = QPixmap(self.project["cover"])
             pixmap = pixmap.scaled(
-                default_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                default_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         else:
             pixmap = QPixmap(default_size)
-            pixmap.fill(Qt.lightGray)
+            pixmap.fill(Qt.GlobalColor.lightGray)
         icon = QIcon(pixmap)
         self.setIcon(icon)
         self.setIconSize(default_size)
@@ -123,9 +123,9 @@ class ProjectPostIt(QToolButton):
             confirm = QMessageBox.question(
                 self, _("Delete Project"),
                 _("Are you sure you want to delete '{}'?").format(self.project['name']),
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
             )
-            if confirm == QMessageBox.Yes:
+            if confirm == QMessageBox.StandardButton.Yes:
                 try:
                     PROJECTS.remove(self.project)
                     save_projects(PROJECTS_DATA)
@@ -216,7 +216,7 @@ class ProjectPostIt(QToolButton):
                 return
             default_size = QSize(300, 450)
             pixmap = pixmap.scaled(
-                default_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                default_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             icon = QIcon(pixmap)
             self.setIcon(icon)
             self.setIconSize(default_size)
@@ -297,7 +297,7 @@ class ProjectCoverWidget(QWidget):
         layout.setSpacing(5)
         self.titleLabel = QLabel(self.project["name"])
         self.titleLabel.setObjectName("projectTitleLabel")
-        self.titleLabel.setAlignment(Qt.AlignCenter)
+        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.titleLabel)
         self.coverButton = ProjectPostIt(self.project)
         self.coverButton.clicked.connect(
@@ -318,7 +318,7 @@ class WorkbenchWindow(QMainWindow):
         # Set up gettext based on the selected language
         self.translation_manager = translation_manager
         self.setWindowTitle(_("Writingway - Workbench"))
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
         self.resize(640, 720)
         self.init_ui()
         self.apply_fixed_stylesheet()
@@ -348,7 +348,7 @@ class WorkbenchWindow(QMainWindow):
 
         header_label = QLabel("")
         header_label.setObjectName("headerLabel")
-        header_label.setAlignment(Qt.AlignCenter)
+        header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(header_label)
         header_layout.addStretch()
 
@@ -393,7 +393,7 @@ class WorkbenchWindow(QMainWindow):
         self.new_project_button.setFixedSize(200, 50)
         self.new_project_button.setToolTip(_("Create a brand-new project"))
         self.new_project_button.clicked.connect(self.new_project)
-        self.content_layout.addWidget(self.new_project_button, alignment=Qt.AlignCenter)
+        self.content_layout.addWidget(self.new_project_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.quoteLabel = None
         if WWSettingsManager.get_general_settings().get("show_random_quote", False):
@@ -407,7 +407,7 @@ class WorkbenchWindow(QMainWindow):
         version_layout = QHBoxLayout()
         version_layout.addStretch()
         self.version_label = QLabel(_("Version: {}").format(VERSION.get('version', 'No Version Set')))
-        self.version_label.setAlignment(Qt.AlignRight)
+        self.version_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         version_layout.addWidget(self.version_label)
         self.main_layout.addLayout(version_layout)
 
@@ -420,13 +420,13 @@ class WorkbenchWindow(QMainWindow):
             return
         self.quoteLabel = QLabel()
         self.quoteLabel.setObjectName("quoteLabel")
-        self.quoteLabel.setAlignment(Qt.AlignCenter)
+        self.quoteLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.quoteLabel.setWordWrap(True)
-        self.quoteLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.quoteLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.quoteLabel.setStyleSheet("font-style: italic; color: #666; margin: 10px;")
         self.update_quote_label()
         self.quoteLabel.setMinimumSize(650, 150)
-        self.content_layout.addWidget(self.quoteLabel, 0, Qt.AlignCenter)
+        self.content_layout.addWidget(self.quoteLabel, 0, Qt.AlignmentFlag.AlignCenter)
 
     def update_quote_label(self):
         """Update the quote label with a new random quote."""

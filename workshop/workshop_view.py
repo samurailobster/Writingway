@@ -39,12 +39,12 @@ class WorkshopView(QDialog):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 10, 0)
-        self.outer_splitter = QSplitter(Qt.Horizontal)
+        self.outer_splitter = QSplitter(Qt.Orientation.Horizontal)
         conversation_container = QWidget()
         conversation_layout = QVBoxLayout(conversation_container)
         conversation_layout.setContentsMargins(0, 0, 0, 0)
         self.conversation_list = QListWidget()
-        self.conversation_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.conversation_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         conversation_layout.addWidget(self.conversation_list)
         self.new_chat_button = QPushButton(_("New Chat"))
         conversation_layout.addWidget(self.new_chat_button)
@@ -59,7 +59,7 @@ class WorkshopView(QDialog):
         self.chat_log.setReadOnly(True)
         self.chat_log.setFont(QFont("Arial", self.font_size))
         chat_layout.addWidget(self.chat_log)
-        self.inner_splitter = QSplitter(Qt.Horizontal)
+        self.inner_splitter = QSplitter(Qt.Orientation.Horizontal)
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -69,7 +69,7 @@ class WorkshopView(QDialog):
         left_layout.addWidget(self.chat_input)
         bottomrow_layout = QHBoxLayout()
         self.prompt_panel = PromptPanel("Workshop")
-        self.prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.prompt_panel.setMaximumWidth(300)
         bottomrow_layout.addWidget(self.prompt_panel)
         middle_stack = QFormLayout()
@@ -95,7 +95,7 @@ class WorkshopView(QDialog):
         bottomrow_layout.addLayout(middle_stack)
         bottomrow_layout.addStretch()
         audio_stack = QFormLayout()
-        audio_stack.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        audio_stack.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         audio_group_layout = QHBoxLayout()
         self.record_button = QPushButton()
         self.record_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/mic.svg"))
@@ -249,7 +249,7 @@ class WorkshopView(QDialog):
         if is_streaming and self._current_streaming_message_start is not None:
             cursor = self.chat_log.textCursor()
             cursor.setPosition(self._current_streaming_message_start)
-            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
             cursor.insertHtml(html)
         else:
@@ -263,7 +263,7 @@ class WorkshopView(QDialog):
     def strike_out_last_exchange(self):
         """Strike through the last User + Assistant messages for Edit mode."""
         cursor = self.chat_log.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         # This is approximate; for precision we could track positions, but simple strike for now
         # Better: use HTML with <del> or CSS
         # For simplicity, we'll re-render with strike in controller after edit
@@ -298,12 +298,12 @@ class WorkshopView(QDialog):
     def remove_conversation_item(self, row):
         self.conversation_list.takeItem(row)
 
-    def show_message_box(self, title, message, icon=QMessageBox.Warning):
+    def show_message_box(self, title, message, icon=QMessageBox.Icon.Warning):
         QMessageBox(icon, title, message, parent=self).exec_()
 
     def show_new_chat_dialog(self):
         dialog = NewChatDialog(self.parent().model.project_name, self)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             return dialog.get_selected_mode(), dialog.get_name(), dialog.get_pov()
         return None, None, None
 
@@ -311,7 +311,7 @@ class WorkshopView(QDialog):
         return QInputDialog.getText(self, _("Rename Conversation"), _("Enter new conversation name:"), text=current_name)
 
     def show_delete_confirmation(self, name):
-        return QMessageBox.question(self, _("Delete Conversation"), _("Are you sure you want to delete '{}'?").format(name)) == QMessageBox.Yes
+        return QMessageBox.question(self, _("Delete Conversation"), _("Are you sure you want to delete '{}'?").format(name)) == QMessageBox.StandardButton.Yes
 
     def toggle_context_panel_visibility(self, visible):
         self.context_panel.setVisible(visible)

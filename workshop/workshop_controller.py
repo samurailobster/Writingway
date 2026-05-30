@@ -246,9 +246,9 @@ class WorkshopController:
             "The last User + Assistant exchange will be marked as edited (struck out).\n"
             "They will be removed only after you send a new message.\n\n"
             "Continue?"),
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             self.current_session.mark_last_exchange_as_edited()
             self.view.chat_input.setPlainText(last_user_msg)
             self.update_chat_log(self.char_name)
@@ -266,9 +266,9 @@ class WorkshopController:
             _("Delete Exchange"), 
             _("Permanently delete the last User message and Assistant response?\n"
             "This cannot be undone."),
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             # Remove last two messages (user + assistant)
             self.current_session.messages = self.current_session.messages[:-2]
             # Update model

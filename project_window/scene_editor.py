@@ -144,7 +144,7 @@ class SceneEditor(QWidget):
     def setup_editor(self):
         e = self.editor
         e.setPlaceholderText(_("Select a node to edit..."))
-        e.setContextMenuPolicy(Qt.CustomContextMenu)
+        e.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         e.customContextMenuRequested.connect(self.show_context_menu)
         e.textChanged.connect(self.controller.on_editor_text_changed)
         e.textChanged.connect(self.start_spellcheck_timer)
@@ -152,7 +152,7 @@ class SceneEditor(QWidget):
         e.selectionChanged.connect(self.update_toolbar_state)
 
         # Adjust viewport margins to prevent scrollbar from obscuring content
-        scrollbar_width = e.style().pixelMetric(QStyle.PM_ScrollBarExtent)
+        scrollbar_width = e.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
         e.setViewportMargins(0, 0, scrollbar_width, 0)  # Reserve space on the right for scrollbar
 
         # Spellcheck timer
@@ -173,7 +173,7 @@ class SceneEditor(QWidget):
             self.color_manager.default_fg,
             self,
             "Select Text Color",
-            QColorDialog.ShowAlphaChannel
+            QColorDialog.ColorDialogOption.ShowAlphaChannel
         )
         if not col.isValid():
             return
@@ -228,8 +228,8 @@ class SceneEditor(QWidget):
         if lang == "Other":
             dlg = QMessageBox(self)
             dlg.setWindowTitle(_("Additional Dictionaries"))
-            dlg.setTextFormat(Qt.RichText)
-            dlg.setTextInteractionFlags(Qt.TextBrowserInteraction)
+            dlg.setTextFormat(Qt.TextFormat.RichText)
+            dlg.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
             dlg.setText(_(
                 "For more dictionaries, please visit:<br>"
                 "<a href=\"https://github.com/LibreOffice/dictionaries\">"
@@ -311,7 +311,7 @@ class SceneEditor(QWidget):
         
         # Create enhanced format for spelling errors
         fmt = QTextCharFormat()
-        fmt.setUnderlineStyle(QTextCharFormat.WaveUnderline)
+        fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
         fmt.setUnderlineColor(QColor(255, 0, 0))  # Bright red
         
         # Make underline thicker with pen
@@ -328,7 +328,7 @@ class SceneEditor(QWidget):
             if not self.dictionary.lookup(w):
                 cur = QTextCursor(self.editor.document())
                 cur.setPosition(m.start())
-                cur.setPosition(m.end(), QTextCursor.KeepAnchor)
+                cur.setPosition(m.end(), QTextCursor.MoveMode.KeepAnchor)
                 sel = QTextEdit.ExtraSelection()
                 sel.cursor = cur
                 sel.format = fmt
@@ -343,7 +343,7 @@ class SceneEditor(QWidget):
             act.triggered.connect(self.controller.rewrite_selected_text)
         if self.dictionary:
             wc = self.editor.cursorForPosition(pos)
-            wc.select(QTextCursor.WordUnderCursor)
+            wc.select(QTextCursor.SelectionType.WordUnderCursor)
             w = wc.selectedText()
             if w and not self.dictionary.lookup(w):
                 sugs = self.dictionary.suggest(w)
@@ -372,9 +372,9 @@ class SceneEditor(QWidget):
             cf = self.editor.currentCharFormat()
             self.update_toggles(cf)
         aln = cur.blockFormat().alignment()
-        self.align_left_action.setChecked(aln == Qt.AlignLeft)
-        self.align_center_action.setChecked(aln == Qt.AlignCenter)
-        self.align_right_action.setChecked(aln == Qt.AlignRight)
+        self.align_left_action.setChecked(aln == Qt.AlignmentFlag.AlignLeft)
+        self.align_center_action.setChecked(aln == Qt.AlignmentFlag.AlignCenter)
+        self.align_right_action.setChecked(aln == Qt.AlignmentFlag.AlignRight)
         self.suppress_updates = False
 
     def get_selection_formats(self, start, end):
@@ -395,7 +395,7 @@ class SceneEditor(QWidget):
             self.check_spelling()
 
     def update_toggles(self, cf):
-        self.bold_action.setChecked(cf.fontWeight() >= QFont.Bold)
+        self.bold_action.setChecked(cf.fontWeight() >= QFont.Weight.Bold)
         self.italic_action.setChecked(cf.fontItalic())
         self.underline_action.setChecked(cf.fontUnderline())
 

@@ -10,8 +10,8 @@ class ColorManager:
     """
     def __init__(self, settings_path):
         self.settings_file = settings_path
-        self.default_fg = QColor(Qt.black)
-        self.default_bg = QColor(Qt.transparent)
+        self.default_fg = QColor(Qt.GlobalColor.black)
+        self.default_bg = QColor(Qt.GlobalColor.transparent)
         self.load_colors()
 
     def load_colors(self):
@@ -52,13 +52,13 @@ class ColorManager:
         Returns tuple (fg, bg) QColor or None if canceled.
         """
         dialog = QColorDialog(parent)
-        dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+        dialog.setOption(QColorDialog.ColorDialogOption.ShowAlphaChannel, True)
         dialog.setCurrentColor(self.default_fg)
         if dialog.exec_() != QColorDialog.Accepted:
             return None
         fg = dialog.selectedColor()
 
-        bg = QColorDialog.getColor(self.default_bg, parent, "Background Color", QColorDialog.ShowAlphaChannel)
+        bg = QColorDialog.getColor(self.default_bg, parent, "Background Color", QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if not bg.isValid():
             return None
 

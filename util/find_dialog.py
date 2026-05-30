@@ -92,8 +92,8 @@ class FindDialog(QDialog):
         selection = QTextEdit.ExtraSelection()
         selection.cursor = cursor
         # Set highlighting (yellow background, black text)
-        selection.format.setBackground(Qt.yellow)
-        selection.format.setForeground(Qt.black)
+        selection.format.setBackground(Qt.GlobalColor.yellow)
+        selection.format.setForeground(Qt.GlobalColor.black)
         extraSelections.append(selection)
         self.editor.setExtraSelections(extraSelections)
         
@@ -118,15 +118,15 @@ class FindDialog(QDialog):
         
         # Move to the beginning of the document
         cursor = self.editor.textCursor()
-        cursor.movePosition(QTextCursor.Start)
+        cursor.movePosition(QTextCursor.MoveOperation.Start)
         self.editor.setTextCursor(cursor)
         
         # Set search options
         flags = QTextDocument.FindFlags()
         if self.case_sensitive.isChecked():
-            flags |= QTextDocument.FindCaseSensitively
+            flags |= QTextDocument.FindFlag.FindCaseSensitively
         if self.whole_word.isChecked():
-            flags |= QTextDocument.FindWholeWords
+            flags |= QTextDocument.FindFlag.FindWholeWords
         
         # Iteratively find all occurrences
         counter = 0
@@ -141,7 +141,7 @@ class FindDialog(QDialog):
             # Different colors for different occurrences
             bg_color = QColor(255, 255, 0, 100)
             selection.format.setBackground(bg_color)
-            selection.format.setForeground(Qt.black)
+            selection.format.setForeground(Qt.GlobalColor.black)
             extraSelections.append(selection)
         
         # Restore cursor position
@@ -188,14 +188,14 @@ class FindDialog(QDialog):
         
         # Move to the beginning of the document
         temp_cursor = QTextCursor(self.editor.document())
-        temp_cursor.movePosition(QTextCursor.Start)
+        temp_cursor.movePosition(QTextCursor.MoveOperation.Start)
         
         # Set search options
         flags = QTextDocument.FindFlags()
         if self.case_sensitive.isChecked():
-            flags |= QTextDocument.FindCaseSensitively
+            flags |= QTextDocument.FindFlag.FindCaseSensitively
         if self.whole_word.isChecked():
-            flags |= QTextDocument.FindWholeWords
+            flags |= QTextDocument.FindFlag.FindWholeWords
             
         # Count occurrences
         count = 0
@@ -209,7 +209,7 @@ class FindDialog(QDialog):
         restore_cursor.setPosition(saved_position)
         if had_selection:
             restore_cursor.setPosition(selection_start)
-            restore_cursor.setPosition(selection_end, QTextCursor.KeepAnchor)
+            restore_cursor.setPosition(selection_end, QTextCursor.MoveMode.KeepAnchor)
         self.editor.setTextCursor(restore_cursor)
         
         return count
@@ -226,9 +226,9 @@ class FindDialog(QDialog):
         # Set search flags
         flags = QTextDocument.FindFlags()
         if self.case_sensitive.isChecked():
-            flags |= QTextDocument.FindCaseSensitively
+            flags |= QTextDocument.FindFlag.FindCaseSensitively
         if self.whole_word.isChecked():
-            flags |= QTextDocument.FindWholeWords
+            flags |= QTextDocument.FindFlag.FindWholeWords
         
         # First search from current position
         found = self.editor.find(search_text, flags)
@@ -243,7 +243,7 @@ class FindDialog(QDialog):
             # If not found from current position and wrap is enabled
             if self.wrap_search.isChecked():
                 cursor = self.editor.textCursor()
-                cursor.movePosition(QTextCursor.Start)
+                cursor.movePosition(QTextCursor.MoveOperation.Start)
                 self.editor.setTextCursor(cursor)
                 
                 if self.editor.find(search_text, flags):
@@ -273,11 +273,11 @@ class FindDialog(QDialog):
         
         # Set search flags
         flags = QTextDocument.FindFlags()
-        flags |= QTextDocument.FindBackward  # Search backward
+        flags |= QTextDocument.FindFlag.FindBackward  # Search backward
         if self.case_sensitive.isChecked():
-            flags |= QTextDocument.FindCaseSensitively
+            flags |= QTextDocument.FindFlag.FindCaseSensitively
         if self.whole_word.isChecked():
-            flags |= QTextDocument.FindWholeWords
+            flags |= QTextDocument.FindFlag.FindWholeWords
         
         # First search from current position backwards
         found = self.editor.find(search_text, flags)
@@ -292,7 +292,7 @@ class FindDialog(QDialog):
             # If not found from current position and wrap is enabled
             if self.wrap_search.isChecked():
                 cursor = self.editor.textCursor()
-                cursor.movePosition(QTextCursor.End)
+                cursor.movePosition(QTextCursor.MoveOperation.End)
                 self.editor.setTextCursor(cursor)
                 
                 if self.editor.find(search_text, flags):

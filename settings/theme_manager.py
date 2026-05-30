@@ -875,7 +875,7 @@ class ThemeManager(QObject):
 
             painter = QPainter(tinted_pixmap)
             painter.drawPixmap(0, 0, pixmap)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceAtop)
             painter.fillRect(pixmap.rect(), tint_color)
             painter.end()
 

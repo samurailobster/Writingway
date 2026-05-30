@@ -90,6 +90,6 @@ class LLMSettingsDialog(QDialog):
     def show_dialog(parent=None, default_provider=None, default_model=None, default_timeout=60, default_max_tokens=3000):
         """Static method to show the dialog and return settings if accepted."""
         dialog = LLMSettingsDialog(parent, default_provider, default_model, default_timeout, default_max_tokens)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             return dialog.get_settings()
         return None

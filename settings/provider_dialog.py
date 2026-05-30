@@ -35,7 +35,7 @@ class ProviderDialog(QDialog):
         
         group_box = QGroupBox(_("Provider Details"))
         form_layout = QFormLayout()
-        form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
 
         self.provider_label = QLabel(_("Provider"))
         self.provider_combobox = QComboBox()
@@ -44,7 +44,7 @@ class ProviderDialog(QDialog):
         self.provider_info_button = QPushButton()
         self.provider_info_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/info.svg"))
         self.provider_info_button.setToolTip(_("Provider Information"))
-        self.provider_info_button.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.provider_info_button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.provider_info_button.clicked.connect(self.show_provider_info)
         provider_layout = QHBoxLayout()
         provider_layout.addWidget(self.provider_combobox)
@@ -72,7 +72,7 @@ class ProviderDialog(QDialog):
         self.model_label = QLabel(_("Model"))
         self.refresh_button = QPushButton()
         self.refresh_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/rotate-cw.svg"))
-        self.refresh_button.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.refresh_button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.refresh_button.setToolTip(_("Refresh Model List"))
         self.refresh_button.clicked.connect(self.refresh_models)
         self.model_combobox = QComboBox()
@@ -87,7 +87,7 @@ class ProviderDialog(QDialog):
         self.api_key_label = QLabel(_("API Key"))
         self.api_key_input = QLineEdit()
         self.api_key_input.setMinimumWidth(200)
-        self.api_key_input.setEchoMode(QLineEdit.Password)
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.reveal_button = QPushButton(_("Reveal"))
         self.reveal_button.setCheckable(True)
         self.reveal_button.toggled.connect(self.toggle_reveal_api_key)
@@ -116,10 +116,10 @@ class ProviderDialog(QDialog):
         
         self.button_box = QDialogButtonBox()
         if self.is_edit_mode:
-            self.button_box.addButton(_("Update"), QDialogButtonBox.AcceptRole)
+            self.button_box.addButton(_("Update"), QDialogButtonBox.ButtonRole.AcceptRole)
         else:
-            self.button_box.addButton(_("Add"), QDialogButtonBox.AcceptRole)
-        self.button_box.addButton(_("Close"), QDialogButtonBox.RejectRole)
+            self.button_box.addButton(_("Add"), QDialogButtonBox.ButtonRole.AcceptRole)
+        self.button_box.addButton(_("Close"), QDialogButtonBox.ButtonRole.RejectRole)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         
@@ -200,7 +200,7 @@ class ProviderDialog(QDialog):
                 self,
                 _("API Key Required"),
                 _(f"An API key is required for {provider_name}. Please enter it:"),
-                echo=QLineEdit.Password
+                echo=QLineEdit.EchoMode.Password
             )
             if ok and api_key:
                 config["api_key"] = api_key
@@ -224,10 +224,10 @@ class ProviderDialog(QDialog):
 
     def toggle_reveal_api_key(self, checked):
         if checked:
-            self.api_key_input.setEchoMode(QLineEdit.Normal)
+            self.api_key_input.setEchoMode(QLineEdit.EchoMode.Normal)
             self.reveal_button.setText(_("Hide"))
         else:
-            self.api_key_input.setEchoMode(QLineEdit.Password)
+            self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
             self.reveal_button.setText(_("Reveal"))
     
     def test_provider_connection(self):
@@ -266,7 +266,7 @@ class ProviderDialog(QDialog):
                 self,
                 _("API Key Required"),
                 _(f"An API key is required for {provider_name}. Please enter it:"),
-                echo=QLineEdit.Password
+                echo=QLineEdit.EchoMode.Password
             )
             if ok and api_key:
                 config["api_key"] = api_key
@@ -324,13 +324,13 @@ class ProviderDialog(QDialog):
         self.model_label.setText(_("Model"))
         self.refresh_button.setToolTip(_("Refresh Model List"))
         self.api_key_label.setText(_("API Key"))
-        self.reveal_button.setText(_("Reveal") if self.api_key_input.echoMode() == QLineEdit.Password else _("Hide"))
+        self.reveal_button.setText(_("Reveal") if self.api_key_input.echoMode() == QLineEdit.EchoMode.Password else _("Hide"))
         self.timeout_label.setText(_("Timeout (seconds)"))
         self.default_checkbox.setText(_("Default Provider"))
         self.test_button.setText(_("Test"))
         self.button_box.clear()
         if self.is_edit_mode:
-            self.button_box.addButton(_("Update"), QDialogButtonBox.AcceptRole)
+            self.button_box.addButton(_("Update"), QDialogButtonBox.ButtonRole.AcceptRole)
         else:
-            self.button_box.addButton(_("Add"), QDialogButtonBox.AcceptRole)
-        self.button_box.addButton(_("Close"), QDialogButtonBox.RejectRole)
+            self.button_box.addButton(_("Add"), QDialogButtonBox.ButtonRole.AcceptRole)
+        self.button_box.addButton(_("Close"), QDialogButtonBox.ButtonRole.RejectRole)

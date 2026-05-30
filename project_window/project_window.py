@@ -82,7 +82,7 @@ class ProjectWindow(QMainWindow):
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.main_splitter = QSplitter(Qt.Horizontal)
+        self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(self.main_splitter)
 
         self.left_widget = QWidget()
@@ -108,7 +108,7 @@ class ProjectWindow(QMainWindow):
 
         self.main_splitter.addWidget(self.left_widget)
 
-        right_vertical_splitter = QSplitter(Qt.Vertical)
+        right_vertical_splitter = QSplitter(Qt.Orientation.Vertical)
         self.compendium_editor = QTextEdit()
         self.compendium_editor.setReadOnly(True)
         self.compendium_editor.setPlaceholderText(_("Select a compendium entry to view..."))
@@ -355,9 +355,9 @@ class ProjectWindow(QMainWindow):
 
     def set_scene_status(self, item, new_status):
         english_status = ProjectTreeWidget.REVERSE_STATUS_MAP.get(new_status, new_status)
-        scene_data = item.data(0, Qt.UserRole) or {"name": item.text(0)}
+        scene_data = item.data(0, Qt.ItemDataRole.UserRole) or {"name": item.text(0)}
         scene_data["status"] = english_status
-        item.setData(0, Qt.UserRole, scene_data)
+        item.setData(0, Qt.ItemDataRole.UserRole, scene_data)
         self.project_tree.assign_item_icon(item, self.project_tree.get_item_level(item))
         self.model.update_structure(self.project_tree.tree)
 
@@ -505,8 +505,8 @@ class ProjectWindow(QMainWindow):
         self.bottom_stack.send_button.setEnabled(True)
         current_item = self.project_tree.tree.currentItem()
         level = self.project_tree.get_item_level(current_item) if current_item else -1
-        if current_item and level < 2 and current_item.data(0, Qt.UserRole).get("summary"):
-            summary = current_item.data(0, Qt.UserRole)["summary"]
+        if current_item and level < 2 and current_item.data(0, Qt.ItemDataRole.UserRole).get("summary"):
+            summary = current_item.data(0, Qt.ItemDataRole.UserRole)["summary"]
             self.retry_with_summary(summary)
             return
         self.statusBar().showMessage(_("Generating summary to fit token limit…"))
@@ -560,7 +560,7 @@ class ProjectWindow(QMainWindow):
 
     def update_text(self, text):
         cursor = self.bottom_stack.preview_text.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         self.bottom_stack.preview_text.setTextCursor(cursor)
         self.bottom_stack.preview_text.insertPlainText(text)
 
@@ -630,11 +630,11 @@ class ProjectWindow(QMainWindow):
                 if prompt:
                     prompt_block = f"\n{'_' * 10}\n{prompt}\n{'_' * 10}\n"
             cursor = self.scene_editor.editor.textCursor()
-            cursor.movePosition(QTextCursor.End)
+            cursor.movePosition(QTextCursor.MoveOperation.End)
             if prompt_block:
                 cursor.insertText(prompt_block)
             cursor.insertHtml(preview)
-            self.scene_editor.editor.moveCursor(QTextCursor.End)
+            self.scene_editor.editor.moveCursor(QTextCursor.MoveOperation.End)
             self.bottom_stack.preview_text.clear()
             self.unsaved_preview = False
             self.model.unsaved_changes = True
@@ -644,7 +644,7 @@ class ProjectWindow(QMainWindow):
     def toggle_bold(self):
         cursor = self.scene_editor.editor.textCursor()
         fmt = QTextCharFormat()
-        fmt.setFontWeight(QFont.Normal if self.scene_editor.editor.fontWeight() == QFont.Bold else QFont.Bold)
+        fmt.setFontWeight(QFont.Weight.Normal if self.scene_editor.editor.fontWeight() == QFont.Weight.Bold else QFont.Weight.Bold)
         cursor.mergeCharFormat(fmt)
         self.scene_editor.editor.mergeCurrentCharFormat(fmt)
 
@@ -672,13 +672,13 @@ class ProjectWindow(QMainWindow):
         )
 
     def align_left(self):
-        self.scene_editor.editor.setAlignment(Qt.AlignLeft)
+        self.scene_editor.editor.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
     def align_center(self):
-        self.scene_editor.editor.setAlignment(Qt.AlignCenter)
+        self.scene_editor.editor.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def align_right(self):
-        self.scene_editor.editor.setAlignment(Qt.AlignRight)
+        self.scene_editor.editor.setAlignment(Qt.AlignmentFlag.AlignRight)
 
     def set_font_size(self, size):
         cursor = self.scene_editor.editor.textCursor()
@@ -772,7 +772,7 @@ class ProjectWindow(QMainWindow):
             return
         selected_text = cursor.selectedText()
         dialog = RewriteDialog(self.model.project_name, selected_text, self)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             cursor.insertText(dialog.rewritten_text)
             self.scene_editor.editor.setTextCursor(cursor)
 

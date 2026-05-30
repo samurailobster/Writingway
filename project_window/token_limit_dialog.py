@@ -66,7 +66,7 @@ class TokenLimitDialog(QDialog):
 
         # Token count display
         self.token_label = QLabel(_("Tokens: Calculating..."))
-        self.token_label.setAlignment(Qt.AlignCenter)
+        self.token_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.token_label)
 
         # Initial token count update

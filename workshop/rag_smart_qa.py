@@ -306,7 +306,7 @@ class SmartQAWidget(QWidget):
         main_layout.setContentsMargins(10, 10, 10, 10)
 
         # Create a vertical splitter so the user can resize/hide the top or bottom pane
-        splitter = QSplitter(Qt.Vertical, self)
+        splitter = QSplitter(Qt.Orientation.Vertical, self)
 
         # -----------------------------------------
         # Upper Pane Container (all controls/input)
@@ -429,7 +429,7 @@ class SmartQAWidget(QWidget):
         settings_layout.addWidget(self.context_mode_combo, 4, 1)
 
         # Extra Instructions TextEdit
-        settings_layout.addWidget(QLabel("Extra Instructions:"), 5, 0, Qt.AlignTop)
+        settings_layout.addWidget(QLabel("Extra Instructions:"), 5, 0, Qt.AlignmentFlag.AlignTop)
         self.custom_prompt_edit = QPlainTextEdit()
         self.custom_prompt_edit.setPlaceholderText(
             "Enter additional instructions for the LLM prompt...\n"
@@ -486,7 +486,7 @@ class SmartQAWidget(QWidget):
         self.qa_results = QTextEdit()
         self.qa_results.setReadOnly(True)
         self.qa_results.setPlaceholderText("Results will appear here after processing your question...")
-        self.qa_results.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+        self.qa_results.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
         self.qa_results.setAcceptRichText(True)
         results_layout.addWidget(self.qa_results)
 

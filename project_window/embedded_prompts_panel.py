@@ -80,7 +80,7 @@ class EmbeddedPromptsPanel(QWidget):
 
     def _setup_splitter(self) -> None:
         """Set up the splitter for tree and editor widgets."""
-        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.layout().addWidget(self.splitter)
 
     def _setup_tree_widget(self) -> None:
@@ -93,10 +93,10 @@ class EmbeddedPromptsPanel(QWidget):
         self.tree.setColumnCount(2)
         self.tree.setHeaderLabels([_("Prompts"), ""])
         self.tree.header().setStretchLastSection(False)
-        self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.tree.header().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.tree.setColumnWidth(1, 40)
-        self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._on_tree_context_menu)
         self.tree.setIndentation(5)
         self.tree.currentItemChanged.connect(self._on_current_item_changed)
@@ -310,11 +310,11 @@ class EmbeddedPromptsPanel(QWidget):
         
         for cat in sorted(self.prompts_data.keys()):
             parent = QTreeWidgetItem(self.tree, [cat])
-            parent.setData(0, Qt.UserRole, {"type": "category", "name": cat})
+            parent.setData(0, Qt.ItemDataRole.UserRole, {"type": "category", "name": cat})
             parent.setData(0, Qt.ItemDataRole.UserRole + 1, "true")  # Custom property for is-category
             parent.setBackground(0, QBrush(ThemeManager.get_category_background_color()))
             parent.setFont(0, bold_font)
-            parent.setFlags(parent.flags() & ~Qt.ItemIsSelectable)
+            parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             plus_button = QPushButton(self.tree)
             plus_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/plus.svg"))
             plus_button.setFlat(True)
@@ -324,7 +324,7 @@ class EmbeddedPromptsPanel(QWidget):
             
             for prompt in self.prompts_data[cat]:
                 child = QTreeWidgetItem(parent, [prompt["name"]])
-                child.setData(0, Qt.UserRole, prompt)
+                child.setData(0, Qt.ItemDataRole.UserRole, prompt)
                 child.setToolTip(0, self._create_prompt_tooltip(prompt))
 
     def _on_current_item_changed(self, current: QTreeWidgetItem, previous: QTreeWidgetItem) -> None:
@@ -348,7 +348,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not current:
             return
         
-        data = current.data(0, Qt.UserRole)
+        data = current.data(0, Qt.ItemDataRole.UserRole)
         if not data or data.get("type") == "category":
             if previous:
                 _setCurrentItem(self.tree, previous)
@@ -394,7 +394,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not self.current_prompt_item:
             return
         
-        data = self.current_prompt_item.data(0, Qt.UserRole)
+        data = self.current_prompt_item.data(0, Qt.ItemDataRole.UserRole)
         if not data or data.get("type") != "prompt" or data.get("default", False):
             return
         
@@ -406,7 +406,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not self.current_prompt_item:
             return
         
-        data = self.current_prompt_item.data(0, Qt.UserRole)
+        data = self.current_prompt_item.data(0, Qt.ItemDataRole.UserRole)
         if not data or data.get("type") == "category" or data.get("default", False):
             return
         
@@ -418,7 +418,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not self.current_prompt_item:
             return
         
-        data = self.current_prompt_item.data(0, Qt.UserRole)
+        data = self.current_prompt_item.data(0, Qt.ItemDataRole.UserRole)
         prompt_id = data.get("id")
         
         # Create or update pending changes
@@ -486,8 +486,8 @@ class EmbeddedPromptsPanel(QWidget):
                 
                 self.prompts_data[category][prompt_index].update(pending_data)
                 # Update tree item if it's the current (or find it to update tooltip/data)
-                if self.current_prompt_item and self.current_prompt_item.data(0, Qt.UserRole).get("id") == prompt_id:
-                    self.current_prompt_item.setData(0, Qt.UserRole, pending_data.copy())
+                if self.current_prompt_item and self.current_prompt_item.data(0, Qt.ItemDataRole.UserRole).get("id") == prompt_id:
+                    self.current_prompt_item.setData(0, Qt.ItemDataRole.UserRole, pending_data.copy())
                     self.current_prompt_item.setToolTip(0, self._create_prompt_tooltip(pending_data))
                 updated = True
             
@@ -543,7 +543,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not item:
             return
         
-        data = item.data(0, Qt.UserRole)
+        data = item.data(0, Qt.ItemDataRole.UserRole)
         menu = QMenu()
         
         if data.get("type") != "category":
@@ -559,7 +559,7 @@ class EmbeddedPromptsPanel(QWidget):
 
     def _add_new_prompt(self, category_item: QTreeWidgetItem) -> None:
         """Add a new prompt to the specified category."""
-        category_name = category_item.data(0, Qt.UserRole).get("name")
+        category_name = category_item.data(0, Qt.ItemDataRole.UserRole).get("name")
         name, ok = QInputDialog.getText(self, _("New Prompt"), _("Enter prompt name:"))
         
         if not ok or not name.strip():
@@ -588,14 +588,14 @@ class EmbeddedPromptsPanel(QWidget):
         
         self.prompts_data.setdefault(category_name, []).append(new_prompt)
         child = QTreeWidgetItem(category_item, [name])
-        child.setData(0, Qt.UserRole, new_prompt)
+        child.setData(0, Qt.ItemDataRole.UserRole, new_prompt)
         category_item.setExpanded(True)
         self.tree.setCurrentItem(child)
         self._save_to_file()
 
     def _rename_prompt(self, item: QTreeWidgetItem) -> None:
         """Rename a prompt."""
-        data = item.data(0, Qt.UserRole)
+        data = item.data(0, Qt.ItemDataRole.UserRole)
         if data.get("default", False):
             QMessageBox.information(self, _("Rename Prompt"), _("Default prompts cannot be renamed."))
             return
@@ -617,13 +617,13 @@ class EmbeddedPromptsPanel(QWidget):
         
         data["name"] = new_name
         item.setText(0, new_name)
-        item.setData(0, Qt.UserRole, data)
+        item.setData(0, Qt.ItemDataRole.UserRole, data)
         self._update_prompt_in_data(category, data)
         self._save_to_file()
 
     def _move_prompt(self, item: QTreeWidgetItem, up: bool = True) -> None:
         """Move a prompt up or down within its category."""
-        data = item.data(0, Qt.UserRole)
+        data = item.data(0, Qt.ItemDataRole.UserRole)
         if data.get("default", False):
             QMessageBox.information(self, _("Move Prompt"), _("Default prompts cannot be moved."))
             return
@@ -647,7 +647,7 @@ class EmbeddedPromptsPanel(QWidget):
 
     def _delete_prompt(self, item: QTreeWidgetItem) -> None:
         """Delete a prompt."""
-        data = item.data(0, Qt.UserRole)
+        data = item.data(0, Qt.ItemDataRole.UserRole)
         if data.get("default", False):
             QMessageBox.information(self, _("Delete Prompt"), _("Default prompts cannot be deleted."))
             return
@@ -659,8 +659,8 @@ class EmbeddedPromptsPanel(QWidget):
         
         category = parent.text(0)
         reply = QMessageBox.question(self, _("Delete Prompt"), _("Delete prompt '{}'?").format(name),
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
             prompt_id = data.get("id")
             if prompt_id in self.pending_changes:
                 del self.pending_changes[prompt_id]
@@ -677,7 +677,7 @@ class EmbeddedPromptsPanel(QWidget):
         if not self.current_prompt_item:
             return
         
-        data = self.current_prompt_item.data(0, Qt.UserRole)
+        data = self.current_prompt_item.data(0, Qt.ItemDataRole.UserRole)
         if not data:
             return
         
@@ -699,7 +699,7 @@ class EmbeddedPromptsPanel(QWidget):
             category = parent_item.text(0)
             self.prompts_data.setdefault(category, []).append(new_prompt)
             new_child = QTreeWidgetItem(parent_item, [new_name])
-            new_child.setData(0, Qt.UserRole, new_prompt)
+            new_child.setData(0, Qt.ItemDataRole.UserRole, new_prompt)
             new_child.setToolTip(0, self._create_prompt_tooltip(new_prompt))
             parent_item.setExpanded(True)
             self.tree.setCurrentItem(new_child)
@@ -713,7 +713,7 @@ class EmbeddedPromptsPanel(QWidget):
 
     def _handle_plus_clicked(self, item: QTreeWidgetItem) -> None:
         """Handle plus button clicks for replicating prompts."""
-        data = item.data(0, Qt.UserRole)
+        data = item.data(0, Qt.ItemDataRole.UserRole)
         if data.get("type") == "category":
             self._add_new_prompt(item)
         else:  # This feature was removed - too many icons on the screen

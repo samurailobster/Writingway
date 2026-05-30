@@ -24,7 +24,7 @@ class NewChatDialog(QDialog):
         self.name_label = QLabel(_("Chat Name:"))
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText(_("Enter chat name"))
-        self.name_input.setAlignment(Qt.AlignCenter)
+        self.name_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         name_layout.addStretch()
         name_layout.addWidget(self.name_label)
         name_layout.addWidget(self.name_input)

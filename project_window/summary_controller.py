@@ -124,10 +124,10 @@ class SummaryController(QObject):
             self.view,
             _("Delete Summary"),
             _("Are you sure you want to delete the summary for {}?").format("/".join(hierarchy)),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.view.scene_editor.editor.clear()
             if self.project_tree.model.reset_summary(hierarchy):
                 self.progress_updated.emit(_("Summary deleted for {}").format('/'.join(hierarchy)))
