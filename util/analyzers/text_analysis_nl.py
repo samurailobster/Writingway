@@ -5,14 +5,16 @@ text_analysis_nl.py
 Dutch-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import math
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
-import math
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -76,11 +78,11 @@ DUTCH_DATA = {
     "weak_terms": {"misschien", "wellicht", "mogelijk", "waarschijnlijk", "lijkt", "enigszins", "beetje", "tamelijk"},
     "standard_speech_verbs": {"zeggen", "vragen"},
     "speech_verbs": {"zeggen", "vragen", "fluisteren", "schreeuwen", "mompelen", "uitroepen"},
-    "filter_words": {"zien", "horen", "voelen", "opmerken", "denken", "overwegen", "observeren", "kijken", "luisteren", "waarnemen", "beslissen", "overwegen", "lijken", "verschijnen", "observeren", "ervaren", "waarnemen", "voorstellen"},
+    "filter_words": {"zien", "horen", "voelen", "opmerken", "denken", "overwegen", "observeren", "kijken", "luisteren", "waarnemen", "beslissen", "lijken", "verschijnen", "ervaren", "voorstellen"},
     "telling_verbs": {"zijn", "voelen", "lijken", "eruitzien", "verschijnen", "worden"},
     "emotion_words": {"boos", "verdrietig", "blij", "opgewonden", "zenuwachtig", "doodsbang", "bezorgd", "beschaamd", "teleurgesteld", "gefrustreerd", "geïrriteerd", "rusteloos", "bang", "vrolijk", "somber", "ongelukkig", "extatisch", "overstuur", "woedend", "verrukt", "geschokt", "verrast", "verward", "trots", "tevreden", "voldaan", "enthousiast", "jaloers"},
     "weak_verbs": {"zijn", "hebben"},
-    "common_words": {"en", "in", "op", "van", "naar", "over", "maar", "of", "als", "is", "zijn", "was", "waren", "heeft", "hebben", "dit", "dat", "deze", "die", "hier", "daar", "mijn", "jouw", "zijn", "haar", "onze", "jullie", "hun", "zich", "niet", "ja", "nee", "omdat", "wanneer", "als", "want", "wie", "wat", "welke"},
+    "common_words": {"en", "in", "op", "van", "naar", "over", "maar", "of", "als", "is", "zijn", "was", "waren", "heeft", "hebben", "dit", "dat", "deze", "die", "hier", "daar", "mijn", "jouw", "haar", "onze", "jullie", "hun", "zich", "niet", "ja", "nee", "omdat", "wanneer", "want", "wie", "wat", "welke"},
     "quote_pattern": r'„[^"]*"|\"[^\"]*\"'
 }
 
@@ -146,46 +148,46 @@ class DutchTextAnalysis(BaseTextAnalysis, QObject):
         # Count words
         words = text.split()
         num_words = len(words)
-        
+
         # Count sentences
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Estimate syllables (Dutch syllable counting is complex, this is a simplification)
         vowels = 'aeiouyàáâäéèêëïìîíòóôöùúûü'
         def count_syllables(word):
             word = word.lower()
             count = 0
             prev_is_vowel = False
-            
+
             for char in word:
                 is_vowel = char in vowels
                 if is_vowel and not prev_is_vowel:
                     count += 1
                 prev_is_vowel = is_vowel
-                
+
             # Handle common Dutch silent 'e' at end of words
             if word.endswith('e') and count > 1:
                 count -= 0.5
-                
+
             return max(1, math.ceil(count))  # Every word has at least one syllable
-        
+
         total_syllables = sum(count_syllables(word) for word in words)
-        
+
         # Calculate metrics
         if num_sentences == 0 or num_words == 0:
             return 0
-        
+
         avg_sentence_length = num_words / num_sentences
         avg_syllables_per_word = total_syllables / num_words
-        
+
         # Flesch-Douma formula
         readability = 206.84 - (0.77 * avg_sentence_length) - (93 * avg_syllables_per_word)
-        
+
         # Clamp the result to 0-100 range
         return max(0, min(100, readability))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Dutch."""
         return TOOLTIP_TRANSLATIONS

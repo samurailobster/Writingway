@@ -1,18 +1,36 @@
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QPushButton,
-    QTextBrowser, QLabel, QApplication, QSplitter, QWidget, QShortcut,
-    QAction, QMenuBar, QMessageBox, QListWidget, QListWidgetItem, QMenu, QInputDialog
-)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QPoint
-from PyQt5.QtGui import QPixmap, QKeySequence, QPalette, QColor, QDesktopServices
-from urllib.parse import urlparse, unquote 
-import wikipediaapi
-import requests
 import json
 import os
-from io import BytesIO
+from urllib.parse import unquote, urlparse
+
+import requests
+import wikipediaapi
+from PyQt5.QtCore import QPoint, Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QColor, QDesktopServices, QKeySequence, QPalette, QPixmap
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QMenuBar,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QSplitter,
+    QTextBrowser,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from settings.llm_api_aggregator import WWApiAggregator
 from util.find_dialog import FindDialog
+
 
 class LLMThread(QThread):
     response_signal = pyqtSignal(str)
@@ -36,34 +54,34 @@ class HistoryDialog(QDialog):
         self.history = history or []
         self.setWindowTitle("Search History")
         self.setGeometry(200, 200, 600, 400)
-        
+
         # Main layout
         layout = QVBoxLayout(self)
-        
+
         # Search field for filtering
         self.search_field = QLineEdit()
         self.search_field.setPlaceholderText("Filter history...")
         self.search_field.textChanged.connect(self.filter_history)
         layout.addWidget(self.search_field)
-        
+
         # History list with custom context menu
         self.history_list = QListWidget()
         self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.history_list.customContextMenuRequested.connect(self.show_context_menu)
         self.history_list.itemDoubleClicked.connect(self.load_article)
         layout.addWidget(self.history_list)
-        
+
         # Populate the list
         self.populate_history_list()
-        
+
         self.setLayout(layout)
-    
+
     def populate_history_list(self):
         self.history_list.clear()
         for query, unused in self.history:
             item = QListWidgetItem(query)
             self.history_list.addItem(item)
-    
+
     def filter_history(self):
         filter_text = self.search_field.text().lower()
         self.history_list.clear()
@@ -71,7 +89,7 @@ class HistoryDialog(QDialog):
             if filter_text in query.lower():
                 item = QListWidgetItem(query)
                 self.history_list.addItem(item)
-    
+
     def show_context_menu(self, pos: QPoint):
         item = self.history_list.itemAt(pos)
         if item is None:
@@ -84,14 +102,14 @@ class HistoryDialog(QDialog):
         delete_action.triggered.connect(lambda: self.delete_item(item))
         rename_action.triggered.connect(lambda: self.rename_item(item))
         menu.exec_(self.history_list.mapToGlobal(pos))
-    
+
     def delete_item(self, item: QListWidgetItem):
         query = item.text()
         self.history = [(q, art) for q, art in self.history if q.lower() != query.lower()]
         self.parent.search_history = self.history
         self.parent.save_history()
         self.populate_history_list()
-    
+
     def rename_item(self, item: QListWidgetItem):
         old_query = item.text()
         new_query, ok = QInputDialog.getText(self, "Rename Article", "Enter new title:", text=old_query)
@@ -104,7 +122,7 @@ class HistoryDialog(QDialog):
             self.parent.search_history = self.history
             self.parent.save_history()
             self.populate_history_list()
-    
+
     def load_article(self, item: QListWidgetItem):
         # Load a saved article from history
         query = item.text()
@@ -121,8 +139,8 @@ class WikidataDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Wikipedia Search and LLM Processor")
         self.setGeometry(100, 100, 1000, 800)
-        
-        # Set window flags 
+
+        # Set window flags
         self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint | Qt.WindowType.WindowCloseButtonHint)
         self.setWindowModality(Qt.WindowModality.NonModal)
 
@@ -130,7 +148,7 @@ class WikidataDialog(QDialog):
         self.search_history = []  # Persistent history of saved articles
         self.article_history = []  # Session browsing history
         self.current_article_index = -1
-        
+
         # History file path
         self.history_file = "assets/wiki_history.json"
         self.load_history()
@@ -144,53 +162,53 @@ class WikidataDialog(QDialog):
 
         # Main layout
         main_layout = QVBoxLayout(self)
-        
+
         self.create_menu_bar()
-        
+
         # Top bar: Navigation and action buttons
         top_bar_layout = QHBoxLayout()
-        
+
         self.back_button = QPushButton("<")
         self.back_button.setMaximumWidth(30)
         self.back_button.clicked.connect(self.go_back)
         self.back_button.setEnabled(False)
         top_bar_layout.addWidget(self.back_button)
-        
+
         self.forward_button = QPushButton(">")
         self.forward_button.setMaximumWidth(30)
         self.forward_button.clicked.connect(self.go_forward)
         self.forward_button.setEnabled(False)
         top_bar_layout.addWidget(self.forward_button)
-        
+
         self.search_field = QLineEdit()
         self.search_field.setPlaceholderText("Enter search term...")
         top_bar_layout.addWidget(self.search_field)
-        
+
         self.language_input = QLineEdit()
         self.language_input.setPlaceholderText("Enter language code...")
         self.language_input.setText("en")
         self.language_input.setMaximumWidth(50)
         top_bar_layout.addWidget(self.language_input)
-        
+
         self.search_button = QPushButton("Search Wikipedia")
         self.search_button.clicked.connect(lambda: self.perform_search(update_history=True))
         top_bar_layout.addWidget(self.search_button)
-        
+
         self.expand_button = QPushButton("Show Full Article")
         self.expand_button.clicked.connect(self.show_full_article)
         self.expand_button.setEnabled(False)
         top_bar_layout.addWidget(self.expand_button)
-        
+
         self.edit_button = QPushButton("Edit Article")
         self.edit_button.clicked.connect(self.edit_article)
         self.edit_button.setEnabled(False)
         top_bar_layout.addWidget(self.edit_button)
-        
+
         self.save_button = QPushButton("Save Article")
         self.save_button.clicked.connect(self.save_article)
         self.save_button.setEnabled(False)
         top_bar_layout.addWidget(self.save_button)
-        
+
         self.shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
         self.shortcut_find.activated.connect(self.open_find_dialog)
         self.find_dialog = None
@@ -202,23 +220,23 @@ class WikidataDialog(QDialog):
 
         # Top section: Article image and text
         self.wiki_splitter = QSplitter(Qt.Orientation.Vertical)
-        
+
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMaximumHeight(300)
         self.image_label.setScaledContents(False)
         self.wiki_splitter.addWidget(self.image_label)
-        
+
         self.result_display = QTextBrowser()
         self.result_display.setOpenExternalLinks(False)
         self.wiki_splitter.addWidget(self.result_display)
         self.result_display.anchorClicked.connect(self.handle_link_click)
-        
+
         palette = self.result_display.palette()
         palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Highlight, QColor("yellow"))
         palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.HighlightedText, QColor("black"))
         self.result_display.setPalette(palette)
-        
+
         self.wiki_splitter.setStretchFactor(0, 1)
         self.wiki_splitter.setStretchFactor(1, 3)
         self.main_splitter.addWidget(self.wiki_splitter)
@@ -226,7 +244,7 @@ class WikidataDialog(QDialog):
         # Bottom section: LLM Processing
         self.llm_widget = QWidget()
         llm_layout = QHBoxLayout(self.llm_widget)
-        
+
         prompt_layout = QVBoxLayout()
         prompt_label = QLabel("Enter prompt:")
         prompt_layout.addWidget(prompt_label)
@@ -237,14 +255,14 @@ class WikidataDialog(QDialog):
         self.send_button.clicked.connect(self.send_message)
         prompt_layout.addWidget(self.send_button)
         llm_layout.addLayout(prompt_layout)
-        
+
         answer_layout = QVBoxLayout()
         answer_label = QLabel("LLM Response:")
         answer_layout.addWidget(answer_label)
         self.answer_display = QTextBrowser()
         answer_layout.addWidget(self.answer_display)
         llm_layout.addLayout(answer_layout)
-        
+
         self.main_splitter.addWidget(self.llm_widget)
         self.main_splitter.setStretchFactor(0, 4)
         self.main_splitter.setStretchFactor(1, 1)
@@ -253,10 +271,10 @@ class WikidataDialog(QDialog):
         self.full_article_text = ""
 
         self.setLayout(main_layout)
-    
+
     def create_menu_bar(self):
         menu_bar = QMenuBar(self)
-        
+
         history_menu = menu_bar.addMenu("History")
         show_history_action = QAction("Show History", self)
         show_history_action.triggered.connect(self.show_history)
@@ -264,18 +282,18 @@ class WikidataDialog(QDialog):
         clear_history_action = QAction("Clear History", self)
         clear_history_action.triggered.connect(self.clear_history)
         history_menu.addAction(clear_history_action)
-        
+
         help_menu = menu_bar.addMenu("Help")
         about_action = QAction("About", self)
         about_action.triggered.connect(self.show_app_info)
         help_menu.addAction(about_action)
-        
+
         self.layout().setMenuBar(menu_bar)
-    
+
     def show_history(self):
         history_dialog = HistoryDialog(self, self.search_history)
         history_dialog.exec_()
-    
+
     def clear_history(self):
         reply = QMessageBox.question(
             self, "Clear History",
@@ -286,7 +304,7 @@ class WikidataDialog(QDialog):
             self.search_history = []
             self.save_history()
             QMessageBox.information(self, "History Cleared", "Search history has been cleared.")
-    
+
     def show_app_info(self):
         about_text = """
         <h2>Wikipedia Search and LLM Processor</h2>
@@ -315,16 +333,16 @@ class WikidataDialog(QDialog):
         msg_box.setText(about_text)
         msg_box.setTextFormat(Qt.TextFormat.RichText)
         msg_box.exec_()
-    
+
     def load_history(self):
         # Load the persistent search history from file
         try:
             if os.path.exists(self.history_file):
-                with open(self.history_file, 'r', encoding='utf-8') as f:
+                with open(self.history_file, encoding='utf-8') as f:
                     self.search_history = json.load(f)
         except Exception as e:
             print(f"Error loading history: {e}")
-    
+
     def save_history(self):
         # Save the persistent search history to file
         try:
@@ -333,7 +351,7 @@ class WikidataDialog(QDialog):
                 json.dump(self.search_history, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"Error saving history: {e}")
-    
+
     def go_back(self):
         if self.current_article_index > 0:
             self.current_article_index -= 1
@@ -347,7 +365,7 @@ class WikidataDialog(QDialog):
             self.update_navigation_buttons()
             self.result_display.repaint()
             self.image_label.repaint()
-    
+
     def go_forward(self):
         if self.current_article_index < len(self.article_history) - 1:
             self.current_article_index += 1
@@ -361,7 +379,7 @@ class WikidataDialog(QDialog):
             self.update_navigation_buttons()
             self.result_display.repaint()
             self.image_label.repaint()
-    
+
     def update_navigation_buttons(self):
         self.back_button.setEnabled(self.current_article_index > 0)
         self.forward_button.setEnabled(self.current_article_index < len(self.article_history) - 1)
@@ -387,7 +405,7 @@ class WikidataDialog(QDialog):
             page = wiki_wiki.page(query)
             if not page.exists():
                 raise Exception("Article not found online.")
-        except Exception as e:
+        except Exception:
             for q, article in self.search_history:
                 if q.lower() == query.lower():
                     self.full_article_text = article
@@ -432,7 +450,7 @@ class WikidataDialog(QDialog):
         </ul>
         <p><i>Showing first 5000 characters. Full article has {len(page.text):,} characters.</i></p>
         """
-    
+
         self.result_display.setHtml(html_content)
         try:
             image_url = self.get_page_image(page.title, selected_language)
@@ -445,18 +463,18 @@ class WikidataDialog(QDialog):
                 self.image_label.setPixmap(pixmap)
             else:
                 self.image_label.clear()
-        except Exception as e:
+        except Exception:
             self.image_label.clear()
 
         self.expand_button.setEnabled(True)
         self.edit_button.setEnabled(True)
         self.save_button.setEnabled(False)
-                
+
         # Add to persistent search history only if the query doesn't exist (case-insensitive)
         if not any(q.lower() == query.lower() for q, unused in self.search_history):
             self.search_history.append((query, self.full_article_text))
             self.save_history()
-        
+
         # Update browsing history if this is a new navigation event
         if update_history:
             if self.current_article_index == -1 or (self.article_history and self.article_history[self.current_article_index]["title"] != page.title):
@@ -511,13 +529,13 @@ class WikidataDialog(QDialog):
         html_content = self.full_article_text.replace('\n', '<br>')
         self.result_display.setHtml(html_content)
         self.result_display.setReadOnly(True)
-    
+
     def edit_article(self):
         # Enable editing of the full article
         self.show_full_article()
         self.result_display.setReadOnly(False)
         self.save_button.setEnabled(True)
-    
+
     def save_article(self):
         # Save the edited article to search history
         edited_text = self.result_display.toPlainText()

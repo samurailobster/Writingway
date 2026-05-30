@@ -1,7 +1,9 @@
+import logging
+
 from PyQt5.QtCore import QThread, pyqtSignal
+
 from .llm_api_aggregator import WWApiAggregator
 
-import logging
 
 class LLMWorker(QThread):
     data_received = pyqtSignal(str)

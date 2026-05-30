@@ -1,16 +1,38 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QComboBox, QDateEdit, QCheckBox, QTreeView, QFileSystemModel, QMessageBox, QAbstractItemView, QMenu, QDialog, QScrollArea, QTextEdit, QShortcut, QHeaderView
-from PyQt5.QtCore import Qt, QItemSelectionModel, QUrl, QDate, QObject, pyqtSignal
-from PyQt5.QtGui import QPixmap, QDesktopServices, QImage, QKeySequence, QTextDocument, QTextCursor
-from settings.theme_manager import ThemeManager
-from workshop.rag_pdf import PdfRagApp
-from util.whisper_app import WhisperApp
-from pathlib import Path
-import os
 import datetime
-import shutil
 import fnmatch
-import fitz
 import logging
+import os
+import shutil
+from pathlib import Path
+
+import fitz
+from PyQt5.QtCore import QDate, QItemSelectionModel, QObject, Qt, QUrl, pyqtSignal
+from PyQt5.QtGui import QDesktopServices, QImage, QKeySequence, QPixmap, QTextCursor, QTextDocument
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDialog,
+    QFileSystemModel,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QShortcut,
+    QTextEdit,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
+
+from settings.theme_manager import ThemeManager
+from util.whisper_app import WhisperApp
+from workshop.rag_pdf import PdfRagApp
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -31,7 +53,7 @@ class DocumentRenderer(QObject):
             self.doc = fitz.open(file_path, filetype=filetype)
             return True
         except Exception as e:
-            self.render_error.emit(f"Failed to load document: {str(e)}")
+            self.render_error.emit(f"Failed to load document: {e!s}")
             return False
 
     def render_page(self, page_num):
@@ -44,15 +66,15 @@ class DocumentRenderer(QObject):
             page = self.doc[page_num]
             matrix = fitz.Matrix(self.zoom_level, self.zoom_level)
             pix = page.get_pixmap(matrix=matrix)
-            
+
             # Convert to QImage and then to QPixmap
             img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888)
             pixmap = QPixmap.fromImage(img)
-            
+
             # Emit the rendered page
             self.page_rendered.emit(pixmap, page_num, self.doc.page_count)
         except Exception as e:
-            self.render_error.emit(f"Error rendering page: {str(e)}")
+            self.render_error.emit(f"Error rendering page: {e!s}")
 
     def set_zoom(self, new_zoom):
         """Set a new zoom level."""
@@ -68,20 +90,20 @@ class DownloadedTab(QWidget):
     def __init__(self, download_dir, parent=None):
         super().__init__(parent)
         self.download_dir = download_dir
-        
+
         # Initialize tracking for active filters
         self.active_filters = {
             "text_filter": [],
             "type_filter": [],
             "date_filter": {"enabled": False, "files": []}
         }
-        
+
         # Dictionary to store original filter state
         self.original_filter_state = {
             "name_filters": None,
             "name_filter_enabled": None
         }
-        
+
         # Initialize the UI
         self.init_ui()
 
@@ -147,7 +169,7 @@ class DownloadedTab(QWidget):
         self.downloaded_tree.setSortingEnabled(True)
         self.downloaded_tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.downloaded_tree.doubleClicked.connect(self.open_downloaded_file)
-        
+
         # Set the Name column width to be wider than others
         self.downloaded_tree.header().setStretchLastSection(False)
         self.downloaded_tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Make Name column stretch
@@ -171,23 +193,23 @@ class DownloadedTab(QWidget):
 
         # Tools buttons layout
         tools_layout = QHBoxLayout()
-        
+
         # PDF RAG Button
         self.pdf_rag_btn = QPushButton()
         self.pdf_rag_btn.setIcon(ThemeManager.get_tinted_icon("assets/icons/file-text.svg"))
         self.pdf_rag_btn.setToolTip("Document Analysis (PDF/Images)")
         self.pdf_rag_btn.clicked.connect(self.open_pdf_rag_tool)
-        
+
         # Whisper App Button
         self.whisper_app_btn = QPushButton()
         self.whisper_app_btn.setIcon(ThemeManager.get_tinted_icon("assets/icons/mic.svg"))
         self.whisper_app_btn.setToolTip("Open Whisper")
         self.whisper_app_btn.clicked.connect(self.open_whisper_app)
-        
+
         tools_layout.addWidget(self.pdf_rag_btn)
         tools_layout.addWidget(self.whisper_app_btn)
         tools_layout.addStretch()  # Add stretch to push buttons to the left
-        
+
         file_management_layout.addWidget(self.refresh_btn)
         file_management_layout.addWidget(self.select_all_files_btn)
         file_management_layout.addWidget(self.remove_empty_folders_btn)
@@ -227,7 +249,7 @@ class DownloadedTab(QWidget):
             if not self.original_filter_state.get("name_filters"):
                 self.original_filter_state["name_filters"] = self.downloaded_model.nameFilters()
                 self.original_filter_state["name_filter_enabled"] = self.downloaded_model.nameFilterDisables()
-            
+
             if "," in filter_text:
                 filters = [pattern.strip() for pattern in filter_text.split(",")]
             else:
@@ -235,10 +257,10 @@ class DownloadedTab(QWidget):
                     filters = [f"*{filter_text}*"]
                 else:
                     filters = [filter_text]
-            
+
             # Store the text filter
             self.active_filters["text_filter"] = filters
-            
+
             # Apply combined filters
             self._apply_combined_filters()
             QMessageBox.information(self, "Filter Applied", f"Showing files matching: {filter_text}")
@@ -250,7 +272,7 @@ class DownloadedTab(QWidget):
         self.file_filter_input.clear()
         self.file_type_filter.setCurrentIndex(0)
         self.date_filter_check.setChecked(False)
-        
+
         # Reset all active filters
         self.active_filters = {
             "text_filter": [],
@@ -267,12 +289,12 @@ class DownloadedTab(QWidget):
             self.downloaded_model.setRootPath(current_path)
             QMessageBox.information(self, "Filters Cleared", "All filters have been removed.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to refresh file list: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to refresh file list: {e!s}")
 
     def apply_type_filter(self, index):
         """Apply file type filter based on selection."""
         filter_patterns = []
-        
+
         if index == 0:  # "All Files" option
             self.active_filters["type_filter"] = []
         elif index == 1:  # Images
@@ -292,7 +314,7 @@ class DownloadedTab(QWidget):
 
         # Update the type filter
         self.active_filters["type_filter"] = filter_patterns
-        
+
         # Apply combined filters
         self._apply_combined_filters()
 
@@ -303,12 +325,12 @@ class DownloadedTab(QWidget):
             self.active_filters["date_filter"]["files"] = []
             self._apply_combined_filters()
             return
-        
+
         from_date = self.date_from_filter.date().toPyDate()
         to_date = self.date_to_filter.date().toPyDate()
-        
+
         filtered_files = []
-        
+
         try:
             root_path = str(self.download_dir)
             for file_path in Path(root_path).rglob('*'):
@@ -316,27 +338,27 @@ class DownloadedTab(QWidget):
                     mod_time = datetime.datetime.fromtimestamp(file_path.stat().st_mtime).date()
                     if from_date <= mod_time <= to_date:
                         filtered_files.append(file_path.name)
-            
+
             # Store date filter results
             self.active_filters["date_filter"]["enabled"] = True
             self.active_filters["date_filter"]["files"] = filtered_files
-            
+
             # Apply combined filters
             self._apply_combined_filters()
-            
+
             QMessageBox.information(self, "Date Filter Applied", f"Found {len(filtered_files)} files modified between {from_date} and {to_date}")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error applying date filter: {str(e)}")
-            
+            QMessageBox.critical(self, "Error", f"Error applying date filter: {e!s}")
+
     def _apply_combined_filters(self):
         """Apply all active filters together."""
         combined_patterns = []
-        
+
         # Logic for combining filters:
         # 1. Start with text filter if present
         # 2. Intersect with type filter if present
         # 3. Further intersect with date filter files if enabled
-        
+
         if self.active_filters["text_filter"] and self.active_filters["type_filter"]:
             # We need to combine text and type filters
             # For each text pattern, combine with each type pattern
@@ -353,7 +375,7 @@ class DownloadedTab(QWidget):
             combined_patterns = self.active_filters["text_filter"]
         elif self.active_filters["type_filter"]:
             combined_patterns = self.active_filters["type_filter"]
-        
+
         # Apply filters
         if combined_patterns:
             self.downloaded_model.setNameFilters(combined_patterns)
@@ -361,7 +383,7 @@ class DownloadedTab(QWidget):
         else:
             self.downloaded_model.setNameFilters([])
             self.downloaded_model.setNameFilterDisables(True)
-        
+
         # If date filter is enabled, we need to further filter the results
         if self.active_filters["date_filter"]["enabled"] and self.active_filters["date_filter"]["files"]:
             # Apply date filter on top of other filters
@@ -382,7 +404,7 @@ class DownloadedTab(QWidget):
             self.downloaded_model.setRootPath(current_path)
             QMessageBox.information(self, "Refreshed", "File list has been refreshed.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to refresh file list: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to refresh file list: {e!s}")
 
     def select_all_filtered_files(self):
         """Select all currently visible files in the tree view."""
@@ -400,7 +422,7 @@ class DownloadedTab(QWidget):
 
             QMessageBox.information(self, "Selection", "All visible files have been selected.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to select files: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to select files: {e!s}")
 
     def delete_selected_files(self):
         """Delete all selected files with confirmation."""
@@ -437,7 +459,7 @@ class DownloadedTab(QWidget):
                         shutil.rmtree(file_path)
                     success_count += 1
                 except Exception as e:
-                    failed_files.append(f"{os.path.basename(file_path)}: {str(e)}")
+                    failed_files.append(f"{os.path.basename(file_path)}: {e!s}")
 
             self.refresh_file_tree()
 
@@ -454,7 +476,7 @@ class DownloadedTab(QWidget):
                     "Deletion Complete",
                     f"Successfully deleted {success_count} file(s)."
                 )
-                
+
     def remove_empty_folders(self):
         """Remove all empty folders in the download directory."""
         try:
@@ -476,29 +498,29 @@ class DownloadedTab(QWidget):
             self.refresh_file_tree() # Refresh the tree view after deleting folders
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to remove empty folders: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to remove empty folders: {e!s}")
 
     def show_context_menu(self, position):
         """Show context menu for tree view items."""
         context_menu = QMenu()
         index = self.downloaded_tree.indexAt(position)
-        
+
         if index.isValid():
             file_path = self.downloaded_model.filePath(index)
-            
+
             # Add menu items
             open_action = context_menu.addAction("Open")
-            
+
             # Add PyMuPDF options only for files (not directories)
             if os.path.isfile(file_path):
                 open_pymupdf_action = context_menu.addAction("Open With PyMuPDF")
                 extract_text_action = context_menu.addAction("Open File With Extracted Text")
-            
+
             delete_action = context_menu.addAction("Delete File")
-            
+
             # Show menu and handle actions
             action = context_menu.exec_(self.downloaded_tree.viewport().mapToGlobal(position))
-            
+
             if action == open_action:
                 self.open_downloaded_file(index)
             elif action == delete_action:
@@ -517,7 +539,7 @@ class DownloadedTab(QWidget):
             try:
                 QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")
+                QMessageBox.critical(self, "Error", f"Failed to open file: {e!s}")
 
     def show_text(self, data: bytes, filename: str):
         """Display text content in a scrollable editor with improved formatting and search functionality."""
@@ -530,36 +552,36 @@ class DownloadedTab(QWidget):
         dlg = QDialog(self)
         dlg.setWindowTitle(f"Text Preview: {filename}")
         layout = QVBoxLayout(dlg)
-        
+
         # Add integrated search bar (initially hidden)
         search_container = QWidget()
         search_layout = QHBoxLayout(search_container)
         search_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         search_field = QLineEdit()
         search_field.setPlaceholderText("Search text...")
         search_layout.addWidget(search_field)
-        
+
         case_sensitive = QCheckBox("Case sensitive")
         search_layout.addWidget(case_sensitive)
-        
+
         whole_words = QCheckBox("Whole words")
         search_layout.addWidget(whole_words)
-        
+
         prev_btn = QPushButton("Previous")
         search_layout.addWidget(prev_btn)
-        
+
         next_btn = QPushButton("Next")
         search_layout.addWidget(next_btn)
-        
+
         close_search_btn = QPushButton("×")
         close_search_btn.setFixedSize(25, 25)
         close_search_btn.setToolTip("Close search")
         search_layout.addWidget(close_search_btn)
-        
+
         search_container.setVisible(False)
         layout.addWidget(search_container)
-        
+
         # Create text editor
         editor = QTextEdit()
         editor.setPlainText(text)
@@ -571,49 +593,49 @@ class DownloadedTab(QWidget):
                 font-size: 12pt;
             }
         """)
-        
+
         # Add widgets to layout
         layout.addWidget(editor)
-        
+
         # Button container
         btn_layout = QHBoxLayout()
-        
+
         # Fullscreen button
         btn_fullscreen = QPushButton("Full Screen (F11)")
         btn_fullscreen.clicked.connect(lambda: self.toggle_fullscreen(dlg, btn_fullscreen))
-        
+
         # Close button
         btn_close = QPushButton("Close")
         btn_close.clicked.connect(dlg.accept)
-        
+
         btn_layout.addWidget(btn_fullscreen)
         btn_layout.addStretch()
         btn_layout.addWidget(btn_close)
-        
+
         layout.addLayout(btn_layout)
-        
+
         # Configure dialog dimensions
         dlg.resize(800, 600)
         dlg.setMinimumSize(400, 300)
-        
+
         # Add keyboard shortcut for F11
         QShortcut(Qt.Key.Key_F11, dlg).activated.connect(
             lambda: self.toggle_fullscreen(dlg, btn_fullscreen)
         )
-        
+
         # Function to toggle search bar visibility
         def toggle_search_bar():
             search_container.setVisible(not search_container.isVisible())
             if search_container.isVisible():
                 search_field.setFocus()
                 search_field.selectAll()
-        
+
         # Function to handle search
         def find_text(direction=1):
             search_text = search_field.text()
             if not search_text:
                 return
-            
+
             # Set search options
             flags = QTextDocument.FindFlags()
             if case_sensitive.isChecked():
@@ -622,7 +644,7 @@ class DownloadedTab(QWidget):
                 flags |= QTextDocument.FindFlag.FindWholeWords
             if direction < 0:
                 flags |= QTextDocument.FindFlag.FindBackward
-            
+
             # Perform search
             cursor = editor.textCursor()
             # If searching backwards, we need to move cursor to selection start
@@ -630,9 +652,9 @@ class DownloadedTab(QWidget):
                 position = cursor.selectionStart()
                 cursor.setPosition(position)
                 editor.setTextCursor(cursor)
-                
+
             found = editor.find(search_text, flags)
-            
+
             # If not found, try wrapping around
             if not found:
                 # Save current cursor
@@ -644,37 +666,37 @@ class DownloadedTab(QWidget):
                 else:
                     cursor.movePosition(QTextCursor.MoveOperation.End)
                 editor.setTextCursor(cursor)
-                
+
                 # Try search again
                 found = editor.find(search_text, flags)
-                
+
                 # If still not found, restore original cursor
                 if not found:
                     editor.setTextCursor(temp_cursor)
                     QMessageBox.information(dlg, "Search Result", f"No matches found for '{search_text}'")
-        
+
         # Search connections
         shortcut_find = QShortcut(QKeySequence("Ctrl+F"), dlg)
         shortcut_find.activated.connect(toggle_search_bar)
-        
+
         close_search_btn.clicked.connect(toggle_search_bar)
-        
+
         search_field.returnPressed.connect(lambda: find_text(1))
         next_btn.clicked.connect(lambda: find_text(1))
         prev_btn.clicked.connect(lambda: find_text(-1))
-        
+
         # Additional keyboard shortcuts for search
         shortcut_find_next = QShortcut(QKeySequence("F3"), dlg)
         shortcut_find_next.activated.connect(lambda: find_text(1))
-        
+
         shortcut_find_prev = QShortcut(QKeySequence("Shift+F3"), dlg)
         shortcut_find_prev.activated.connect(lambda: find_text(-1))
-        
+
         shortcut_close_search = QShortcut(QKeySequence("Escape"), dlg)
-        shortcut_close_search.activated.connect(lambda: 
+        shortcut_close_search.activated.connect(lambda:
             search_container.setVisible(False) if search_container.isVisible() else None
         )
-        
+
         dlg.exec_()
 
     def toggle_fullscreen(self, dialog, button):
@@ -684,7 +706,7 @@ class DownloadedTab(QWidget):
         else:
             dialog.showFullScreen()
             button.setText("Exit Full Screen (F11)")
-        
+
     def open_file_with_pymupdf(self, file_path):
         """
         Open a file using PyMuPDF and display its pages as images.
@@ -696,22 +718,22 @@ class DownloadedTab(QWidget):
             # Determine file extension to handle files with incorrect extensions
             file_ext = os.path.splitext(file_path)[1].lower()
             filetype = None
-            
+
             # Handle special cases for file extensions
             if file_ext not in ['.pdf', '.xps', '.epub', '.mobi', '.fb2', '.cbz', '.svg', '.txt',
-                               '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.pnm', '.pgm', 
+                               '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.pnm', '.pgm',
                                '.pbm', '.ppm', '.pam', '.jxr', '.jpx', '.jp2', '.psd']:
                 # Try to determine file type based on content (default to PDF)
                 if any(file_path.lower().endswith(ext) for ext in ['.txt', '.py', '.json', '.xml', '.html', '.htm']):
                     filetype = "txt"
-            
+
             # Call the paginated document viewer
             self.show_paginated_document(os.path.basename(file_path), file_path, filetype)
-            
+
         except Exception as e:
-            logger.error(f"Failed to open file with PyMuPDF: {str(e)}")
-            QMessageBox.critical(self, "Error", f"Failed to open file with PyMuPDF: {str(e)}")
-            
+            logger.error(f"Failed to open file with PyMuPDF: {e!s}")
+            QMessageBox.critical(self, "Error", f"Failed to open file with PyMuPDF: {e!s}")
+
     def show_paginated_document(self, filename: str, file_path, filetype: str = None):
         """Display a paginated document with navigation and zoom controls."""
         try:
@@ -735,12 +757,12 @@ class DownloadedTab(QWidget):
             nav_layout.addWidget(page_label)
             btn_go = QPushButton("Go")
             nav_layout.addWidget(btn_go)
-            
+
             # Add fullscreen button next to Go button
             btn_fullscreen = QPushButton("Full Screen (F11)")
             btn_fullscreen.setToolTip("Toggle fullscreen mode (F11)")
             nav_layout.addWidget(btn_fullscreen)
-            
+
             nav_layout.addStretch()
             btn_prev = QPushButton("◀ Previous")
             btn_next = QPushButton("Next ▶")
@@ -785,7 +807,7 @@ class DownloadedTab(QWidget):
             current_page = 0
             self.doc_renderer = DocumentRenderer()
 
-            def update_document_ui(dialog, label, input_field, page_lbl, prev_btn, next_btn, 
+            def update_document_ui(dialog, label, input_field, page_lbl, prev_btn, next_btn,
                                   pixmap, page_num, total_pages, doc_name):
                 """Update the UI with the rendered page and navigation state."""
                 label.setPixmap(pixmap)
@@ -879,18 +901,18 @@ class DownloadedTab(QWidget):
             # Determine file extension to handle files with incorrect extensions
             file_ext = os.path.splitext(file_path)[1].lower()
             filetype = None
-            
+
             # Handle special cases for file extensions
             if file_ext not in ['.pdf', '.xps', '.epub', '.mobi', '.fb2', '.cbz', '.svg', '.txt',
-                              '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.pnm', '.pgm', 
+                              '.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.pnm', '.pgm',
                               '.pbm', '.ppm', '.pam', '.jxr', '.jpx', '.jp2', '.psd']:
                 # Try to determine file type based on content (default to PDF)
                 if any(file_path.lower().endswith(ext) for ext in ['.txt', '.py', '.json', '.xml', '.html', '.htm']):
                     filetype = "txt"
-            
+
             # Open the document with PyMuPDF
             doc = fitz.open(file_path, filetype=filetype)
-            
+
             # Extract text from all pages
             all_text = ""
             for page_num in range(doc.page_count):
@@ -898,11 +920,11 @@ class DownloadedTab(QWidget):
                 all_text += f"--- Page {page_num + 1} ---\n"
                 all_text += page.get_text()
                 all_text += "\n\n"
-            
+
             # Create a dialog to display the extracted text
             with doc:  # Use context manager to ensure doc is closed
                 self.show_text(all_text.encode('utf-8'), os.path.basename(file_path))
-            
+
         except Exception as e:
-            logger.error(f"Failed to extract text from file: {str(e)}")
-            QMessageBox.critical(self, "Error", f"Failed to extract text from file: {str(e)}")
+            logger.error(f"Failed to extract text from file: {e!s}")
+            QMessageBox.critical(self, "Error", f"Failed to extract text from file: {e!s}")

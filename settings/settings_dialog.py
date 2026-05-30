@@ -1,26 +1,38 @@
-from gettext import gettext as _
-import sys
 import copy
-import os
-from PyQt5.QtWidgets import (
-    QApplication, QDialog, QTabWidget, QVBoxLayout,
-    QCheckBox, QComboBox, QLabel, QPushButton,
-    QFormLayout, QColorDialog, QHBoxLayout, QSpinBox,
-    QMessageBox, QListWidget, QListWidgetItem,
-    QGroupBox, QWidget
-)
-from PyQt5.QtGui import QIcon, QPalette, QColor, QFont
-from PyQt5.QtCore import Qt, pyqtSignal, QSettings
+import sys
+from gettext import gettext as _
 
-from .translation_manager import LANGUAGES
-from .theme_manager import ThemeManager
+from PyQt5.QtCore import QSettings, Qt, pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
 from .llm_api_aggregator import WWApiAggregator
-from .settings_manager import WWSettingsManager
 from .provider_dialog import ProviderDialog
+from .settings_manager import WWSettingsManager
+from .theme_manager import ThemeManager
+from .translation_manager import LANGUAGES
+
 
 class SettingsDialog(QDialog):
     settings_saved = pyqtSignal()
-    
+
     def __init__(self, translation_manager, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Preferences"))
@@ -32,7 +44,7 @@ class SettingsDialog(QDialog):
         self.llm_configs = WWSettingsManager.get_llm_configs()
         self.default_provider = WWSettingsManager.get_active_llm_name()
         self.translation_manager = translation_manager
-        
+
         self.original_llm_configs = copy.deepcopy(self.llm_configs)
 
         self.init_ui()
@@ -80,7 +92,7 @@ class SettingsDialog(QDialog):
         self.enable_autosave_checkbox = QCheckBox(_("Enable Auto-Save"))
         self.enable_autosave_checkbox.stateChanged.connect(self.mark_unsaved_changes)
         layout.addRow(self.enable_autosave_checkbox)
-        
+
         self.show_quote_checkbox = QCheckBox(_("Show Random Quotes"))
         self.show_quote_checkbox.stateChanged.connect(self.mark_unsaved_changes)
         layout.addRow(self.show_quote_checkbox)
@@ -133,15 +145,15 @@ class SettingsDialog(QDialog):
 
     def init_provider_tab(self):
         layout = QVBoxLayout()
-        
+
         self.providers_group = QGroupBox(_("Configured Providers"))
         providers_layout = QVBoxLayout()
-        
+
         self.providers_list = QListWidget()
         self.providers_list.setMinimumHeight(200)
         self.providers_list.itemClicked.connect(self.provider_item_clicked)
         providers_layout.addWidget(self.providers_list)
-        
+
         buttons_layout = QHBoxLayout()
         self.new_provider_button = QPushButton(_("New Provider"))
         self.new_provider_button.clicked.connect(self.add_new_provider)
@@ -149,24 +161,24 @@ class SettingsDialog(QDialog):
         self.edit_provider_button.clicked.connect(self.edit_selected_provider)
         self.delete_provider_button = QPushButton(_("Delete"))
         self.delete_provider_button.clicked.connect(self.delete_provider)
-        
+
         buttons_layout.addWidget(self.new_provider_button)
         buttons_layout.addWidget(self.edit_provider_button)
         buttons_layout.addWidget(self.delete_provider_button)
         providers_layout.addLayout(buttons_layout)
-        
+
         self.providers_group.setLayout(providers_layout)
         layout.addWidget(self.providers_group)
-        
+
         self.provider_tab.setLayout(layout)
-        
+
         self.edit_provider_button.setEnabled(False)
         self.delete_provider_button.setEnabled(False)
 
     def populate_providers_list(self):
         """Populate the providers list with configured providers"""
         self.providers_list.clear()
-        
+
         for provider_name, provider_data in self.llm_configs.items():
             item = QListWidgetItem(provider_name)
             if provider_name == self.default_provider:
@@ -177,17 +189,17 @@ class SettingsDialog(QDialog):
                 item.setText(f"{provider_name} ({_('Default Provider')})")
             else:
                 item.setData(Qt.ItemDataRole.UserRole, {"name": provider_name, "is_default": False})
-            
+
             self.providers_list.addItem(item)
 
     def provider_item_clicked(self, item):
         """Handle provider item selection"""
         self.edit_provider_button.setEnabled(True)
-        
+
         provider_data = item.data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
         is_default_provider = provider_data["is_default"]
-        
+
         self.delete_provider_button.setEnabled(not is_default_provider)
 
     def add_new_provider(self):
@@ -197,30 +209,30 @@ class SettingsDialog(QDialog):
             parent=self,
             providers=default_providers
         )
-        
+
         if self.provider_dialog.exec_():
             provider_data = self.provider_dialog.get_provider_data()
             provider_name = provider_data["name"]
-            
+
             if not provider_name:
                 QMessageBox.warning(self, _("Warning"), _("Provider name cannot be empty."))
                 return
-                
+
             if provider_name in self.llm_configs:
                 QMessageBox.warning(self, _("Warning"), _(f"Provider '{provider_name}' already exists."))
                 return
-                
+
             self.llm_configs[provider_name] = {
                 "provider": provider_data["provider"],
-                "endpoint": provider_data["endpoint"] == "Default" and provider_data["endpoint"] or "",
+                "endpoint": (provider_data["endpoint"] == "Default" and provider_data["endpoint"]) or "",
                 "model": provider_data["model"],
                 "api_key": provider_data["api_key"],
                 "timeout": provider_data["timeout"]
             }
-            
+
             if provider_data["is_default"]:
                 self.default_provider = provider_name
-                
+
             self.populate_providers_list()
             self.mark_unsaved_changes()
 
@@ -228,16 +240,16 @@ class SettingsDialog(QDialog):
         """Open dialog to edit the selected provider"""
         if not self.providers_list.currentItem():
             return
-            
+
         provider_data = self.providers_list.currentItem().data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
-        
+
         if provider_name not in self.llm_configs:
             return
-            
+
         default_providers = WWApiAggregator.get_llm_providers()
         is_default = provider_name == self.default_provider
-        
+
         self.provider_dialog = ProviderDialog(
             parent=self,
             provider_name=provider_name,
@@ -245,10 +257,10 @@ class SettingsDialog(QDialog):
             providers=default_providers,
             is_default=is_default
         )
-        
+
         if self.provider_dialog.exec_():
             updated_data = self.provider_dialog.get_provider_data()
-            
+
             self.llm_configs[provider_name] = {
                 "provider": updated_data["provider"],
                 "endpoint": updated_data["endpoint"],
@@ -256,12 +268,12 @@ class SettingsDialog(QDialog):
                 "api_key": updated_data["api_key"],
                 "timeout": updated_data["timeout"]
             }
-            
+
             if updated_data["is_default"]:
                 self.default_provider = provider_name
             elif self.default_provider == provider_name and not updated_data["is_default"]:
                 self.default_provider = ""
-                
+
             self.populate_providers_list()
             self.mark_unsaved_changes()
 
@@ -269,29 +281,29 @@ class SettingsDialog(QDialog):
         """Deletes the currently selected provider."""
         if not self.providers_list.currentItem():
             return
-            
+
         provider_data = self.providers_list.currentItem().data(Qt.ItemDataRole.UserRole)
         provider_name = provider_data["name"]
-        
+
         if provider_data["is_default"]:
             QMessageBox.warning(self, _("Warning"), _(f"{provider_name} cannot be deleted as it is the default provider."))
             return
-            
+
         reply = QMessageBox.question(
-            self, 
+            self,
             _("Confirm Deletion"),
             _("Are you sure you want to delete the selected provider?"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             if provider_name in self.llm_configs:
                 del self.llm_configs[provider_name]
-                
+
             if self.default_provider == provider_name:
                 self.default_provider = ""
-                
+
             self.populate_providers_list()
             self.edit_provider_button.setEnabled(False)
             self.delete_provider_button.setEnabled(False)
@@ -320,16 +332,16 @@ class SettingsDialog(QDialog):
         self.text_size_label.setText(_("Text Size"))
         self.providers_group.setTitle(_("Configured Providers"))
         self.sample_text_label.setText(_("Sample Text"))
-        
+
         self.save_button.setText(_("Save"))
         self.cancel_button.setText(_("Close"))
         self.new_provider_button.setText(_("New Provider"))
         self.edit_provider_button.setText(_("Edit"))
         self.delete_provider_button.setText(_("Delete"))
-        
+
         if hasattr(self, 'provider_dialog') and self.provider_dialog.isVisible():
             self.provider_dialog.update_labels()
-        
+
         self.populate_providers_list()
 
     def load_values_from_settings(self):
@@ -348,7 +360,7 @@ class SettingsDialog(QDialog):
         self.enable_category_background_checkbox.setChecked(self.appearance_settings.get("enable_category_background", True))
 
         self.populate_providers_list()
-        
+
         self.show_quote_checkbox.setChecked(self.general_settings.get("show_random_quote", False))
 
     def save_settings_to_file(self):

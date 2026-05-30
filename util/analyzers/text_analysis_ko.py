@@ -5,14 +5,15 @@ text_analysis_ko.py
 Korean-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
-import math
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -76,11 +77,11 @@ KOREAN_DATA = {
     "weak_terms": {"아마도", "어쩌면", "~인 것 같다", "~일 수도 있다", "~일지도 모른다", "조금", "약간"},
     "standard_speech_verbs": {"말했다", "물었다"},
     "speech_verbs": {"말했다", "물었다", "속삭였다", "외쳤다", "중얼거렸다", "소리쳤다"},
-    "filter_words": {"보았다", "들었다", "느꼈다", "알아차렸다", "생각했다", "궁금해했다", "관찰했다", "쳐다봤다", "경청했다", "감지했다", "결정했다", "고려했다", "~인 것 같았다", "나타났다", "관찰했다", "느꼈다", "인식했다", "상상했다"},
+    "filter_words": {"보았다", "들었다", "느꼈다", "알아차렸다", "생각했다", "궁금해했다", "관찰했다", "쳐다봤다", "경청했다", "감지했다", "결정했다", "고려했다", "~인 것 같았다", "나타났다", "인식했다", "상상했다"},
     "telling_verbs": {"이다", "~이었다", "느꼈다", "보였다", "~처럼 보였다", "나타났다", "~이 되었다"},
     "emotion_words": {"화난", "슬픈", "행복한", "흥분한", "긴장한", "무서운", "걱정하는", "당황한", "실망한", "좌절한", "짜증난", "불안한", "두려운", "기쁜", "우울한", "불행한", "황홀한", "화가 난", "분노한", "기뻐하는", "충격받은", "놀란", "혼란스러운", "자랑스러운", "만족한", "흡족한", "열정적인", "질투하는"},
     "weak_verbs": {"이다", "있다", "하다"},
-    "common_words": {"그리고", "에서", "에", "와", "으로", "에 대해", "하지만", "또는", "처럼", "이다", "있다", "이었다", "있었다", "가지고 있다", "가지고 있다", "그것", "그것의", "그것에게", "이", "저", "그", "저기", "여기", "나의", "너의", "그의", "그녀의", "우리의", "너희의", "그들의", "자신", "아니", "예", "인가", "왜냐하면", "때", "만약", "왜냐하면", "어떤", "누구", "무엇"},
+    "common_words": {"그리고", "에서", "에", "와", "으로", "에 대해", "하지만", "또는", "처럼", "이다", "있다", "이었다", "있었다", "가지고 있다", "그것", "그것의", "그것에게", "이", "저", "그", "저기", "여기", "나의", "너의", "그의", "그녀의", "우리의", "너희의", "그들의", "자신", "아니", "예", "인가", "왜냐하면", "때", "만약", "어떤", "누구", "무엇"},
     "quote_pattern": r'"[^"]*"|\'[^\']*\''
 }
 
@@ -138,39 +139,39 @@ class KoreanTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         if num_sentences == 0:
             return 0
-            
+
         # Count words (Korean words are typically separated by spaces)
         words = text.split()
         num_words = len(words)
-        
+
         if num_words == 0:
             return 0
-            
+
         # Calculate average sentence length
         avg_sentence_length = num_words / num_sentences
-        
+
         # Count syllables (Korean is syllabic, each Hangul character is one syllable)
         # We'll count Hangul characters as a proxy for syllables
         hangul_pattern = re.compile('[가-힣]')
         hangul_chars = hangul_pattern.findall(text)
         num_syllables = len(hangul_chars)
-        
+
         if num_words == 0:
             return 0
-            
+
         # Calculate syllables per word
         syllables_per_word = num_syllables / num_words
-        
+
         # Calculate Korean readability index
         # Higher values indicate more difficult text
         # This formula is a simplification and adaptation for Korean
         readability_index = 0.4 * ((avg_sentence_length) + 100 * (syllables_per_word / 4.5))
-        
+
         return readability_index
-        
+
     def get_tooltips(self):
         """Returns tooltips in Korean."""
         return TOOLTIP_TRANSLATIONS

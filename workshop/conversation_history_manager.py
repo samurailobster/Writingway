@@ -1,7 +1,7 @@
-import math
 import tiktoken
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+
 from settings.llm_api_aggregator import WWApiAggregator
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 # Define the model name and get its encoding. Adjust the model name as needed.
 MODEL_NAME = "gpt-3.5-turbo"
@@ -32,17 +32,17 @@ def summarize_conversation(conversation_history, max_tokens=5000, overrides=None
     """
     if not conversation_history:
         return "No previous conversation."
-    
+
     # Separate preserved and summarizable messages
     to_summarize = []
-    
+
     for msg in conversation_history:
         content = msg.get("content", "").strip()
         if not content:
             continue
-            
+
         to_summarize.append(f"{msg['role']}: {content}")
-            
+
     # Build summary text
     summary_parts = []
     if to_summarize:
@@ -55,7 +55,7 @@ def summarize_conversation(conversation_history, max_tokens=5000, overrides=None
         "Create a concise but detailed summary that captures essential context, "
         "plot points, character development, tone, and key events.\n"
     )
-    
+
     # Create ChatPromptTemplate for the conversation history
     template = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(system_prompt),

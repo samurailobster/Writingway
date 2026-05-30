@@ -1,17 +1,31 @@
 from gettext import gettext as _
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QStackedWidget, QHBoxLayout, QPushButton, 
-                            QTextEdit, QComboBox, QSizePolicy,
-                            QFormLayout, QSplitter, QCheckBox)
-from PyQt5.QtGui import QColor
+
 from PyQt5.QtCore import Qt, QVariant
-from settings.theme_manager import ThemeManager
-from .focus_mode import PlainTextEdit
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from compendium.context_panel import ContextPanel
 from compendium.pov_combobox import POVComboBox
-from .summary_controller import SummaryController, SummaryMode
-from .summary_model import SummaryModel
 from muse.prompt_panel import PromptPanel
 from muse.prompt_preview_dialog import PromptPreviewDialog
+from settings.theme_manager import ThemeManager
+
+from .focus_mode import PlainTextEdit
+from .summary_controller import SummaryController, SummaryMode
+from .summary_model import SummaryModel
+
 
 class BottomStack(QWidget):
     """Stacked widget for summary and LLM panels."""
@@ -56,7 +70,7 @@ class BottomStack(QWidget):
         self.summary_preview_button.setToolTip(_("Preview the final prompt"))
         self.summary_preview_button.clicked.connect(self.summary_controller.preview_summary)
         layout.addWidget(self.summary_preview_button)
-        
+
         layout.addStretch()
         self.summary_mode_combo = QComboBox()
         # Populate combo box with enum values and localized display names
@@ -198,14 +212,14 @@ class BottomStack(QWidget):
         combo.currentIndexChanged.connect(callback)
         layout.addRow(f"{label_text}:", combo)
         return combo
-    
+
     def handle_pov_character_change(self, text):
         if text == _("Custom..."):
             return
         self.model.settings["global_pov_character"] = text
         self.model.save_settings()
         self.update_tooltips()
-    
+
     def update_tint(self, tint_color):
         self.tint_color = tint_color
         self.apply_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/save.svg", tint_color))
@@ -246,19 +260,19 @@ class BottomStack(QWidget):
             "pov_character": self.pov_character_combo.currentText(),
             "tense": self.tense_combo.currentText()
         }
-    
+
     def preview_prompt(self):
         additional_vars = self.get_additional_vars()
         prompt_config = self.prose_prompt_panel.get_prompt()
         action_beats = self.prompt_input.toPlainText().strip()
         current_scene_text = self.scene_editor.editor.toPlainText().strip() if self.controller.project_tree.tree.currentItem() and self.controller.project_tree.get_item_level(self.controller.project_tree.tree.currentItem()) >= 2 else None
         extra_context = self.context_panel.get_selected_context_text()
-        
+
         dialog = PromptPreviewDialog(
             self.controller,
-            prompt_config=prompt_config, 
-            user_input=action_beats, 
-            additional_vars=additional_vars, 
-            current_scene_text=current_scene_text, 
+            prompt_config=prompt_config,
+            user_input=action_beats,
+            additional_vars=additional_vars,
+            current_scene_text=current_scene_text,
             extra_context=extra_context)
         dialog.exec_()

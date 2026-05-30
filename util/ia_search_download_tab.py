@@ -1,16 +1,31 @@
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QGroupBox, 
-                             QFormLayout, QDateEdit, QComboBox, QCheckBox, QListWidget, QHBoxLayout, 
-                             QListWidgetItem, QAbstractItemView, QMessageBox, QDialog, QProgressDialog,
-                             QGridLayout, QSizePolicy)
-from PyQt5.QtCore import Qt, QDate, QThread, pyqtSignal, QSize
-from PyQt5.QtGui import QIcon, QPixmap, QCursor
-from internetarchive import search_items, download
-from .ia_item_details_dialog import ItemDetailsDialog
 import logging
 import time
 import webbrowser
-from typing import List
 from pathlib import Path
+
+from internetarchive import download, search_items
+from PyQt5.QtCore import QDate, QSize, Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QCursor, QIcon, QPixmap
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QProgressDialog,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .ia_item_details_dialog import ItemDetailsDialog
 
 logger = logging.getLogger("ArchiveViewer")
 
@@ -50,7 +65,7 @@ class SearchWorker(QThread):
 
         except Exception as e:
             logger.error(f"Search failed: {e}")
-            self.finished_signal.emit(False, f"Search failed: {str(e)}")
+            self.finished_signal.emit(False, f"Search failed: {e!s}")
 
     def cancel(self):
         self.is_cancelled = True
@@ -60,7 +75,7 @@ class DownloadWorker(QThread):
     progress_signal = pyqtSignal(str)
     finished_signal = pyqtSignal(bool, str)
 
-    def __init__(self, identifiers: List[str], session, dest_dir: Path, options=None):
+    def __init__(self, identifiers: list[str], session, dest_dir: Path, options=None):
         super().__init__()
         self.identifiers = identifiers
         self.session = session
@@ -116,10 +131,10 @@ class ProgressDialog(QProgressDialog):
         self.setCancelButton(None)  # Remove default cancel button
         self.setAutoClose(False)
         self.setAutoReset(False)
-        
+
         # Set a fixed size
         self.setMinimumWidth(400)
-        
+
         # Customizing appearance
         self.setStyleSheet("""
             QProgressDialog {
@@ -142,7 +157,7 @@ class ProgressDialog(QProgressDialog):
                 background-color: #c0392b;
             }
         """)
-        
+
         # Custom cancel button
         self.cancel_btn = QPushButton(cancel_button_text)
         self.setCancelButton(self.cancel_btn)
@@ -287,7 +302,7 @@ class SearchDownloadTab(QWidget):
         layout.addWidget(results_label)
         layout.addWidget(self.search_results)
         layout.addLayout(action_buttons_layout)
-        
+
     def open_collection_description(self):
         """Open the collection description page in the default web browser."""
         webbrowser.open("https://archive.org/details/opensource?tab=about")
@@ -455,7 +470,7 @@ class SearchDownloadTab(QWidget):
         except Exception as e:
             logger.error(f"Failed to start search: {e}")
             self.progress_dialog.close()
-            QMessageBox.critical(self, "Error", f"Failed to start search: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to start search: {e!s}")
 
     def update_search_results(self, results):
         """Update the search results list as results come in."""
@@ -463,18 +478,18 @@ class SearchDownloadTab(QWidget):
             title = result.get('title', result['identifier'])
             identifier = result['identifier']
             mediatype = result.get('mediatype', '')
-            
+
             item = QListWidgetItem(f"{title} ({identifier})")
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Unchecked)
-            
+
             # Set an icon based on mediatype
             item.setIcon(self.get_mediatype_icon(mediatype))
-            
+
             # Set tooltip explaining what the icon color means
             tooltip = f"Type: {mediatype}" if mediatype else "Type: unknown"
             item.setToolTip(tooltip)
-            
+
             self.search_results.addItem(item)
 
     def search_finished(self, success, message):
@@ -482,7 +497,7 @@ class SearchDownloadTab(QWidget):
         if self.progress_dialog:
             self.progress_dialog.close()
             self.progress_dialog = None
-            
+
         if success:
             if self.search_results.count() == 0:
                 QMessageBox.information(self, "Info", "No results found.")
@@ -490,7 +505,7 @@ class SearchDownloadTab(QWidget):
         else:
             logger.error(f"Search failed: {message}")
             QMessageBox.critical(self, "Error", message)
-            
+
         self.search_worker = None
 
     def cancel_search(self):
@@ -523,17 +538,17 @@ class SearchDownloadTab(QWidget):
             'checksum': self.checksum_checkbox.isChecked(),
             'checksum_archive': self.checksum_archive_checkbox.isChecked()
         }
-        
+
         # Create and show progress dialog
         self.progress_dialog = ProgressDialog(
-            "Downloading", 
-            f"Starting download of {len(selected_items)} items...", 
-            "Cancel", 
+            "Downloading",
+            f"Starting download of {len(selected_items)} items...",
+            "Cancel",
             self
         )
         self.progress_dialog.canceled.connect(self.cancel_download)
         self.progress_dialog.show()
-        
+
         # Create and start download worker
         try:
             self.download_worker = DownloadWorker(
@@ -548,7 +563,7 @@ class SearchDownloadTab(QWidget):
         except Exception as e:
             logger.error(f"Failed to start download: {e}")
             self.progress_dialog.close()
-            QMessageBox.critical(self, "Error", f"Failed to start download: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to start download: {e!s}")
 
     def update_download_progress(self, message):
         """Update the progress dialog with download status."""
@@ -560,14 +575,14 @@ class SearchDownloadTab(QWidget):
         if self.progress_dialog:
             self.progress_dialog.close()
             self.progress_dialog = None
-            
+
         if success:
             logger.info(f"Download completed: {message}")
             QMessageBox.information(self, "Success", message)
         else:
             logger.error(f"Download failed: {message}")
             QMessageBox.critical(self, "Error", message)
-            
+
         self.download_worker = None
 
     def cancel_download(self):

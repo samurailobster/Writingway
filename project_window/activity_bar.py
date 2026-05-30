@@ -1,8 +1,11 @@
 from gettext import gettext as _
-from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QVBoxLayout
-from PyQt5.QtGui import QColor
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QAction, QToolBar, QVBoxLayout, QWidget
+
 from settings.theme_manager import ThemeManager
+
 
 class ActivityBar(QWidget):
     """Vertical icon panel for switching between views, similar to VS Code Activity Bar."""
@@ -26,18 +29,18 @@ class ActivityBar(QWidget):
 
         # Actions
         self.outline_action = self.add_action(
-            "assets/icons/pen-tool.svg", 
-            _("Outline and Scene Editor"), 
+            "assets/icons/pen-tool.svg",
+            _("Outline and Scene Editor"),
             self.controller.toggle_outline_view
         )
         self.search_action = self.add_action(
-            "assets/icons/search.svg", 
-            _("Search and Replace"), 
+            "assets/icons/search.svg",
+            _("Search and Replace"),
             self.controller.toggle_search_view
         )
         self.compendium_action = self.add_action(
-            "assets/icons/book-open.svg", 
-            _("Compendium"), 
+            "assets/icons/book-open.svg",
+            _("Compendium"),
             self.controller.toggle_compendium_view
         )
         self.prompts_action = self.add_action(

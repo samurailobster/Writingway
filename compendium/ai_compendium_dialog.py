@@ -1,11 +1,28 @@
-from gettext import gettext as _
-# ai_compendium_dialog.py
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QPushButton, QTextEdit, QMessageBox, QTreeWidget, QTreeWidgetItem, 
-                             QSplitter, QMenu, QWidget, QInputDialog, QSizePolicy, QShortcut, QLabel)
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtGui import QFont, QCursor, QKeySequence
 import json
 import os
+from gettext import gettext as _
+
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QCursor, QFont, QKeySequence
+
+# ai_compendium_dialog.py
+from PyQt5.QtWidgets import (
+    QDialog,
+    QInputDialog,
+    QLabel,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QSplitter,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 class AICompendiumDialog(QDialog):
     def __init__(self, ai_compendium_data, compendium_file, parent=None):
@@ -20,7 +37,7 @@ class AICompendiumDialog(QDialog):
     def load_existing_compendium(self):
         if os.path.exists(self.compendium_file):
             try:
-                with open(self.compendium_file, "r", encoding="utf-8") as f:
+                with open(self.compendium_file, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 print(f"Error loading existing compendium: {e}")
@@ -141,7 +158,7 @@ class AICompendiumDialog(QDialog):
 
                 # Bold entry if new or modified
                 if key in existing_entries:
-                    if (existing_entries[key]["content"] == entry_content and 
+                    if (existing_entries[key]["content"] == entry_content and
                         existing_entries[key]["relationships"] == entry_rels):
                         entry_item.setData(2, Qt.UserRole, "Unchanged")
                         entry_item.setFlags(entry_item.flags() & ~Qt.ItemIsEditable)
@@ -190,9 +207,9 @@ class AICompendiumDialog(QDialog):
                 content = current.data(1, Qt.UserRole)
                 display_text = _("Content:\n{}\n\nRelationships:\n").format(content)
                 rel_found = False
-                for rel_item in [current.child(k).child(l) 
-                                for k in range(current.childCount()) 
-                                for l in range(current.child(k).childCount()) 
+                for rel_item in [current.child(k).child(l)
+                                for k in range(current.childCount())
+                                for l in range(current.child(k).childCount())
                                 if current.child(k).text(0) == _("Relationships")]:
                     if rel_item.data(2, Qt.UserRole) == "Active":
                         rel_name = rel_item.text(0)
@@ -205,9 +222,9 @@ class AICompendiumDialog(QDialog):
                 self.editor.setPlainText(display_text.strip())
 
             has_bold = False
-            for rel_item in [current.child(k).child(l) 
-                            for k in range(current.childCount()) 
-                            for l in range(current.child(k).childCount()) 
+            for rel_item in [current.child(k).child(l)
+                            for k in range(current.childCount())
+                            for l in range(current.child(k).childCount())
                             if current.child(k).text(0) == _("Relationships")]:
                 if rel_item.font(0).bold():
                     has_bold = True
@@ -430,9 +447,9 @@ class AICompendiumDialog(QDialog):
                     content = item.data(1, Qt.UserRole)
                     display_text = _("Content:\n{}\n\nRelationships:\n").format(content)
                     rel_found = False
-                    for rel_item in [item.child(k).child(l) 
-                                    for k in range(item.childCount()) 
-                                    for l in range(item.child(k).childCount()) 
+                    for rel_item in [item.child(k).child(l)
+                                    for k in range(item.childCount())
+                                    for l in range(item.child(k).childCount())
                                     if item.child(k).text(0) == _("Relationships")]:
                         if rel_item.data(2, Qt.UserRole) == "Active":
                             rel_name = rel_item.text(0)
@@ -534,9 +551,9 @@ class AICompendiumDialog(QDialog):
                                     if line.startswith("- ") and ": " in line:
                                         name, rel_type = line[2:].split(": ", 1)
                                         rel_status = "Active"
-                                        for rel_item in [entry_item.child(k).child(l) 
-                                                        for k in range(entry_item.childCount()) 
-                                                        for l in range(entry_item.child(k).childCount()) 
+                                        for rel_item in [entry_item.child(k).child(l)
+                                                        for k in range(entry_item.childCount())
+                                                        for l in range(entry_item.child(k).childCount())
                                                         if entry_item.child(k).text(0) == _("Relationships")]:
                                             if rel_item.text(0) == name:
                                                 rel_status = rel_item.data(2, Qt.UserRole)
@@ -550,9 +567,9 @@ class AICompendiumDialog(QDialog):
                             entry_content = entry_item.data(1, Qt.UserRole)
                             relationships = [
                                 {"name": rel_item.text(0), "type": rel_item.data(4, Qt.UserRole) or rel_item.data(1, Qt.UserRole)}
-                                for rel_item in [entry_item.child(k).child(l) 
-                                                for k in range(entry_item.childCount()) 
-                                                for l in range(entry_item.child(k).childCount()) 
+                                for rel_item in [entry_item.child(k).child(l)
+                                                for k in range(entry_item.childCount())
+                                                for l in range(entry_item.child(k).childCount())
                                                 if entry_item.child(k).text(0) == _("Relationships")]
                                 if rel_item.data(2, Qt.UserRole) == "Active"
                             ]
@@ -638,7 +655,7 @@ class AICompendiumDialog(QDialog):
                         font = rel_child.font(0)
                         font.setPointSize(self.font_size)
                         rel_child.setFont(0, font)
-        
+
         font = self.editor.font()
         font.setPointSize(self.font_size)
         self.editor.setFont(font)

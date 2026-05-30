@@ -1,12 +1,12 @@
-import json
-import os
 import re
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QRadioButton, QComboBox, QTextEdit, QPushButton, QMessageBox, QFormLayout, QLabel
+from gettext import gettext as _
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QRadioButton, QVBoxLayout
+
 from compendium.compendium_manager import CompendiumManager
 from compendium.pov_combobox import POVComboBox
-from settings.settings_manager import WWSettingsManager
-from gettext import gettext as _
+
 
 class NewChatDialog(QDialog):
     def __init__(self, project_name:str, parent=None):
@@ -14,11 +14,11 @@ class NewChatDialog(QDialog):
         self.project_name = project_name
         self.compendium_manager = CompendiumManager(project_name)
         self.init_ui()
-        
+
     def init_ui(self):
         self.setWindowTitle(_("New Chat Mode"))
         layout = QVBoxLayout(self)
-        
+
         # Centered chat name input
         name_layout = QHBoxLayout()
         self.name_label = QLabel(_("Chat Name:"))
@@ -30,13 +30,13 @@ class NewChatDialog(QDialog):
         name_layout.addWidget(self.name_input)
         name_layout.addStretch()
         layout.addLayout(name_layout)
-        
+
         # Mode selection
         mode_layout = QVBoxLayout()
         self.writing_coach_radio = QRadioButton(_("Writing Coach"))
         self.writing_coach_radio.setChecked(True)
         mode_layout.addWidget(self.writing_coach_radio)
-        
+
         # Role Play radio button with inline POV combo
         role_play_layout = QHBoxLayout()
         self.role_play_radio = QRadioButton(_("Role Play"))
@@ -46,9 +46,9 @@ class NewChatDialog(QDialog):
         role_play_layout.addWidget(self.pov_combo)
         role_play_layout.addStretch()
         mode_layout.addLayout(role_play_layout)
-        
+
         layout.addLayout(mode_layout)
-        
+
         # Buttons
         button_layout = QHBoxLayout()
         self.ok_button = QPushButton(_("OK"))
@@ -58,7 +58,7 @@ class NewChatDialog(QDialog):
         button_layout.addWidget(self.ok_button)
         button_layout.addWidget(self.cancel_button)
         layout.addLayout(button_layout)
-        
+
         self.role_play_radio.toggled.connect(self.update_pov_enabled)
         self.set_default_name()
 

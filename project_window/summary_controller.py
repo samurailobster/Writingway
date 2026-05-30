@@ -1,11 +1,15 @@
-from gettext import gettext as _
-from PyQt5.QtCore import Qt, QObject, pyqtSignal
-from PyQt5.QtWidgets import QMessageBox, QApplication
-from .summary_service import SummaryService
-from muse.prompt_preview_dialog import PromptPreviewDialog
-from .progress_dialog import ProgressDialog
 import time
 from enum import Enum
+from gettext import gettext as _
+
+from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMessageBox
+
+from muse.prompt_preview_dialog import PromptPreviewDialog
+
+from .progress_dialog import ProgressDialog
+from .summary_service import SummaryService
+
 
 class SummaryMode(Enum):
     """Enum for summary generation modes."""
@@ -73,7 +77,7 @@ class SummaryController(QObject):
         self.current_summary = ChapterSummary(hierarchy, scenes)
         self.current_prompt = prompt
         self.current_overrides = overrides
-        
+
         self.view.scene_editor.editor.clear()
 
         self.progress_dialog = ProgressDialog(self.view)
@@ -215,7 +219,7 @@ class SummaryController(QObject):
                 self._update_editor(summary_text)
                 if not self.parent_act_summary:
                     self.project_tree.model.save_summary(self.current_summary.hierarchy, summary_text)
-                
+
                 # If part of an act summary, send the chapter summary to LLM for further summarization
                 if self.parent_act_summary:
                     mode = self.view.summary_mode_combo.itemData(self.view.summary_mode_combo.currentIndex())
@@ -241,7 +245,7 @@ class SummaryController(QObject):
                     self.parent_act_summary = None
                     self._process_next_chapter()
                     return
-            
+
             self.current_summary = None
             self._process_next_chapter()
 

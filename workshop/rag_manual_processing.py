@@ -1,23 +1,45 @@
-import os
 import json
-from typing import List
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLineEdit, QPushButton, QPlainTextEdit, 
-                             QSpinBox, QProgressBar, QSplitter, QFileDialog, QMessageBox, QGridLayout, QScrollArea, 
-                             QCheckBox, QLabel)
+import os
 
-from .rag_utils import PdfProcessor, TokenCounter, PdfProcessingWorker, SettingsManager, HistoryDialog, AppSettings, LlmClient, DocumentProcessorFactory
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QScrollArea,
+    QSpinBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .rag_utils import (
+    DocumentProcessorFactory,
+    LlmClient,
+    PdfProcessingWorker,
+    SettingsManager,
+    TokenCounter,
+)
+
 
 class LlmWorker(QThread):
     result_ready = pyqtSignal(int, str, str)
-    
+
     def __init__(self, chunk_idx: int, prompt: str, chunk_text: str):
         super().__init__()
         self.chunk_idx = chunk_idx
         self.prompt = prompt
         self.chunk_text = chunk_text
-    
+
     def run(self):
         full_input = f"{self.prompt}\n\n{self.chunk_text}"
         try:
@@ -27,7 +49,7 @@ class LlmWorker(QThread):
                 raise RuntimeError(error)
             self.result_ready.emit(self.chunk_idx, response, "")
         except Exception as e:
-            self.result_ready.emit(self.chunk_idx, "", f"Error: {str(e)}")
+            self.result_ready.emit(self.chunk_idx, "", f"Error: {e!s}")
 
 class ManualProcessingWidget(QWidget):
     def __init__(self, parent=None):
@@ -94,11 +116,11 @@ class ManualProcessingWidget(QWidget):
 
         self.prompt_group = QGroupBox("Default Prompt Template")
         prompt_layout = QVBoxLayout()
-        
+
         self.individual_prompts_checkbox = QCheckBox("Use individual prompts for each chunk")
         self.individual_prompts_checkbox.toggled.connect(self.toggle_individual_prompts)
         prompt_layout.addWidget(self.individual_prompts_checkbox)
-        
+
         self.manual_default_prompt_edit = QPlainTextEdit()
         self.manual_default_prompt_edit.setPlaceholderText("Enter default prompt for all chunks...")
         prompt_layout.addWidget(self.manual_default_prompt_edit)
@@ -202,24 +224,24 @@ class ManualProcessingWidget(QWidget):
         path = self.manual_pdf_path_edit.text().strip()
         if not os.path.isfile(path):
             return
-        
+
         try:
             processor = DocumentProcessorFactory.get_processor(path)
             section_count, error = processor.load_document(path)
             if error:
                 QMessageBox.warning(self, "Document Error", error)
                 return
-            
+
             last_section = section_count
             self.manual_spin_from.setMaximum(last_section)
             self.manual_spin_to.setMaximum(last_section)
-            
+
             self.manual_spin_from.setProperty("max_page", last_section)
             self.manual_spin_to.setProperty("max_page", last_section)
-            
+
             self.manual_spin_from.setValue(1)
             self.manual_spin_to.setValue(last_section)
-            
+
             self.parent_app.settings.last_pdf_path_manual = path  # Keeping name for compatibility
             SettingsManager.save_settings(self.parent_app.settings)
         except ValueError as e:
@@ -230,7 +252,7 @@ class ManualProcessingWidget(QWidget):
         max_page = sender.property("max_page")
         if max_page is not None and sender.value() > max_page:
             sender.setValue(max_page)
-            
+
         if sender == self.manual_spin_from and self.manual_spin_from.value() > self.manual_spin_to.value():
             self.manual_spin_from.setValue(self.manual_spin_to.value())
         elif sender == self.manual_spin_to and self.manual_spin_to.value() < self.manual_spin_from.value():
@@ -264,47 +286,47 @@ class ManualProcessingWidget(QWidget):
         if not file_path or not os.path.isfile(file_path):
             QMessageBox.warning(self, "Error", "Invalid file selected.")
             return
-        
+
         try:
             processor = DocumentProcessorFactory.get_processor(file_path)
             section_count, error = processor.load_document(file_path)
             if error:
                 QMessageBox.warning(self, "Error", f"Failed to load document: {error}")
                 return
-            
+
             from_section = self.manual_spin_from.value()
             to_section = self.manual_spin_to.value()
-            
+
             if from_section > section_count:
                 from_section = section_count
                 self.manual_spin_from.setValue(from_section)
-                
+
             if to_section > section_count:
                 to_section = section_count
                 self.manual_spin_to.setValue(to_section)
-            
+
             if from_section > to_section:
                 from_section = to_section
                 self.manual_spin_from.setValue(from_section)
-            
+
             self.parent_app.settings.last_chunk_size = self.manual_chunk_spin.value()
             self.parent_app.settings.default_prompt = self.manual_default_prompt_edit.toPlainText()
             SettingsManager.save_settings(self.parent_app.settings)
-            
+
             # Adjust for zero-based indexing
             sections = list(range(from_section - 1, to_section))
-            
+
             self.manual_progress_bar.setVisible(True)
             self.manual_progress_bar.setRange(0, 0)
             self.manual_process_btn.setEnabled(False)
-            
+
             self.manual_worker = PdfProcessingWorker(file_path, sections, self.manual_chunk_spin.value())
             self.manual_worker.finished.connect(self.on_manual_pdf_processing_finished)
             self.manual_worker.start()
         except ValueError as e:
             QMessageBox.warning(self, "Unsupported Format", str(e))
 
-    def on_manual_pdf_processing_finished(self, markdown: str, chunks: List[str], error: str):
+    def on_manual_pdf_processing_finished(self, markdown: str, chunks: list[str], error: str):
         # Handle processing completion for any document type
         self.manual_progress_bar.setVisible(False)
         self.manual_process_btn.setEnabled(True)
@@ -345,7 +367,7 @@ class ManualProcessingWidget(QWidget):
             w = self.manual_prompts_layout.itemAt(i).widget()
             if w:
                 w.setParent(None)
-        
+
         self.chunk_prompt_inputs = []
 
         for idx, chunk in enumerate(self.manual_chunks):
@@ -360,20 +382,20 @@ class ManualProcessingWidget(QWidget):
             )
             preview.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             chunk_layout.addWidget(preview)
-            
+
             if self.individual_prompts_checkbox.isChecked():
                 if idx == 0:
                     prompt_header_layout = QHBoxLayout()
                     prompt_label = QLabel("Prompt:")
                     prompt_header_layout.addWidget(prompt_label)
-                    
+
                     copy_to_all_btn = QPushButton("Copy to all")
                     copy_to_all_btn.clicked.connect(self.copy_prompt_to_all)
                     prompt_header_layout.addWidget(copy_to_all_btn, alignment=Qt.AlignmentFlag.AlignRight)
                     chunk_layout.addLayout(prompt_header_layout)
                 else:
                     chunk_layout.addWidget(QLabel("Prompt:"))
-                
+
                 prompt_input = QPlainTextEdit()
                 prompt_input.setPlaceholderText(f"Enter prompt for chunk {idx+1}...")
                 if not self.individual_prompts_checkbox.isChecked():
@@ -381,7 +403,7 @@ class ManualProcessingWidget(QWidget):
                 prompt_input.setMaximumHeight(100)
                 chunk_layout.addWidget(prompt_input)
                 self.chunk_prompt_inputs.append(prompt_input)
-            
+
             self.manual_prompts_layout.addWidget(chunk_group)
 
     def send_manual_to_llm(self):
@@ -393,7 +415,7 @@ class ManualProcessingWidget(QWidget):
             if w.isRunning():
                 w.quit()
                 w.wait()
-        
+
         self.manual_llm_workers = []
         self.all_llm_responses = []
         self.manual_progress_bar.setRange(0, len(self.manual_chunks))
@@ -407,7 +429,7 @@ class ManualProcessingWidget(QWidget):
                 prompt = self.chunk_prompt_inputs[idx].toPlainText().strip()
             else:
                 prompt = self.manual_default_prompt_edit.toPlainText().strip()
-                
+
             worker = LlmWorker(idx, prompt, chunk)
             worker.result_ready.connect(self.on_manual_llm_result)
             worker.started.connect(self.parent_app.set_busy_cursor)
@@ -418,7 +440,7 @@ class ManualProcessingWidget(QWidget):
     def on_manual_llm_result(self, idx, response, error):
         container = self.manual_prompts_layout.itemAt(idx).widget()
         layout = container.layout()
-        
+
         txt = error or response
         edit = QPlainTextEdit()
         edit.setReadOnly(True)

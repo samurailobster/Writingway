@@ -1,7 +1,9 @@
 from gettext import gettext as _
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QHBoxLayout, QMessageBox
-from PyQt5.QtCore import Qt, pyqtSignal
+
 import tiktoken
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QTextEdit, QVBoxLayout
+
 
 class TokenLimitDialog(QDialog):
     """
@@ -12,7 +14,7 @@ class TokenLimitDialog(QDialog):
         use_summary(str): Emitted when the user chooses to use the edited summary.
         truncate_story: Emitted when the user chooses to truncate the story.
     """
-    
+
     use_summary = pyqtSignal(str)
     truncate_story = pyqtSignal()
 
@@ -106,8 +108,9 @@ class TokenLimitDialog(QDialog):
 
 # Example usage (for testing standalone)
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
     import sys
+
+    from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
     dialog = TokenLimitDialog(

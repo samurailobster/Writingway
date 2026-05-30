@@ -1,9 +1,10 @@
-import json
-import os, re
 import copy
+import json
 import logging
-from typing import Any, Dict, Optional, Union
+import os
+import re
 from pathlib import Path
+from typing import Any
 
 # Configure logging
 logging.basicConfig(
@@ -69,7 +70,7 @@ class SettingsManager:
         "active_llm_config": "LMStudio"
     }
 
-    def __init__(self, file_path: Union[str, Path] = "settings.json"):
+    def __init__(self, file_path: str | Path = "settings.json"):
         """
         Initialize the settings manager with the path to the settings file.
         
@@ -93,13 +94,13 @@ class SettingsManager:
         """Load settings from the file, creating a new one if it doesn't exist."""
         try:
             if self.file_path.exists():
-                with open(self.file_path, 'r', encoding='utf-8') as file:
+                with open(self.file_path, encoding='utf-8') as file:
                     data = json.load(file)
-                
+
                 # Check version and handle backward compatibility
                 if "version" not in data:
                     data = self._convert_old_settings(data)
-                
+
                 # Update settings with loaded data
                 self.settings.update(data)
                 self.logger.info(f"Settings loaded successfully from {self.file_path}")
@@ -107,20 +108,20 @@ class SettingsManager:
                 # Create a new settings file with defaults
                 self._save_settings()
                 self.logger.info(f"Created new settings file at {self.file_path}")
-        except (json.JSONDecodeError, IOError) as e:
-            self.logger.error(f"Error loading settings: {str(e)}")
+        except (OSError, json.JSONDecodeError) as e:
+            self.logger.error(f"Error loading settings: {e!s}")
             # If there's an error, create a backup of the corrupt file if it exists
             if self.file_path.exists():
                 backup_path = self.file_path.with_suffix('.json.bak')
                 try:
                     # Copy the corrupt file to a backup
-                    with open(self.file_path, 'r', encoding='utf-8') as src:
+                    with open(self.file_path, encoding='utf-8') as src:
                         with open(backup_path, 'w', encoding='utf-8') as dst:
                             dst.write(src.read())
                     self.logger.info(f"Corrupt settings file backed up to {backup_path}")
-                except IOError as backup_error:
-                    self.logger.error(f"Failed to create backup: {str(backup_error)}")
-            
+                except OSError as backup_error:
+                    self.logger.error(f"Failed to create backup: {backup_error!s}")
+
             # Reset to defaults and save
             self.settings = copy.deepcopy(self.DEFAULT_SETTINGS)
             self._save_settings()
@@ -136,20 +137,20 @@ class SettingsManager:
         try:
             # Ensure the directory exists
             self.file_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Write settings to file with pretty formatting
             with open(self.file_path, 'w', encoding='utf-8') as file:
                 json.dump(self.settings, file, indent=4, ensure_ascii=False)
-            
+
             self.logger.info(f"Settings saved successfully to {self.file_path}")
             # Reconfigure logging after saving settings
             self._configure_logging()
             return True
-        except IOError as e:
-            self.logger.error(f"Error saving settings: {str(e)}")
+        except OSError as e:
+            self.logger.error(f"Error saving settings: {e!s}")
             return False
 
-    def _convert_old_settings(self, old_settings: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_old_settings(self, old_settings: dict[str, Any]) -> dict[str, Any]:
         """
         Convert old settings format to the current version.
         
@@ -160,62 +161,62 @@ class SettingsManager:
             Dict containing the converted settings in the current format
         """
         self.logger.info("Converting old settings format to current version")
-        
+
         # Start with default settings and update with conversions
         new_settings = copy.deepcopy(self.DEFAULT_SETTINGS)
-        
+
         try:
             # Convert appearance settings
             if "theme" in old_settings:
                 new_settings["appearance"]["theme"] = old_settings["theme"]
-            
+
             # Convert general settings
             if "tts_fast" in old_settings:
                 new_settings["general"]["fast_tts"] = old_settings["tts_fast"]
-            
+
             if "autosave" in old_settings:
                 new_settings["general"]["enable_autosave"] = old_settings["autosave"]
-            
+
             # Convert LLM configs
             if "llm_configs" in old_settings and isinstance(old_settings["llm_configs"], list):
                 new_llm_configs = {}
-                
+
                 for config in old_settings["llm_configs"]:
                     if "name" in config and isinstance(config, dict):
                         name = config.pop("name")
                         new_llm_configs[name] = config
-                        
+
                         # Ensure required fields exist in each config
                         for key in ["provider", "endpoint", "api_key", "timeout"]:
                             if key not in config:
                                 config[key] = ""
-                        
+
                         # Add model field if it doesn't exist
                         if "model" not in config:
                             config["model"] = ""
-                                     
+
                         # Truncate endpoint after "/v1/"
                         if "endpoint" in config:
                             endpoint = config["endpoint"]
                             if "/v1/" in endpoint:
                                 config["endpoint"] = endpoint.split("/v1/")[0] + "/v1/"
-           
+
                 # Update LLM configs if we found any valid ones
                 if new_llm_configs:
                     new_settings["llm_configs"] = new_llm_configs
-                    
+
                     # Set active LLM config to the first one if available
                     if list(new_llm_configs.keys()):
                         new_settings["active_llm_config"] = list(new_llm_configs.keys())[0]
-            
+
             self.logger.info("Old settings successfully converted")
             return new_settings
-            
+
         except Exception as e:
-            self.logger.error(f"Error converting old settings: {str(e)}")
+            self.logger.error(f"Error converting old settings: {e!s}")
             return new_settings  # Return defaults if conversion fails
 
-    def get_general_settings(self) -> Dict[str, Any]:
+    def get_general_settings(self) -> dict[str, Any]:
         """
         Get all general settings.
         
@@ -224,7 +225,7 @@ class SettingsManager:
         """
         return copy.deepcopy(self.settings.get("general", {}))
 
-    def get_appearance_settings(self) -> Dict[str, Any]:
+    def get_appearance_settings(self) -> dict[str, Any]:
         """
         Get all appearance settings.
         
@@ -233,7 +234,7 @@ class SettingsManager:
         """
         return copy.deepcopy(self.settings.get("appearance", {}))
 
-    def get_llm_configs(self) -> Dict[str, Dict[str, Any]]:
+    def get_llm_configs(self) -> dict[str, dict[str, Any]]:
         """
         Get all LLM configurations.
         
@@ -251,7 +252,7 @@ class SettingsManager:
         """
         return self.settings.get("active_llm_config", "")
 
-    def get_active_llm_config(self) -> Optional[Dict[str, Any]]:
+    def get_active_llm_config(self) -> dict[str, Any] | None:
         """
         Get the active LLM configuration.
         
@@ -263,7 +264,7 @@ class SettingsManager:
             return copy.deepcopy(self.settings["llm_configs"][active_name])
         return None
 
-    def get_llm_config(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_llm_config(self, name: str) -> dict[str, Any] | None:
         """
         Get a specific LLM configuration by name.
         
@@ -309,17 +310,17 @@ class SettingsManager:
             # Ensure category exists
             if category not in self.settings:
                 self.settings[category] = {}
-            
+
             # Update the setting
             self.settings[category][key] = value
-            
+
             # Save to ensure file consistency
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error setting {category}.{key}: {str(e)}")
+            self.logger.error(f"Error setting {category}.{key}: {e!s}")
             return False
 
-    def update_llm_configs(self, configs: Dict[str, Dict[str, Any]], default: str) -> bool:
+    def update_llm_configs(self, configs: dict[str, dict[str, Any]], default: str) -> bool:
         """
         Update multiple LLM configurations at once with a dictionary.
         
@@ -330,19 +331,19 @@ class SettingsManager:
             # Ensure llm_configs exists
             if "llm_configs" not in self.settings:
                 self.settings["llm_configs"] = {}
-            
+
             # Update or create the LLM configs
             for name, config in configs.items():
                 self.settings["llm_configs"][name] = copy.deepcopy(config)
             self.settings["active_llm_config"] = default
-            
+
             # Save to ensure file consistency
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error updating multiple LLM configs: {str(e)}")
+            self.logger.error(f"Error updating multiple LLM configs: {e!s}")
             return False
 
-    def update_llm_config(self, name: str, config: Dict[str, Any]) -> bool:
+    def update_llm_config(self, name: str, config: dict[str, Any]) -> bool:
         """
         Update an LLM configuration, creating it if it doesn't exist.
         
@@ -357,14 +358,14 @@ class SettingsManager:
             # Ensure llm_configs exists
             if "llm_configs" not in self.settings:
                 self.settings["llm_configs"] = {}
-            
+
             # Update or create the LLM config
             self.settings["llm_configs"][name] = copy.deepcopy(config)
-            
+
             # Save to ensure file consistency
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error updating LLM config {name}: {str(e)}")
+            self.logger.error(f"Error updating LLM config {name}: {e!s}")
             return False
 
     def delete_llm_config(self, name: str) -> bool:
@@ -387,15 +388,15 @@ class SettingsManager:
                         self.settings["active_llm_config"] = remaining_configs[0]
                     else:
                         self.settings["active_llm_config"] = ""
-                
+
                 # Delete the config
                 del self.settings["llm_configs"][name]
-                
+
                 # Save to ensure file consistency
                 return self._save_settings()
             return False
         except Exception as e:
-            self.logger.error(f"Error deleting LLM config {name}: {str(e)}")
+            self.logger.error(f"Error deleting LLM config {name}: {e!s}")
             return False
 
     def set_active_llm_config(self, name: str) -> bool:
@@ -412,21 +413,21 @@ class SettingsManager:
             # Check if the config exists
             if "llm_configs" in self.settings and name in self.settings["llm_configs"]:
                 self.settings["active_llm_config"] = name
-                
+
                 # Save to ensure file consistency
                 return self._save_settings()
             return False
         except Exception as e:
-            self.logger.error(f"Error setting active LLM config to {name}: {str(e)}")
+            self.logger.error(f"Error setting active LLM config to {name}: {e!s}")
             return False
 
-    def update_general_settings(self, settings_dict: Dict[str, Any]) -> bool:
+    def update_general_settings(self, settings_dict: dict[str, Any]) -> bool:
         return self.update_settings("general", settings_dict)
-    
-    def update_appearance_settings(self, settings_dict: Dict[str, Any]) -> bool:
+
+    def update_appearance_settings(self, settings_dict: dict[str, Any]) -> bool:
         return self.update_settings("appearance", settings_dict)
 
-    def update_settings(self, category, settings_dict: Dict[str, Any]) -> bool:
+    def update_settings(self, category, settings_dict: dict[str, Any]) -> bool:
         """
         Update multiple settings at once with a dictionary.
         
@@ -439,14 +440,14 @@ class SettingsManager:
         try:
             # Deep merge the settings
             self._deep_update(self.settings, category, settings_dict)
-            
+
             # Save to ensure file consistency
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error updating multiple settings: {str(e)}")
+            self.logger.error(f"Error updating multiple settings: {e!s}")
             return False
 
-    def _deep_update(self, target: Dict[str, Any], category: str, source: Dict[str, Any]) -> None:
+    def _deep_update(self, target: dict[str, Any], category: str, source: dict[str, Any]) -> None:
         """
         Recursively update a dictionary without overwriting entire nested dictionaries.
         
@@ -473,10 +474,10 @@ class SettingsManager:
             self.settings = copy.deepcopy(self.DEFAULT_SETTINGS)
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error resetting to defaults: {str(e)}")
+            self.logger.error(f"Error resetting to defaults: {e!s}")
             return False
 
-    def export_settings(self, export_path: Union[str, Path]) -> bool:
+    def export_settings(self, export_path: str | Path) -> bool:
         """
         Export settings to a different file.
         
@@ -489,17 +490,17 @@ class SettingsManager:
         try:
             export_path = Path(export_path)
             export_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             with open(export_path, 'w', encoding='utf-8') as file:
                 json.dump(self.settings, file, indent=4, ensure_ascii=False)
-            
+
             self.logger.info(f"Settings exported successfully to {export_path}")
             return True
         except Exception as e:
-            self.logger.error(f"Error exporting settings: {str(e)}")
+            self.logger.error(f"Error exporting settings: {e!s}")
             return False
 
-    def import_settings(self, import_path: Union[str, Path]) -> bool:
+    def import_settings(self, import_path: str | Path) -> bool:
         """
         Import settings from a different file.
         
@@ -511,38 +512,38 @@ class SettingsManager:
         """
         try:
             import_path = Path(import_path)
-            
+
             if not import_path.exists():
                 self.logger.error(f"Import file does not exist: {import_path}")
                 return False
-            
-            with open(import_path, 'r', encoding='utf-8') as file:
+
+            with open(import_path, encoding='utf-8') as file:
                 data = json.load(file)
-            
+
             # Check version and handle backward compatibility
             if "version" not in data:
                 data = self._convert_old_settings(data)
-            
+
             # Update settings with loaded data
             self.settings.update(data)
-            
+
             # Save to ensure file consistency
             return self._save_settings()
         except Exception as e:
-            self.logger.error(f"Error importing settings: {str(e)}")
+            self.logger.error(f"Error importing settings: {e!s}")
             return False
 
     def sanitize(self, text):
-        return re.sub(r'\W+', '', text)    
-    
+        return re.sub(r'\W+', '', text)
+
     def get_project_path(self, project_name = "", file = ""):
         """Return the path to the project directory and desanitze any filename therein."""
         return os.path.join(os.getcwd(), "Projects", self.sanitize(project_name), file)
-    
+
     def get_project_relpath(self, project_name = "", file = ""):
         """Return the relative path to the project directory and desanitze any filename therein."""
         return os.path.join("Projects", self.sanitize(project_name), file)
-    
+
     def is_project_file_path(self, text: str) -> bool:
         """
         Checks if a string is a relative file path starting with 'Projects/'
@@ -562,15 +563,15 @@ WWSettingsManager = SettingsManager()
 # Example usage
 if __name__ == "__main__":
     settings = SettingsManager("settings.json")
-    
+
     # Get values
     general = settings.get_general_settings()
     appearance = settings.get_appearance_settings()
     active_llm = settings.get_active_llm_config()
-    
+
     # Change a setting
     settings.set_setting("general", "fast_tts", True)
-    
+
     # Update LLM config
     settings.update_llm_config("Claude", {
         "provider": "Anthropic",
@@ -579,9 +580,9 @@ if __name__ == "__main__":
         "api_key": "",
         "timeout": 120
     })
-    
+
     # Set active LLM
     settings.set_active_llm_config("Claude")
-    
+
     # Reset to defaults
     # settings.reset_to_defaults()

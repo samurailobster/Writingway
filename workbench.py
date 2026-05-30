@@ -1,21 +1,33 @@
-from gettext import gettext as _
-import os
 import json
-import shutil
+import os
 import random
-from typing import List
-from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QStackedWidget, QHBoxLayout, QVBoxLayout, QSizePolicy,
-    QToolButton, QPushButton, QLabel, QMessageBox, QMenu, QFileDialog, QInputDialog
-)
+import shutil
+from gettext import gettext as _
+
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from PyQt5.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QStackedWidget,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from compendium.enhanced_compendium import EnhancedCompendiumWindow
+from project_window import project_settings_manager
 from project_window.project_window import ProjectWindow
 from settings.settings_dialog import SettingsDialog
 from settings.settings_manager import WWSettingsManager
 from settings.theme_manager import ThemeManager
-from project_window import project_settings_manager
-from compendium.enhanced_compendium import EnhancedCompendiumWindow
 
 # Define the file used for storing project data.
 PROJECTS_FILE = "projects.json"
@@ -28,7 +40,7 @@ def load_version():
     """Load version data from the version JSON file."""
     if os.path.exists(VERSION_FILE):
         try:
-            with open(VERSION_FILE, "r", encoding="utf-8") as f:
+            with open(VERSION_FILE, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             QMessageBox.warning(None, _("Load Version Error"),
@@ -55,7 +67,7 @@ def load_projects():
     }
     if os.path.exists(filepath):
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 data = json.load(f)
                 # Ensure compatibility with older files
                 if isinstance(data, list):
@@ -327,7 +339,7 @@ class WorkbenchWindow(QMainWindow):
         self.last_opened_project = None
         self.open_project_windows = {}
         self.translation_manager.language_changed.connect(self.on_language_changed)
-        
+
         # Connect to theme change signal
         theme_manager = ThemeManager()
         theme_manager.themeChanged.connect(self.on_theme_changed)
@@ -338,7 +350,7 @@ class WorkbenchWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
         self.main_layout.setSpacing(15)
-        
+
         self.content_layout = QVBoxLayout()
         self.main_layout.addLayout(self.content_layout)
 
@@ -449,7 +461,7 @@ class WorkbenchWindow(QMainWindow):
         file_name = "quotes_pl.json" if language == "pl" else "quotes.json"
         quotes_file = os.path.join(os.getcwd(), "assets", "quotes", file_name)
         try:
-            with open(quotes_file, "r", encoding="utf-8") as f:
+            with open(quotes_file, encoding="utf-8") as f:
                 quotes = json.load(f)
             if not quotes:
                 raise ValueError(_("Empty quotes list"))
@@ -459,7 +471,7 @@ class WorkbenchWindow(QMainWindow):
                 print(f"Falling back to English quotes due to error: {e}")
                 fallback_file = os.path.join(os.getcwd(), "assets", "quotes", "quotes.json")
                 try:
-                    with open(fallback_file, "r", encoding="utf-8") as f:
+                    with open(fallback_file, encoding="utf-8") as f:
                         quotes = json.load(f)
                     if not quotes:
                         raise ValueError(_("Empty quotes list"))
@@ -658,7 +670,7 @@ class WorkbenchWindow(QMainWindow):
         self.settings_button.setIcon(ThemeManager.get_tinted_icon(cog_icon_path))
         self.left_button.setIcon(ThemeManager.get_tinted_icon(os.path.join("assets", "icons", "chevron-left.svg")))
         self.right_button.setIcon(ThemeManager.get_tinted_icon(os.path.join("assets", "icons", "chevron-right.svg")))
-        
+
         # Refresh project cover widgets
         for i in range(self.coverStack.count()):
             widget = self.coverStack.widget(i)
@@ -667,20 +679,21 @@ class WorkbenchWindow(QMainWindow):
                 cover_button = widget.coverButton
                 if hasattr(cover_button, 'setup_ui'):
                     cover_button.setup_ui()
-        
+
         # Refresh all open project windows
         for project_name, project_window in self.open_project_windows.items():
             if project_window and project_window.isVisible():
                 project_window.change_theme(theme_name)
-                
-    def get_project_list(self) -> List[str]:
+
+    def get_project_list(self) -> list[str]:
         """ Extract a list of "name" values from the PROJECTS list of dicts """
         project_list = [project.get("name", "Unnamed Project") for project in PROJECTS]
         return project_list
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
     import sys
+
+    from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     window = WorkbenchWindow()
     window.show()

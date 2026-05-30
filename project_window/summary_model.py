@@ -1,6 +1,8 @@
 import re
+
 import tiktoken
 from PyQt5.QtCore import Qt
+
 
 class SummaryModel:
     def __init__(self, project_name, max_tokens=16000, encoding_name="cl100k_base"):
@@ -55,7 +57,7 @@ class SummaryModel:
         """Recursively gather content from child scenes or summaries from chapters/acts."""
         scene_data = []
         hierarchy = self._get_hierarchy(item)
-        
+
         # If project_model is provided, use it to load summaries for acts/chapters
         if force_scene_text == False and project_model and len(hierarchy) == 2:  # Chapter level
             node = project_model._get_node_by_hierarchy(hierarchy)
@@ -68,7 +70,7 @@ class SummaryModel:
                         "hierarchy": hierarchy,
                         "type": "summary"
                     }]
-        
+
         # Scene-level or no summary available, gather scene content
         if item.childCount() == 0:
             data = item.data(0, Qt.ItemDataRole.UserRole)

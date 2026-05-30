@@ -1,10 +1,11 @@
 import json
 import os
-import re
-from typing import Dict
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+
 from .settings_manager import WWSettingsManager
+
 
 class SelectionManager:
     """Manages persistence of checkbox selections for a QTreeWidget instance in a project, scoped by panel."""
@@ -21,7 +22,7 @@ class SelectionManager:
         self._panel_id = panel_id
         self.selection_file = WWSettingsManager.get_project_relpath(project_name, selection_file_name)
 
-    def load_selections(self) -> Dict[str, bool]:
+    def load_selections(self) -> dict[str, bool]:
         """
         Load saved checkbox selections for the panel specified at initialization.
 
@@ -30,7 +31,7 @@ class SelectionManager:
         """
         if os.path.exists(self.selection_file):
             try:
-                with open(self.selection_file, "r", encoding="utf-8") as f:
+                with open(self.selection_file, encoding="utf-8") as f:
                     data = json.load(f)
                 panel_data = data.get("panels", {}).get(self._panel_id, {"selections": []})
                 return {item["path"]: item["checked"] for item in panel_data.get("selections", [])}
@@ -64,7 +65,7 @@ class SelectionManager:
         # Load existing data to preserve other panels' selections
         try:
             if os.path.exists(self.selection_file):
-                with open(self.selection_file, "r", encoding="utf-8") as f:
+                with open(self.selection_file, encoding="utf-8") as f:
                     data = json.load(f)
             else:
                 data = {}

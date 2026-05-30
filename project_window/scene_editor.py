@@ -1,22 +1,34 @@
-from gettext import gettext as _
-import os
 import glob
+import json
+import os
 import re
 import sys
-import json
+from gettext import gettext as _
 
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QToolBar, QAction, QColorDialog,
-    QFontComboBox, QComboBox, QLabel, QMessageBox, QTextEdit, QStyle, QShortcut
-)
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QTextCursor, QColor, QTextCharFormat, QPen, QKeySequence, QIcon, QPixmap
-
-from .focus_mode import PlainTextEdit
+from PyQt5.QtGui import QColor, QFont, QIcon, QKeySequence, QPen, QPixmap, QTextCharFormat, QTextCursor
+from PyQt5.QtWidgets import (
+    QAction,
+    QColorDialog,
+    QComboBox,
+    QFontComboBox,
+    QLabel,
+    QMessageBox,
+    QShortcut,
+    QStyle,
+    QTextEdit,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+)
 from spylls.hunspell import Dictionary
-from util.find_dialog import FindDialog
+
 from settings.theme_manager import ThemeManager
 from util.color_manager import ColorManager
+from util.find_dialog import FindDialog
+
+from .focus_mode import PlainTextEdit
+
 
 class SceneEditor(QWidget):
     """Scene editor with toolbar, text area, and spellchecking support."""
@@ -37,7 +49,7 @@ class SceneEditor(QWidget):
         self.extra_selections = []
         self.settings_file = os.path.join(self.dict_dir, "editor_settings.json")
         self.saved_language = "Off"
-        
+
         # Load saved language preference if available
         self.load_language_preference()
 
@@ -160,7 +172,7 @@ class SceneEditor(QWidget):
         self.spellcheck_timer.setSingleShot(True)
         self.spellcheck_timer.setInterval(500)
         self.spellcheck_timer.timeout.connect(self.check_spelling)
-        
+
         # Set a callback to check spelling when content is loaded
         QTimer.singleShot(500, self.delayed_initial_check)
 
@@ -259,7 +271,7 @@ class SceneEditor(QWidget):
             )
             self.dictionary = None
             self.clear_spellcheck_highlights()
-        
+
     def save_language_preference(self, lang):
         try:
             os.makedirs(os.path.dirname(self.settings_file), exist_ok=True)
@@ -269,16 +281,16 @@ class SceneEditor(QWidget):
             self.saved_language = lang
         except Exception as e:
             print(f"Error saving language preference: {e}")
-            
+
     def load_language_preference(self):
         try:
             if os.path.exists(self.settings_file):
-                with open(self.settings_file, 'r', encoding='utf-8') as f:
+                with open(self.settings_file, encoding='utf-8') as f:
                     settings = json.load(f)
                     self.saved_language = settings.get("language", "Off")
         except Exception as e:
             print(f"Error loading language preference: {e}")
-            
+
     def apply_saved_language(self):
         if self.saved_language not in self.languages:
             return
@@ -308,21 +320,21 @@ class SceneEditor(QWidget):
             return
         text = self.editor.toPlainText()
         self.extra_selections = []
-        
+
         # Create enhanced format for spelling errors
         fmt = QTextCharFormat()
         fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
         fmt.setUnderlineColor(QColor(255, 0, 0))  # Bright red
-        
+
         # Make underline thicker with pen
         pen = QPen(QColor(255, 0, 0))
         pen.setWidth(2)  # Thicker underline
         fmt.setUnderlineColor(pen.color())
-        
+
         # Use improved regex for word detection that can handle apostrophes and hyphens
         # This matches words and contractions better than the simple \w+ pattern
         word_pattern = r'\b[a-zA-Z]+[\'-]?[a-zA-Z]*\b'
-        
+
         for m in re.finditer(word_pattern, text):
             w = m.group()
             if not self.dictionary.lookup(w):
@@ -436,12 +448,12 @@ class SceneEditor(QWidget):
             action = getattr(self, f"{name}_action", None)
             if action:
                 action.setIcon(ThemeManager.get_tinted_icon(path, tint_color))
-        
+
         # Update TTS action
         tts_action = getattr(self, "tts_action", None)
         if tts_action:
             tts_action.setIcon(ThemeManager.get_tinted_icon("assets/icons/play-circle.svg", tint_color))
-        
+
         # Update alignment actions
         alignment_actions = [
             ("align_left", "assets/icons/align-left.svg"),
@@ -452,7 +464,7 @@ class SceneEditor(QWidget):
             action = getattr(self, f"{name}_action", None)
             if action:
                 action.setIcon(ThemeManager.get_tinted_icon(path, tint_color))
-        
+
         # Update scene-specific actions
         scene_actions = [
             ("manual_save", "assets/icons/save.svg"),
@@ -463,7 +475,7 @@ class SceneEditor(QWidget):
             action = getattr(self, f"{name}_action", None)
             if action:
                 action.setIcon(ThemeManager.get_tinted_icon(path, tint_color))
-            
+
     def open_find_dialog(self):
         if self.find_dialog is None:
             self.find_dialog = FindDialog(self.editor, self)

@@ -1,9 +1,10 @@
-import pyttsx3
-import json, os
-import threading
 import logging
 import platform
 import subprocess
+import threading
+
+import pyttsx3
+
 from settings.settings_manager import WWSettingsManager
 
 # Configure logging

@@ -1,14 +1,17 @@
-from gettext import gettext as _
 import os
 import time
 import uuid
-from typing import Optional
-from PyQt5.QtCore import pyqtSignal, QObject
-from . import project_settings_manager as psm
+from gettext import gettext as _
+
+from PyQt5.QtCore import QObject, pyqtSignal
+
 from compendium.compendium_manager import CompendiumManager
+from settings.autosave_manager import get_latest_autosave_path, load_latest_autosave, save_scene
 from settings.settings_manager import WWSettingsManager
-from settings.autosave_manager import load_latest_autosave, save_scene, get_latest_autosave_path
-from .tree_manager import load_structure, save_structure, update_structure_from_tree, get_structure_file_path
+
+from . import project_settings_manager as psm
+from .tree_manager import get_structure_file_path, load_structure, save_structure, update_structure_from_tree
+
 
 class ProjectModel(QObject):
     """Manages project data and persistence."""
@@ -59,7 +62,7 @@ class ProjectModel(QObject):
     def save_structure(self):
         save_structure(self.project_name, self.structure)
 
-    def load_autosave(self, hierarchy, node: Optional[dict]=None):
+    def load_autosave(self, hierarchy, node: dict | None=None):
         return load_latest_autosave(self.project_name, hierarchy, node)
 
     def migrate_legacy_content(self):
@@ -94,7 +97,7 @@ class ProjectModel(QObject):
         if os.path.exists(backup_path):
             self.save_structure()
 
-    def load_scene_content(self, hierarchy) -> Optional[str]:
+    def load_scene_content(self, hierarchy) -> str | None:
         node = self._get_node_by_hierarchy(hierarchy)
         if not node:
             return None
@@ -117,7 +120,7 @@ class ProjectModel(QObject):
             content = "\n".join(content.split("\n")[1:])
         return content
 
-    def save_scene(self, hierarchy, content, expected_project_name: Optional[str]=None):
+    def save_scene(self, hierarchy, content, expected_project_name: str | None=None):
         node = self._get_node_by_hierarchy(hierarchy)
         if not node:
             return None
@@ -130,7 +133,7 @@ class ProjectModel(QObject):
             self.save_structure()
             self.structureChanged.emit(hierarchy, uuid_val)
         return filepath
-    
+
     def save_summary(self, hierarchy, summary_text):
         node = self._get_node_by_hierarchy(hierarchy)
         if not node:
@@ -148,7 +151,7 @@ class ProjectModel(QObject):
         except Exception as e:
             print(f"Error saving summary for {hierarchy}: {e}")
             return False
-    
+
     def save_summary_to_file(self, hierarchy, summary_text):
         """
         Save the summary to a file and update the structure with the filepath.
@@ -204,7 +207,7 @@ class ProjectModel(QObject):
         self.structureChanged.emit(hierarchy, uuid_val)
         return True
 
-    def load_summary(self, hierarchy: Optional[list] = None, uuid: Optional[str] = None) -> Optional[str]:
+    def load_summary(self, hierarchy: list | None = None, uuid: str | None = None) -> str | None:
         if uuid and hierarchy:
             raise ValueError(_("Provide either uuid or hierarchy, not both"))
         if not uuid and not hierarchy:
@@ -224,13 +227,13 @@ class ProjectModel(QObject):
         elif node and node.get("has_summary", False): # node is saved to file
             return self._load_summary_from_file(node)
         return None
-    
-    def _load_summary_from_file(self, node: dict, summary_file:Optional[str] = None):
+
+    def _load_summary_from_file(self, node: dict, summary_file:str | None = None):
         if not summary_file:
             summary_file = node.get("latest_file", '')
         if summary_file and os.path.exists(summary_file):
             try:
-                with open(summary_file, "r", encoding="utf-8") as f:
+                with open(summary_file, encoding="utf-8") as f:
                     content = f.read()
                     # Strip UUID comment
                     if content.startswith("<!-- UUID:"):
@@ -241,7 +244,7 @@ class ProjectModel(QObject):
                 return None
         return None
 
-    
+
     def _find_node_by_uuid(self, nodes, target_uuid):
         for node in nodes:
             if node.get("uuid") == target_uuid:
@@ -251,13 +254,13 @@ class ProjectModel(QObject):
                 if result:
                     return result
         return None
-    
+
     def _check_duplicate_name(self, nodes, name, exclude_uuid=None):
         for node in nodes:
             if node["name"] == name and (exclude_uuid is None or node["uuid"] != exclude_uuid):
                 return True
         return False
-    
+
     def add_act(self, act_name):
         if self._check_duplicate_name(self.structure.get("acts", []), act_name):
             self.errorOccurred.emit(_("An Act named '{}' already exists. Please choose a unique name.").format(act_name))
@@ -336,7 +339,7 @@ class ProjectModel(QObject):
                     current = item.get("chapters" if level == 0 else "scenes", [])
                     break
         return current
-    
+
     def delete_node(self, hierarchy):
         node = self._get_node_by_hierarchy(hierarchy)
         uuid_val = node.get("uuid") or None

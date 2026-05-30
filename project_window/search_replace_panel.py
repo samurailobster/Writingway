@@ -1,10 +1,23 @@
-from gettext import gettext as _
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QTreeWidget, 
-    QTreeWidgetItem, QPushButton, QToolButton, QMenu, QAction, QTextEdit, QLabel)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QColor, QTextCursor, QBrush, QFont, QTextDocument, QTextCharFormat
 import re
+from gettext import gettext as _
+
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QBrush, QColor, QFont, QTextCursor, QTextDocument
+from PyQt5.QtWidgets import (
+    QAction,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QPushButton,
+    QTextEdit,
+    QToolButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 from settings.theme_manager import ThemeManager
 
 SEARCH_DELAY = 500
@@ -119,19 +132,19 @@ class SearchReplacePanel(QWidget):
         self.menu_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/more-vertical.svg", self.tint_color))
         self.menu_button.setToolTip(_("Search options"))
         self.menu = QMenu(self)
-        
+
         # Regex toggle action
         self.regex_action = QAction(_("Regex Search"), self)
         self.regex_action.setCheckable(True)
         self.regex_action.toggled.connect(self.on_regex_toggled)
         self.menu.addAction(self.regex_action)
-        
+
         # Replace toggle action
         self.replace_action = QAction(_("Show Replace"), self)
         self.replace_action.setCheckable(True)
         self.replace_action.toggled.connect(self.toggle_replace)
         self.menu.addAction(self.replace_action)
-        
+
         self.menu_button.setMenu(self.menu)
         self.menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         search_layout.addWidget(self.menu_button)
@@ -416,7 +429,7 @@ class SearchReplacePanel(QWidget):
         """Select a match, save current changes, and load its scene with highlighting."""
         # Save unsaved changes before switching scenes
         self.controller.check_unsaved_changes()
-        
+
         self.current_match = self.matches[index]
         scene_item, match_item = self.current_match
         self.results_tree.setCurrentItem(match_item)
@@ -512,43 +525,43 @@ class SearchReplacePanel(QWidget):
         # Strip UUID comment if present
         if content.startswith("<!-- UUID:"):
             content = "\n".join(content.split("\n")[1:])
-        
+
         # Load content into QTextDocument
         doc = QTextDocument()
         doc.setHtml(content)
         plain_content = doc.toPlainText()
-        
+
         # Validate position
         if position + len(match_text) > len(plain_content):
             self.controller.statusBar().showMessage(_("Match position is invalid; content may have changed"), 5000)
             return
-        
+
         # Verify the match text at the position
         if plain_content[position:position + len(match_text)] != match_text:
             self.controller.statusBar().showMessage(_("Match text does not match; content may have changed"), 5000)
             return
-        
+
         replace_text = self.replace_input.text()
         cursor = QTextCursor(doc)
         cursor.setPosition(position)
         cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
-        
+
         # Check if the match is in CJK text
         is_cjk = is_cjk_text(match_text)
-        
+
         space_removed = False
         punctuation_removed = False
         before_char = plain_content[position - 1] if position > 0 else ""
         after_char = plain_content[position + len(match_text)] if position + len(match_text) < len(plain_content) else ""
         space_after = after_char.isspace()  # Check if there's a space after the match
-        
+
         if replace_text == "" and not is_cjk:
             # Handle empty string replacement for non-CJK text
             is_start_of_sentence = is_sentence_start(plain_content, position)
-            
+
             # Remove the matched text
             cursor.removeSelectedText()
-            
+
             # Clean up spaces and punctuation
             if before_char.isspace() and after_char.isspace():
                 # Remove one space to avoid double spaces
@@ -563,7 +576,7 @@ class SearchReplacePanel(QWidget):
                     cursor.removeSelectedText()
                     space_removed = True
                     position -= 1  # Adjust position for removed space
-            
+
             # Handle sentence start: capitalize next word
             if is_start_of_sentence:
                 next_char_pos = find_next_non_space_char(plain_content, position + len(match_text))
@@ -583,10 +596,10 @@ class SearchReplacePanel(QWidget):
         else:
             # Normal replacement (including CJK or non-empty replace_text)
             cursor.insertText(replace_text)  # Insert replacement text, preserving formatting
-        
+
         # Get updated content
         new_content = doc.toHtml()
-        
+
         # Save the modified content
         filepath = self.model.save_scene(hierarchy, new_content)
         if filepath:
@@ -645,7 +658,7 @@ class SearchReplacePanel(QWidget):
             scenes_to_update[hierarchy_key].append((position, match_text, original_match_text))
 
         replacement_count = 0
-        from PyQt5.QtGui import QTextDocument, QTextCursor
+        from PyQt5.QtGui import QTextCursor, QTextDocument
         for hierarchy_key, replacements in scenes_to_update.items():
             hierarchy = list(hierarchy_key)  # Convert back to list for model methods
             modified_hierarchies.add(tuple(hierarchy))
@@ -655,44 +668,44 @@ class SearchReplacePanel(QWidget):
             # Strip UUID comment if present
             if content.startswith("<!-- UUID:"):
                 content = "\n".join(content.split("\n")[1:])
-            
+
             # Load content into QTextDocument
             doc = QTextDocument()
             doc.setHtml(content)
             plain_content = doc.toPlainText()
-            
+
             # Sort replacements in reverse order to avoid position shifts
             replacements.sort(reverse=True)
             cursor = QTextCursor(doc)
             position_adjustments = {}  # Track position shifts for match updates
             match_contexts = {}  # Store context for each match
-            
+
             for pos, match_text, original_match_text in replacements:
                 if pos + len(match_text) > len(plain_content):
                     continue
                 # Verify the match text at the position
                 if plain_content[pos:pos + len(match_text)] != match_text:
                     continue
-                
+
                 # Check if the match is in CJK text
                 is_cjk = is_cjk_text(match_text)
                 cursor.setPosition(pos)
                 cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
-                
+
                 space_removed = False
                 punctuation_removed = False
                 before_char = plain_content[pos - 1] if pos > 0 else ""
                 after_char = plain_content[pos + len(match_text)] if pos + len(match_text) < len(plain_content) else ""
                 space_after = after_char.isspace()  # Check if there's a space after the match
                 position_adjustment = 0
-                
+
                 if replace_text == "" and not is_cjk:
                     # Handle empty string replacement for non-CJK text
                     is_start_of_sentence = is_sentence_start(plain_content, pos)
-                    
+
                     # Remove the matched text
                     cursor.removeSelectedText()
-                    
+
                     # Clean up spaces and punctuation
                     if before_char.isspace() and after_char.isspace():
                         # Remove one space to avoid double spaces
@@ -709,7 +722,7 @@ class SearchReplacePanel(QWidget):
                             space_removed = True
                             position_adjustment = -1
                             pos -= 1
-                    
+
                     # Handle sentence start: capitalize next word
                     if is_start_of_sentence:
                         next_char_pos = find_next_non_space_char(plain_content, pos + len(match_text))
@@ -731,7 +744,7 @@ class SearchReplacePanel(QWidget):
                     # Normal replacement (including CJK or non-empty replace_text)
                     cursor.insertText(replace_text)
                     position_adjustment = len(replace_text) - len(match_text)
-                
+
                 position_adjustments[pos] = position_adjustment
                 match_contexts[pos] = {
                     "space_removed": space_removed,
@@ -741,10 +754,10 @@ class SearchReplacePanel(QWidget):
                     "space_after": space_after
                 }
                 replacement_count += 1
-            
+
             # Get updated content
             new_content = doc.toHtml()
-            
+
             # Save the modified content
             filepath = self.model.save_scene(hierarchy, new_content)
             if filepath:
@@ -774,7 +787,7 @@ class SearchReplacePanel(QWidget):
                             "after_char": match_contexts.get(pos, {}).get("after_char", ""),
                             "space_after": match_contexts.get(pos, {}).get("space_after", False)
                         })
-        
+
         # Update self.matches to reflect replacements
         self.matches = [(s, m) for s, m in self.matches]
         self.results_tree.expandAll()
@@ -805,21 +818,21 @@ class SearchReplacePanel(QWidget):
         # Strip UUID comment if present
         if content.startswith("<!-- UUID:"):
             content = "\n".join(content.split("\n")[1:])
-        
+
         # Load content into QTextDocument
-        from PyQt5.QtGui import QTextDocument, QTextCursor
+        from PyQt5.QtGui import QTextCursor, QTextDocument
         doc = QTextDocument()
         doc.setHtml(content)
         plain_content = doc.toPlainText()
-        
+
         # Validate position
         if position > len(plain_content):
             self.controller.statusBar().showMessage(_("Invalid position for undo"), 5000)
             return
-        
+
         cursor = QTextCursor(doc)
         undo_position = position
-        
+
         # Adjust position for removed space (e.g., before punctuation)
         if space_removed and before_char.isspace() and after_char in ",.!?;":
             undo_position += 1  # Account for removed space before punctuation
@@ -827,23 +840,23 @@ class SearchReplacePanel(QWidget):
             cursor.insertText(" ")  # Restore the space before the match
         else:
             cursor.setPosition(undo_position)
-        
+
         # Remove the current text (empty for "" replacements)
         if match_text:
             cursor.movePosition(QTextCursor.MoveOperation.NextCharacter, QTextCursor.MoveMode.KeepAnchor, len(match_text))
             cursor.removeSelectedText()
-        
+
         # Insert original match text
         cursor.insertText(original_match_text)
-        
+
         # Restore space after match if it existed
         if space_after:
             cursor.insertText(" ")
-        
+
         # Restore punctuation if removed
         if punctuation_removed and after_char in ",.!?;":
             cursor.insertText(after_char)
-        
+
         # If sentence start, undo capitalization of the next word
         if is_sentence_start(plain_content, position):
             next_char_pos = find_next_non_space_char(plain_content, position + len(original_match_text))
@@ -853,10 +866,10 @@ class SearchReplacePanel(QWidget):
                 next_char = cursor.selectedText()
                 cursor.removeSelectedText()
                 cursor.insertText(next_char.lower())
-        
+
         # Get updated content
         new_content = doc.toHtml()
-        
+
         # Save the modified content
         filepath = self.model.save_scene(hierarchy, new_content)
         if filepath:
@@ -898,7 +911,7 @@ class SearchReplacePanel(QWidget):
             # Save unsaved changes before switching scenes
             self.controller.check_unsaved_changes()
             self._programmatic_change = True
-            
+
             try:
                 hierarchy = item.data(0, Qt.ItemDataRole.UserRole)["hierarchy"]
                 position = item.data(0, Qt.ItemDataRole.UserRole)["position"]

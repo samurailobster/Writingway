@@ -5,13 +5,15 @@ text_analysis_mk.py
 Macedonian-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 # Tooltip translations for Macedonian
 TOOLTIP_TRANSLATIONS = {
@@ -77,7 +79,7 @@ MACEDONIAN_DATA = {
     "weak_terms": {"можеби", "веројатно", "изгледа", "како да", "малку", "некако"},
     "standard_speech_verbs": {"кажам", "прашам"},
     "speech_verbs": {"кажам", "прашам", "шаптам", "извикам", "муркнам"},
-    "filter_words": {"видел", "чува", "чув", "забележал", "размислил", "набљудувал", "гледал", "слушал", "осетил", "одлучил", "се појавил", "забележал", "се осетил"},
+    "filter_words": {"видел", "чува", "чув", "забележал", "размислил", "набљудувал", "гледал", "слушал", "осетил", "одлучил", "се појавил", "се осетил"},
     "telling_verbs": {"биде", "се чувствува", "изгледа", "се појавува", "станува"},
     "emotion_words": {"лош", "тажен", "среќен", "возбуден", "нервен", "страшен", "загрижен", "осрамнет", "разочаран", "фрустриран", "задоволен", "ентусијастичен", "завистлив"},
     "weak_verbs": {"биде"},

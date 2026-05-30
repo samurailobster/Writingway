@@ -1,13 +1,20 @@
-from gettext import gettext as _
 import os
-import sys
 import re
-from PyQt5.QtCore import Qt, QPropertyAnimation
+import sys
+from gettext import gettext as _
+
+from PyQt5.QtCore import QPropertyAnimation, Qt
+from PyQt5.QtGui import QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QLabel, QGridLayout, QVBoxLayout,
-    QGraphicsOpacityEffect, QApplication, QTextEdit
+    QApplication,
+    QGraphicsOpacityEffect,
+    QGridLayout,
+    QLabel,
+    QMainWindow,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtGui import QPixmap, QKeyEvent
 
 # Subclass QTextEdit to force plain text paste
 
@@ -16,13 +23,13 @@ class PlainTextEdit(QTextEdit):
     def __init__(self):
         super().__init__()
         self.zoom_factor = 10  # Default zoom level
-       
+
     def adjust_zoom(self, delta):
         # Update zoom factor (ensure it stays within reasonable bounds)
         self.zoom_factor = max(5, min(self.zoom_factor + delta, 30))  # 50% to 300%
-        
+
         # Apply the zoom factor to the viewport
-        stylesheet = self.styleSheet();
+        stylesheet = self.styleSheet()
         loc = stylesheet.find("font-size")
         if loc == -1:
             stylesheet += f" font-size: {self.zoom_factor * 10}%;"
@@ -35,7 +42,7 @@ class PlainTextEdit(QTextEdit):
     def toHtmlPreservingOriginal(self):
         # Export the HTML without the zoom factor affecting font sizes
         return self.document().toHtml()
-    
+
     def insertFromMimeData(self, source):
         self.insertPlainText(source.text())
 

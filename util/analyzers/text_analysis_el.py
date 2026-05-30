@@ -5,14 +5,15 @@ text_analysis_el.py
 Greek-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
-import math
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -78,9 +79,9 @@ GREEK_DATA = {
     "speech_verbs": {"λέω", "ρωτάω", "ψιθυρίζω", "φωνάζω", "μουρμουρίζω", "αναφωνώ"},
     "filter_words": {"είδε", "άκουσε", "ένιωσε", "παρατήρησε", "σκέφτηκε", "αναρωτήθηκε", "παρακολούθησε", "κοίταξε", "άκουγε", "αισθάνθηκε", "αποφάσισε", "σκεφτόταν", "φαινόταν", "εμφανίστηκε", "παρατηρούσε", "ένιωθε", "αντιλαμβανόταν", "φανταζόταν"},
     "telling_verbs": {"είμαι", "νιώθω", "φαίνομαι", "μοιάζω", "εμφανίζομαι", "γίνομαι"},
-    "emotion_words": {"θυμωμένος", "λυπημένος", "χαρούμενος", "ενθουσιασμένος", "νευρικός", "τρομαγμένος", "ανήσυχος", "ντροπιασμένος", "απογοητευμένος", "απογοητευμένος", "εκνευρισμένος", "ανήσυχος", "φοβισμένος", "χαρούμενος", "καταθλιπτικός", "δυστυχισμένος", "εκστατικός", "αναστατωμένος", "εξοργισμένος", "ενθουσιασμένος", "σοκαρισμένος", "έκπληκτος", "μπερδεμένος", "περήφανος", "ευχαριστημένος", "ικανοποιημένος", "ενθουσιώδης", "ζηλιάρης"},
+    "emotion_words": {"θυμωμένος", "λυπημένος", "χαρούμενος", "ενθουσιασμένος", "νευρικός", "τρομαγμένος", "ανήσυχος", "ντροπιασμένος", "απογοητευμένος", "εκνευρισμένος", "φοβισμένος", "καταθλιπτικός", "δυστυχισμένος", "εκστατικός", "αναστατωμένος", "εξοργισμένος", "σοκαρισμένος", "έκπληκτος", "μπερδεμένος", "περήφανος", "ευχαριστημένος", "ικανοποιημένος", "ενθουσιώδης", "ζηλιάρης"},
     "weak_verbs": {"είμαι"},
-    "common_words": {"και", "σε", "για", "από", "με", "το", "του", "της", "τα", "των", "ένα", "μια", "στο", "στη", "στον", "στην", "είναι", "ήταν", "έχει", "έχουν", "αυτό", "αυτός", "αυτή", "εκεί", "εδώ", "μου", "σου", "του", "της", "μας", "σας", "τους", "δεν", "ναι", "αν", "όταν", "επειδή", "γιατί", "που", "οποίος", "οποία", "οποίο"},
+    "common_words": {"και", "σε", "για", "από", "με", "το", "του", "της", "τα", "των", "ένα", "μια", "στο", "στη", "στον", "στην", "είναι", "ήταν", "έχει", "έχουν", "αυτό", "αυτός", "αυτή", "εκεί", "εδώ", "μου", "σου", "μας", "σας", "τους", "δεν", "ναι", "αν", "όταν", "επειδή", "γιατί", "που", "οποίος", "οποία", "οποίο"},
     "quote_pattern": r'«[^»]*»|\"[^\"]*\"'
 }
 
@@ -140,11 +141,11 @@ class GreekTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?;]+', text)  # Note: ';' is Greek question mark
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Estimate syllables by counting vowels (α, ε, η, ι, ο, υ, ω) and diphthongs
         vowels = 'αεηιουωάέήίόύώϊϋΐΰ'
         diphthongs = ['αι', 'οι', 'ει', 'υι', 'αυ', 'ευ', 'ηυ', 'ου']
-        
+
         total_syllables = 0
         for word in words:
             word = word.lower()
@@ -160,33 +161,33 @@ class GreekTextAnalysis(BaseTextAnalysis, QObject):
                             is_diphthong = True
                             i += 2
                             break
-                
+
                 # If not a diphthong, check for single vowels
                 if not is_diphthong:
                     if word[i] in vowels:
                         syllables += 1
                     i += 1
-            
+
             # Ensure each word has at least one syllable
             if syllables == 0:
                 syllables = 1
-                
+
             total_syllables += syllables
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         # Simplified adaptation of Flesch-Kincaid for Greek
         average_sentence_length = num_words / num_sentences
         average_syllables_per_word = total_syllables / num_words
-        
+
         # Formula: 206.835 - (1.015 * ASL) - (84.6 * ASW)
         # Adjusted for Greek text
         readability = 206.835 - (1.015 * average_sentence_length) - (84.6 * average_syllables_per_word)
-        
+
         # Constrain to 0-100 range for easier interpretation
         return max(0, min(100, readability))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Greek."""
         return TOOLTIP_TRANSLATIONS

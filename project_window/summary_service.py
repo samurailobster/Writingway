@@ -1,6 +1,9 @@
-from settings.llm_worker import LLMWorker
-from PyQt5.QtCore import QObject, pyqtSignal
 import traceback
+
+from PyQt5.QtCore import QObject, pyqtSignal
+
+from settings.llm_worker import LLMWorker
+
 
 class SummaryService(QObject):
     summary_generated = pyqtSignal(str)
@@ -42,9 +45,9 @@ class SummaryService(QObject):
             self.worker.start()
             print(f"DEBUG: Started LLMWorker: {id(self.worker)}")
         except Exception as e:
-            print(f"DEBUG: Error in generate_summary: {str(e)}")
+            print(f"DEBUG: Error in generate_summary: {e!s}")
             traceback.print_exc()
-            self.error_occurred.emit(f"Failed to generate summary: {str(e)}")
+            self.error_occurred.emit(f"Failed to generate summary: {e!s}")
             self.finished.emit()  # Allow continuation on error
 
     def _on_data_received(self, text):

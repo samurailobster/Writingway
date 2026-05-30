@@ -1,6 +1,8 @@
 from gettext import gettext as _
-from PyQt5.QtWidgets import QInputDialog
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QInputDialog
+
 
 def add_act(window):
     """Add a new act using ProjectModel."""

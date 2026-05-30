@@ -5,14 +5,15 @@ text_analysis_da.py
 Danish-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-import math
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -78,7 +79,7 @@ DANISH_DATA = {
     "speech_verbs": {"sige", "spørge", "hviske", "råbe", "mumle", "udbryde"},
     "filter_words": {"så", "hørte", "følte", "bemærkede", "tænkte", "spekulerede", "observerede", "kiggede", "lyttede", "fornemmede", "besluttede", "overvejede", "syntes", "dukkede op", "iagttog", "oplevede", "opfattede", "forestillede sig"},
     "telling_verbs": {"være", "føle", "synes", "se ud", "dukke op", "blive"},
-    "emotion_words": {"vred", "ked af det", "glad", "begejstret", "nervøs", "bange", "bekymret", "flov", "skuffet", "frustreret", "irriteret", "urolig", "bange", "lykkelig", "trist", "ulykkelig", "ekstatisk", "ophidset", "rasende", "henrykt", "chokeret", "overrasket", "forvirret", "stolt", "tilfreds", "tilfreds", "entusiastisk", "jaloux"},
+    "emotion_words": {"vred", "ked af det", "glad", "begejstret", "nervøs", "bange", "bekymret", "flov", "skuffet", "frustreret", "irriteret", "urolig", "lykkelig", "trist", "ulykkelig", "ekstatisk", "ophidset", "rasende", "henrykt", "chokeret", "overrasket", "forvirret", "stolt", "tilfreds", "entusiastisk", "jaloux"},
     "weak_verbs": {"være"},
     "common_words": {"og", "i", "på", "med", "til", "om", "men", "eller", "som", "er", "var", "har", "havde", "dette", "den", "det", "de", "der", "her", "min", "din", "hans", "hendes", "vores", "jeres", "deres", "sig", "ikke", "ja", "nej", "hvis", "når", "fordi", "hvilken", "hvilke"},
     "quote_pattern": r'„[^"]*"|\"[^\"]*\"'
@@ -146,25 +147,25 @@ class DanishTextAnalysis(BaseTextAnalysis, QObject):
         """
         words = text.split()
         num_words = len(words)
-        
+
         # Count sentences - split by period, exclamation mark, or question mark
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Count long words (more than 6 characters)
         num_long_words = sum(1 for word in words if len(word) > 6)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         # Calculate LIX
         words_per_sentence = num_words / num_sentences
         percentage_long_words = (num_long_words * 100) / num_words
         lix = words_per_sentence + percentage_long_words
-        
+
         return lix
-        
+
     def get_tooltips(self):
         """Returns tooltips in Danish."""
         return TOOLTIP_TRANSLATIONS

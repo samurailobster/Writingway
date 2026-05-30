@@ -5,13 +5,15 @@ text_analysis_ru.py
 Russian-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -77,7 +79,7 @@ RUSSIAN_DATA = {
     "speech_verbs": {"сказать", "спросить", "прошептать", "крикнуть", "пробормотать", "воскликнуть"},
     "filter_words": {"видел", "слышал", "чувствовал", "заметил", "подумал", "задумался", "наблюдал", "смотрел", "слушал", "ощущал", "решил", "рассматривал", "казалось", "появился", "наблюдаемый", "почувствовал", "воспринимал", "воображал"},
     "telling_verbs": {"быть", "чувствовать", "казаться", "выглядеть", "появляться", "становиться"},
-    "emotion_words": {"злой", "грустный", "счастливый", "взволнованный", "нервный", "испуганный", "обеспокоенный", "смущенный", "разочарованный", "расстроенный", "раздраженный", "тревожный", "напуганный", "радостный", "подавленный", "несчастный", "восторженный", "нервный", "яростный", "восхищенный", "шокированный", "удивленный", "сбитый с толку", "гордый", "довольный", "удовлетворенный", "восторженный", "завистливый"},
+    "emotion_words": {"злой", "грустный", "счастливый", "взволнованный", "нервный", "испуганный", "обеспокоенный", "смущенный", "разочарованный", "расстроенный", "раздраженный", "тревожный", "напуганный", "радостный", "подавленный", "несчастный", "восторженный", "яростный", "восхищенный", "шокированный", "удивленный", "сбитый с толку", "гордый", "довольный", "удовлетворенный", "завистливый"},
     "weak_verbs": {"быть"},
     "common_words": {"и", "в", "на", "с", "к", "о", "а", "но", "или", "как", "есть", "суть", "был", "была", "было", "имеет", "имеют", "это", "этого", "этому", "этот", "эта", "эти", "там", "здесь", "мой", "твой", "его", "её", "наш", "ваш", "их", "себя", "не", "так", "ли", "потому", "когда", "если", "поскольку", "который", "которая", "которое"},
     "quote_pattern": r'«[^»]*»|\"[^\"]*\"'
@@ -141,11 +143,11 @@ class RussianTextAnalysis(BaseTextAnalysis, QObject):
         words = re.findall(r'\b\w+\b', text.lower())
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
-        
+
         # Count words and sentences
         num_words = len(words)
         num_sentences = len(sentences)
-        
+
         # Count syllables (approximation for Russian)
         vowels = 'аеёиоуыэюя'
         syllable_count = 0
@@ -153,21 +155,21 @@ class RussianTextAnalysis(BaseTextAnalysis, QObject):
             count = sum(1 for char in word if char in vowels)
             # Ensure each word has at least one syllable
             syllable_count += max(1, count)
-        
+
         # Avoid division by zero
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         # Calculate average sentence length and average syllables per word
         asl = num_words / num_sentences
         asw = syllable_count / num_words
-        
+
         # Calculate Flesch Reading Ease adapted for Russian
         flesch_score = 206.835 - (1.3 * asl) - (60.1 * asw)
-        
+
         # Ensure score is in the usual range (0-100)
         return max(0, min(100, flesch_score))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Russian."""
         return TOOLTIP_TRANSLATIONS

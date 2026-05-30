@@ -1,16 +1,38 @@
-import os
-from typing import List, Dict, Optional
-from difflib import SequenceMatcher
-import re
 import json
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, QLineEdit, QPushButton, QTextEdit, 
-                             QProgressBar, QFileDialog, QMessageBox, QGridLayout, QComboBox, QDoubleSpinBox, 
-                             QPlainTextEdit, QLabel, QSpinBox, QSplitter)
-from PyQt5.QtGui import QTextOption
+import os
+import re
+from difflib import SequenceMatcher
 
-from .rag_utils import TokenCounter, PdfProcessingWorker, LlmClient, SettingsManager, HistoryDialog, AppSettings, PdfProcessor, DocumentProcessorFactory, EpubProcessingWorker, GenericProcessingWorker
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QTextOption
+from PyQt5.QtWidgets import (
+    QComboBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .rag_utils import (
+    DocumentProcessorFactory,
+    LlmClient,
+    SettingsManager,
+    TokenCounter,
+)
+
 
 class EnhancedPdfProcessor:
     @staticmethod
@@ -20,7 +42,7 @@ class EnhancedPdfProcessor:
         min_semantic: float = 0.2,
         top_k: int = 5,
         window: int = 1
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Perform semantic similarity search with keyword-based boost.
         Returns up to top_k paragraphs plus surrounding context.
@@ -62,7 +84,7 @@ class EnhancedPdfProcessor:
         min_similarity: float = 0.2,
         top_k: int = 5,
         window: int = 1
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Perform pure semantic similarity search.
         Returns up to top_k paragraphs plus surrounding context.
@@ -98,7 +120,7 @@ class EnhancedPdfProcessor:
         question: str,
         top_k: int = 5,
         window: int = 1
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Perform exact keyword search. Treats every word in the question as keyword.
         Returns up to top_k paragraphs plus surrounding context.
@@ -136,7 +158,7 @@ class SimpleQaSystem:
     @staticmethod
     def generate_answer(
         question: str,
-        context: List[Dict],
+        context: list[dict],
         extra_instructions: str = ""
     ) -> tuple[str, dict]:
         """
@@ -164,22 +186,22 @@ class SimpleQaSystem:
             prompt_parts.append("**Rules:**\n1. Be precise.\n2. If unsure, say \"I don't know.\"\n3. Mention paragraph numbers.")
 
         prompt = "\n\n".join(prompt_parts)
-        
+
         # Count prompt tokens before sending to LLM
         prompt_tokens = TokenCounter.count_tokens(prompt)
-        
+
         response, _ = LlmClient.send_prompt(prompt)
-        
+
         # Count completion tokens from the actual response
         completion_tokens = TokenCounter.count_tokens(response)
         total_tokens = prompt_tokens + completion_tokens
-        
+
         token_stats = {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": total_tokens
         }
-        
+
         return response, token_stats
 
 class QaWorker(QThread):
@@ -277,9 +299,9 @@ class QaWorker(QThread):
                     f"(score: {sec.get('score', 1.0):.2f}):\n"
                     f"{sec['text']}\n"
                 )
-            
+
             # Add token information
-            result_text += f"\n\n--- Token Usage ---\n"
+            result_text += "\n\n--- Token Usage ---\n"
             result_text += f"Prompt tokens: {token_stats['prompt_tokens']:,}\n"
             result_text += f"Completion tokens: {token_stats['completion_tokens']:,}\n"
             result_text += f"Total tokens: {token_stats['total_tokens']:,}\n"
@@ -288,7 +310,7 @@ class QaWorker(QThread):
             self.finished.emit(result_text, relevant_sections)
 
         except Exception as e:
-            self.error.emit(f"Error: {str(e)}")
+            self.error.emit(f"Error: {e!s}")
 
 class SmartQAWidget(QWidget):
     def __init__(self, parent=None):
@@ -511,7 +533,7 @@ class SmartQAWidget(QWidget):
         if self.parent_app.settings.last_pdf_path_qa and os.path.exists(self.parent_app.settings.last_pdf_path_qa):
             self.qa_pdf_path_edit.setText(self.parent_app.settings.last_pdf_path_qa)
             self.load_qa_pdf_info()
-            
+
     def update_context_mode_items(self):
         """
         Reads the current snippet_length_spin value and updates the items in context_mode_combo.
@@ -612,7 +634,7 @@ class SmartQAWidget(QWidget):
                 return
 
             # build list of all sections (chapters/pages/etc.)
-            sections = list(range(0, section_count))
+            sections = list(range(section_count))
 
             # show progress
             self.qa_progress_bar.setVisible(True)
@@ -640,18 +662,18 @@ class SmartQAWidget(QWidget):
         except ValueError as e:
             QMessageBox.warning(self, "Unsupported Format", str(e))
 
-    def on_qa_pdf_processing_finished(self, markdown: str, chunks: List[str], error: str):
+    def on_qa_pdf_processing_finished(self, markdown: str, chunks: list[str], error: str):
         # Handle processing completion for any document type
         self.qa_progress_bar.setVisible(False)
         self.qa_process_btn.setEnabled(True)
-        
+
         if error:
             QMessageBox.critical(self, "Processing Error", error)
             self.qa_status_label.setText("Document processing failed")
             self.qa_status_label.setStyleSheet("color: #8B0000; font-style: italic;")
             self.qa_search_btn.setEnabled(False)
             return
-        
+
         self.qa_markdown_text = markdown
         self.parent_app.status_bar.showMessage("Document processed for Smart QA", 5000)
         self.qa_search_btn.setEnabled(True)

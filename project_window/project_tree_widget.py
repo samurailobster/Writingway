@@ -1,11 +1,22 @@
-from gettext import gettext as _, pgettext
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QTreeWidget, QMenu,
-                             QMessageBox, QInputDialog, QHeaderView, QAbstractItemView, QToolButton,
-                             QApplication)
-from PyQt5.QtCore import Qt, QEvent, QSize, QPoint, QRect, QTimer
-from PyQt5.QtGui import QIcon, QFont, QBrush, QColor, QPainter, QPen
-import project_window.tree_manager as tree_manager
+from gettext import gettext as _
+from gettext import pgettext
+
+from PyQt5.QtCore import QEvent, QPoint, QSize, Qt, QTimer
+from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPen
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QInputDialog,
+    QMenu,
+    QMessageBox,
+    QToolButton,
+    QTreeWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
 import project_window.project_structure_manager as psm
+import project_window.tree_manager as tree_manager
 from settings.theme_manager import ThemeManager
 
 
@@ -59,7 +70,7 @@ class ProjectTreeWidget(QWidget):
 
     # Reverse mapping for translating user selections back to English
     REVERSE_STATUS_MAP = {v: k for k, v in STATUS_MAP.items()}
-    
+
     # drag-drop constants
     _DND_THRESHOLD   = 5   # pixels of movement before drag is considered started
     _DND_SCROLL_MARGIN  = 30  # px from edge of viewport that triggers auto-scroll
@@ -792,7 +803,7 @@ class ProjectTreeWidget(QWidget):
             assert act is not None
             act_hierarchy = (act.text(0),)
             restore_recursively(act, act_hierarchy)
-            
+
     def assign_item_icon(self, item, level):
         """Assign an icon to a tree item based on its level and status."""
         tint = self.controller.icon_tint

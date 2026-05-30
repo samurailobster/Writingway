@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QVBoxLayout
-from PyQt5.QtGui import QColor
-from settings.theme_manager import ThemeManager
 from gettext import gettext as _
+
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QAction, QToolBar, QVBoxLayout, QWidget
+
+from settings.theme_manager import ThemeManager
 
 
 class GlobalToolbar(QWidget):

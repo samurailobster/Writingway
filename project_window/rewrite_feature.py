@@ -1,11 +1,11 @@
 from gettext import gettext as _
+
 # rewrite_feature.py
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QComboBox,
-    QPushButton, QMessageBox
-)
+from PyQt5.QtWidgets import QComboBox, QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QTextEdit, QVBoxLayout
+
 from muse.prompt_utils import load_prompts
 from settings.llm_worker import LLMWorker
+
 
 class RewriteDialog(QDialog):
     """
@@ -27,17 +27,17 @@ class RewriteDialog(QDialog):
         self.worker = None
         self.setWindowTitle(_("Rewrite Selected Text"))
         self.init_ui()
-    
+
     def init_ui(self):
         layout = QVBoxLayout(self)
-        
+
         # Display original text.
         orig_label = QLabel(_("Original Text:"))
         layout.addWidget(orig_label)
         self.orig_edit = QTextEdit()
         self.orig_edit.setPlainText(self.original_text)
         layout.addWidget(self.orig_edit)
-        
+
         # Dropdown for selecting a rewrite prompt.
         prompt_layout = QHBoxLayout()
         prompt_label = QLabel(_("Select Rewrite Prompt:"))
@@ -51,19 +51,19 @@ class RewriteDialog(QDialog):
                 self.prompt_combo.addItem(p.get("name", "Unnamed"))
         prompt_layout.addWidget(self.prompt_combo)
         layout.addLayout(prompt_layout)
-        
+
         # Button to generate the rewrite.
         self.generate_button = QPushButton(_("Generate Rewrite"))
         self.generate_button.clicked.connect(self.generate_rewrite)
         layout.addWidget(self.generate_button)
-        
+
         # Display rewritten text.
         new_label = QLabel(_("Rewritten Text:"))
         layout.addWidget(new_label)
         self.new_edit = QTextEdit()
         self.new_edit.setReadOnly(True)
         layout.addWidget(self.new_edit)
-        
+
         # Control buttons.
         button_layout = QHBoxLayout()
         self.apply_button = QPushButton(_("Apply"))
@@ -82,7 +82,7 @@ class RewriteDialog(QDialog):
 
     def on_finished(self):
         pass
-    
+
     def generate_rewrite(self):
         # Get the selected prompt's text.
         if not self.prompts:
@@ -93,12 +93,12 @@ class RewriteDialog(QDialog):
         if not prompt_text:
             QMessageBox.warning(self, _("Rewrite"), _("Selected prompt has no text."))
             return
-        
+
         self.new_edit.clear()  # Clear previous rewritten text.
 
         # Construct final prompt.
         final_prompt = f"{prompt_text}\n\nOriginal Passage:\n{self.orig_edit.toPlainText()}"
-        
+
         # Build the overrides dictionary to force local LLM usage.
         overrides = {
             "provider": prompt_data.get("provider", "Local"),
@@ -106,7 +106,7 @@ class RewriteDialog(QDialog):
             "max_tokens": prompt_data.get("max_tokens", 2000),
             "temperature": prompt_data.get("temperature", 1.0)
         }
-        
+
         try:
             self.worker = LLMWorker(final_prompt, overrides)
             self.worker.data_received.connect(self.update_text)
@@ -117,11 +117,11 @@ class RewriteDialog(QDialog):
             QMessageBox.warning(self, _("Rewrite"), _("Error sending prompt to LLM: {}").format(str(e)))
             return
 
-    
+
     def retry_rewrite(self):
         # Re-generate using the same selected prompt.
         self.generate_rewrite()
-    
+
     def apply_rewrite(self):
         self.rewritten_text = self.new_edit.toPlainText()
         if not self.rewritten_text:

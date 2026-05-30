@@ -1,19 +1,21 @@
-import requests
-from typing import Dict, List, Optional, Any, Type, Union
-from abc import ABC, abstractmethod
-from pydantic import ValidationError
-from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import PromptTemplate
-from langchain_core.language_models.llms import LLM
-from langchain_core.language_models import BaseChatModel
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
-from langchain_together import ChatTogether
-from .settings_manager import WWSettingsManager
 import logging
 import time  # Added for cache expiration
+from abc import ABC, abstractmethod
+from typing import Any
+
+import requests
+from langchain.prompts import PromptTemplate
+from langchain_anthropic import ChatAnthropic
+from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models.llms import LLM
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
+from langchain_together import ChatTogether
+from pydantic import ValidationError
+
+from .settings_manager import WWSettingsManager
 
 # Configuration constants
 DEFAULT_MAX_TOKENS = 1024
@@ -22,23 +24,21 @@ MODEL_CACHE_TTL = 3600  # Cache TTL in seconds (1 hour)
 
 class LLMProviderBase(ABC):
     """Base class for all LLM providers."""
-    
-    def __init__(self, config: Dict[str, Any] = None, aggregator=None):
+
+    def __init__(self, config: dict[str, Any] = None, aggregator=None):
         self.config = config or {}
         self.cached_models = None
         self.aggregator = aggregator  # Reference to WW_Aggregator for cache access
-    
+
     @property
     @abstractmethod
     def provider_name(self) -> str:
         """Return the name of the provider."""
-        pass
-    
+
     @property
     @abstractmethod
     def default_endpoint(self) -> str:
         """Return the default endpoint for the provider."""
-        pass
 
     @property
     def model_list_key(self) -> str:
@@ -49,33 +49,32 @@ class LLMProviderBase(ABC):
     def model_key(self) -> str:
         """Return the key for the model name in the provider's json response."""
         return "id"
-    
+
     @property
     def model_requires_api_key(self) -> bool:
         """Return whether the provider requires an API key."""
         return False
-    
+
     @property
     def use_reverse_sort(self) -> bool:
         """Return whether to reverse the output of the model list."""
         return False
 
     @abstractmethod
-    def get_llm_instance(self, overrides) -> Union[LLM, BaseChatModel]:
+    def get_llm_instance(self, overrides) -> LLM | BaseChatModel:
         """Returns a configured LLM instance."""
-        pass
-    
-    def _do_models_request(self, url: str, headers: Dict[str, str] = None) -> List[str]:
+
+    def _do_models_request(self, url: str, headers: dict[str, str] = None) -> list[str]:
         """Send a request to the provider to fetch available models."""
         headers = headers or {'Authorization': f'Bearer {self.get_api_key()}'}
         return requests.get(url, headers=headers)
-    
-    def get_available_models(self, do_refresh: bool = False) -> List[str]:
+
+    def get_available_models(self, do_refresh: bool = False) -> list[str]:
         """Returns a list of available model IDs from the provider."""
         model_details = self.get_model_details(do_refresh)
         return [model[self.model_key] for model in model_details]
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available models."""
         # Check aggregator's cache first
         if self.aggregator and not do_refresh:
@@ -131,22 +130,22 @@ class LLMProviderBase(ABC):
     def get_base_url(self) -> str:
         """Returns the base URL for the provider."""
         return self.config.get("endpoint") or self.get_default_endpoint()
-    
+
     def get_api_key(self) -> str:
         """Returns the API key for the provider."""
         return self.config.get("api_key", "")
-    
+
     def get_timeout(self, overrides) -> int:
         """Returns the timeout setting for the provider."""
         return overrides.get("timeout", self.config.get("timeout", 30))
-    
+
     def get_context_window(self) -> int:
         """Returns the context window size for the current model."""
         return 4096
 
     def get_model_endpoint(self, overrides=None) -> str:
         """Returns the model endpoint for the provider."""
-        url = overrides and overrides.get("endpoint") or self.config.get("endpoint", self.get_base_url())
+        url = (overrides and overrides.get("endpoint")) or self.config.get("endpoint", self.get_base_url())
         return url.replace("/chat/completions", "/models")
 
     def test_connection(self, overrides=None) -> bool:
@@ -166,19 +165,19 @@ class LLMProviderBase(ABC):
 
 class OpenAIProvider(LLMProviderBase):
     """OpenAI LLM provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "OpenAI"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "https://api.openai.com/v1/"
-    
+
     @property
     def model_requires_api_key(self) -> bool:
         return True
-    
+
     def get_llm_instance(self, overrides) -> BaseChatModel:
         return ChatOpenAI(
             openai_api_key=overrides.get("api_key", self.get_api_key()),
@@ -189,7 +188,7 @@ class OpenAIProvider(LLMProviderBase):
             request_timeout=self.get_timeout(overrides)
         )
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available OpenAI models."""
         # Use shared cache logic from base class
         if self.aggregator and not do_refresh:
@@ -234,11 +233,11 @@ class OpenAIProvider(LLMProviderBase):
 
 class AnthropicProvider(LLMProviderBase):
     """Anthropic LLM provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "Anthropic"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "https://api.anthropic.com/v1/"
@@ -246,7 +245,7 @@ class AnthropicProvider(LLMProviderBase):
     @property
     def model_requires_api_key(self) -> bool:
         return True
-    
+
     @property
     def use_reverse_sort(self) -> bool:
         return True
@@ -260,8 +259,8 @@ class AnthropicProvider(LLMProviderBase):
             max_tokens=overrides.get("max_tokens", self.config.get("max_tokens", DEFAULT_MAX_TOKENS)),
             timeout=self.get_timeout(overrides)
         )
-    
-    def _do_models_request(self, url: str, headers: Dict[str, str] = None) -> List[str]:
+
+    def _do_models_request(self, url: str, headers: dict[str, str] = None) -> list[str]:
         """Send a request to the provider to fetch available models."""
         default_headers = {
             "x-api-key": self.get_api_key(),
@@ -273,19 +272,19 @@ class AnthropicProvider(LLMProviderBase):
 
 class GeminiProvider(LLMProviderBase):
     """Google Gemini provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "Gemini"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "https://generativelanguage.googleapis.com/v1beta/"
-    
+
     @property
     def model_requires_api_key(self) -> bool:
         return True
-    
+
     @property
     def model_list_key(self) -> str:
         return "models"
@@ -293,11 +292,11 @@ class GeminiProvider(LLMProviderBase):
     @property
     def model_key(self) -> str:
         return "id"
-    
+
     @property
     def use_reverse_sort(self) -> bool:
         return True
-    
+
     def get_llm_instance(self, overrides) -> BaseChatModel:
         return ChatGoogleGenerativeAI(
             google_api_key=overrides.get("api_key", self.get_api_key()),
@@ -307,7 +306,7 @@ class GeminiProvider(LLMProviderBase):
             timeout=self.get_timeout(overrides)
         )
 
-    def _do_models_request(self, url: str, headers: Dict[str, str] = None) -> List[str]:
+    def _do_models_request(self, url: str, headers: dict[str, str] = None) -> list[str]:
         """Send a request to the provider to fetch available models."""
         api_key = self.get_api_key()
         if not api_key:
@@ -315,7 +314,7 @@ class GeminiProvider(LLMProviderBase):
         url += f"?key={api_key}"
         return requests.get(url, headers=headers)
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available Gemini models."""
         if self.aggregator and not do_refresh:
             cached = self.aggregator.get_cached_models(self.provider_name)
@@ -366,15 +365,15 @@ class GeminiProvider(LLMProviderBase):
 
 class OllamaProvider(LLMProviderBase):
     """Ollama LLM provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "Ollama"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "http://localhost:11434/v1/"
-    
+
     def get_llm_instance(self, overrides):
         mymodel = overrides.get("model", self.get_current_model())
         if mymodel[0:5] in ["", "Local"]:
@@ -385,7 +384,7 @@ class OllamaProvider(LLMProviderBase):
             timeout=self.get_timeout(overrides)
         )
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available Ollama models."""
         if self.aggregator and not do_refresh:
             cached = self.aggregator.get_cached_models(self.provider_name)
@@ -425,19 +424,19 @@ class OllamaProvider(LLMProviderBase):
 
 class OpenRouterProvider(LLMProviderBase):
     """OpenRouter provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "OpenRouter"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "https://openrouter.ai/api/v1/"
-    
+
     @property
     def model_requires_api_key(self) -> bool:
         return True
-    
+
     def get_llm_instance(self, overrides) -> BaseChatModel:
         return ChatOpenAI(
             openai_api_key=overrides.get("api_key", self.get_api_key()),
@@ -448,7 +447,7 @@ class OpenRouterProvider(LLMProviderBase):
             request_timeout=self.get_timeout(overrides)
         )
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available OpenRouter models."""
         if self.aggregator and not do_refresh:
             cached = self.aggregator.get_cached_models(self.provider_name)
@@ -493,19 +492,19 @@ class OpenRouterProvider(LLMProviderBase):
 
 class TogetherAIProvider(LLMProviderBase):
     """Together AI provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "TogetherAI"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "https://api.together.xyz/v1"
-    
+
     @property
     def model_requires_api_key(self) -> bool:
         return True
-    
+
     def get_llm_instance(self, overrides) -> BaseChatModel:
         return ChatTogether(
             together_api_key=overrides.get("api_key", self.get_api_key()),
@@ -515,11 +514,11 @@ class TogetherAIProvider(LLMProviderBase):
             max_tokens=overrides.get("max_tokens", self.config.get("max_tokens", DEFAULT_MAX_TOKENS)),
         )
 
-    def get_available_models(self, do_refresh: bool = False) -> List[str]:
+    def get_available_models(self, do_refresh: bool = False) -> list[str]:
         """Returns a list of available model IDs from the provider."""
         return [model["id"] for model in self.get_model_details(do_refresh)]
 
-    def get_model_details(self, do_refresh: bool = False) -> List[Dict[str, Any]]:
+    def get_model_details(self, do_refresh: bool = False) -> list[dict[str, Any]]:
         """Returns detailed information about available TogetherAI models."""
         if self.aggregator and not do_refresh:
             cached = self.aggregator.get_cached_models(self.provider_name)
@@ -574,14 +573,14 @@ class TogetherAIProvider(LLMProviderBase):
             if do_refresh:
                 raise ResourceWarning(response.json().get("error", "Failed to fetch models"))
         return self.cached_models
-    
+
 class LMStudioProvider(LLMProviderBase):
     """LMStudio provider implementation."""
-    
+
     @property
     def provider_name(self) -> str:
         return "LMStudio"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "http://localhost:1234/v1"
@@ -598,18 +597,18 @@ class LMStudioProvider(LLMProviderBase):
 
 class CustomProvider(LLMProviderBase):
     """Custom LLM provider implementation for local network tools."""
-    
+
     @property
     def provider_name(self) -> str:
         return "Custom"
-    
+
     @property
     def default_endpoint(self) -> str:
         return "http://localhost:11434/v1/"
-    
+
     def get_api_key(self):
         return super().get_api_key() or "not-needed"
-    
+
     def get_llm_instance(self, overrides) -> BaseChatModel:
         self.config["endpoint"] = overrides.get("endpoint", self.get_base_url())
         self.config["api_key"] = overrides.get("api_key", self.get_api_key())
@@ -625,65 +624,65 @@ class CustomProvider(LLMProviderBase):
 
 class WW_Aggregator:
     """Main aggregator class for managing LLM providers."""
-    
+
     def __init__(self):
         self._provider_cache = {}
         self._settings = None
         self._model_cache = {}  # New: Shared cache for model details
         self._model_cache_timestamps = {}  # New: Timestamps for cache expiration
-    
-    def create_provider(self, provider_name: str, config: Dict[str, Any] = None) -> Optional[LLMProviderBase]:
+
+    def create_provider(self, provider_name: str, config: dict[str, Any] = None) -> LLMProviderBase | None:
         """Create a new provider instance."""
         provider_class = self._get_provider_class(provider_name)
         if not provider_class:
             return None
-        
+
         config = config or {}
         return provider_class(config, aggregator=self)  # Pass self as aggregator
-    
-    def get_provider(self, provider_name: str) -> Optional[LLMProviderBase]:
+
+    def get_provider(self, provider_name: str) -> LLMProviderBase | None:
         """Get a provider instance by name."""
         if provider_name not in self._provider_cache:
             config = self._get_provider_config(provider_name)
             if not config:
                 return None
-            
+
             provider = config.get("provider")
             provider_class = self._get_provider_class(provider)
             if not provider_class:
                 return None
-            
+
             self._provider_cache[provider_name] = provider_class(config, aggregator=self)
-        
+
         return self._provider_cache[provider_name]
-    
-    def get_active_llms(self) -> List[str]:
+
+    def get_active_llms(self) -> list[str]:
         """Returns a list of all configured and cached LLMs."""
         return list(self._provider_cache.keys())
-    
-    def _get_provider_config(self, provider_name: str) -> Optional[Dict[str, Any]]:
+
+    def _get_provider_config(self, provider_name: str) -> dict[str, Any] | None:
         """Get the configuration for a provider from settings."""
         settings = WWSettingsManager.get_llm_configs()
         if not settings:
             return None
-        
+
         return settings.get(provider_name)
-    
-    def _get_provider_class(self, provider_name: str) -> Optional[Type[LLMProviderBase]]:
+
+    def _get_provider_class(self, provider_name: str) -> type[LLMProviderBase] | None:
         """Get the provider class based on the provider name."""
         provider_map = {
             cls().provider_name: cls
             for cls in LLMProviderBase.__subclasses__()
         }
         return provider_map.get(provider_name)
-    
-    def cache_models(self, provider_name: str, models: List[Dict[str, Any]]):
+
+    def cache_models(self, provider_name: str, models: list[dict[str, Any]]):
         """Cache model details for a provider."""
         self._model_cache[provider_name] = models
         self._model_cache_timestamps[provider_name] = time.time()
         logging.debug(f"Cached models for {provider_name}")
-    
-    def get_cached_models(self, provider_name: str) -> Optional[List[Dict[str, Any]]]:
+
+    def get_cached_models(self, provider_name: str) -> list[dict[str, Any]] | None:
         """Retrieve cached model details for a provider."""
         if provider_name in self._model_cache:
             timestamp = self._model_cache_timestamps.get(provider_name, 0)
@@ -697,93 +696,94 @@ class WW_Aggregator:
 
 import threading
 
+
 class LLMAPIAggregator:
     """Main class for the LLM API Aggregator."""
-    
+
     def __init__(self):
         self.aggregator = WW_Aggregator()
         self.interrupt_flag = threading.Event()
         self.is_streaming = False
         logging.debug("LLMAPIAggregator initialized")
-    
-    def get_llm_providers(self) -> List[str]:
+
+    def get_llm_providers(self) -> list[str]:
         """Dynamically returns a list of supported LLM provider names."""
         return [cls().provider_name for cls in LLMProviderBase.__subclasses__()]
-    
+
     def send_prompt_to_llm(
-        self, 
-        final_prompt: str, 
-        overrides: Optional[Dict[str, Any]] = None,
-        conversation_history: Optional[List[Dict[str, str]]] = None
+        self,
+        final_prompt: str,
+        overrides: dict[str, Any] | None = None,
+        conversation_history: list[dict[str, str]] | None = None
     ) -> str:
         """Send a prompt to the active LLM and return the generated text."""
         overrides = overrides or {}
-        
+
         provider_name = overrides.get("provider") or WWSettingsManager.get_active_llm_name()
         if provider_name in ["Local", "Default"]:
             provider_name = WWSettingsManager.get_active_llm_name()
             overrides = {}
         if not provider_name:
             raise ValueError("No active LLM provider specified")
-        
+
         provider = self.aggregator.get_provider(provider_name)
         if not provider:
             raise ValueError(f"Provider '{provider_name}' not found or not configured")
-        
+
         # Fallback for default prompt overrides
         if overrides.get("model") in [None, "Default Model"]:
             overrides["model"] = provider.get_current_model()
-        
+
         llm = provider.get_llm_instance(overrides)
-        
+
         if conversation_history:
-            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-            
+            from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
             messages = []
             for message in conversation_history:
                 role = message.get("role", "").lower()
                 content = message.get("content", "")
-                
+
                 if role == "system":
                     messages.append(SystemMessage(content=content))
                 elif role == "user" or role == "human":
                     messages.append(HumanMessage(content=content))
                 elif role == "assistant" or role == "ai":
                     messages.append(AIMessage(content=content))
-            
+
             messages.append(HumanMessage(content=final_prompt))
-            
+
             response = llm.invoke(messages)
             return response.content
         else:
             return llm.invoke(final_prompt).content
 
     def stream_prompt_to_llm(
-        self, 
-        final_prompt: str, 
-        overrides: Optional[Dict[str, Any]] = None,
-        conversation_history: Optional[List[Dict[str, str]]] = None
+        self,
+        final_prompt: str,
+        overrides: dict[str, Any] | None = None,
+        conversation_history: list[dict[str, str]] | None = None
     ):
         """Stream a prompt to the active LLM and yield the generated text."""
         logging.debug(f"Starting stream_prompt_to_llm, interrupt_flag: {self.interrupt_flag.is_set()}")
         overrides = overrides or {}
-        
+
         provider_name = overrides.get("provider") or WWSettingsManager.get_active_llm_name()
         if provider_name in ["Local", "Default"]:
             provider_name = WWSettingsManager.get_active_llm_name()
             overrides = {}
         if not provider_name:
             raise ValueError("No active LLM provider specified")
-        
+
         provider = self.aggregator.get_provider(provider_name)
         if not provider:
             raise ValueError(f"Provider '{provider_name}' not found or not configured")
-        
+
         if provider.model_requires_api_key:
             api_key = overrides.get("api_key", provider.get_api_key())
             if not api_key or api_key == "not-needed":
                 raise ValueError(f"API key required for {provider_name} but not provided")
-            
+
         # Fallback for default prompt overrides
         if overrides.get("model") in [None, "Default Model"]:
             overrides["model"] = provider.get_current_model()
@@ -792,26 +792,26 @@ class LLMAPIAggregator:
             llm = provider.get_llm_instance(overrides)
         except ValueError as e:
             raise ValueError(f"Failed to initialize LLM: {e}")
-        
+
         self.is_streaming = True
         try:
             if conversation_history:
-                from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-                
+                from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
                 messages = []
                 for message in conversation_history:
                     role = message.get("role", "").lower()
                     content = message.get("content", "")
-                    
+
                     if role == "system":
                         messages.append(SystemMessage(content=content))
                     elif role == "user" or role == "human":
                         messages.append(HumanMessage(content=content))
                     elif role == "assistant" or role == "ai":
                         messages.append(AIMessage(content=content))
-                
+
                 messages.append(HumanMessage(content=final_prompt))
-                
+
                 stream = llm.stream(messages)
                 for chunk in stream:
                     if self.interrupt_flag.is_set():
@@ -829,7 +829,7 @@ class LLMAPIAggregator:
             logging.error(f"Streaming error: {e}")
             raise
         finally:
-            logging.debug(f"Stream cleanup, setting is_streaming=False, clearing interrupt_flag")
+            logging.debug("Stream cleanup, setting is_streaming=False, clearing interrupt_flag")
             self.is_streaming = False
             self.interrupt_flag.clear()
             logging.debug(f"After cleanup, interrupt_flag: {self.interrupt_flag.is_set()}")
@@ -837,7 +837,7 @@ class LLMAPIAggregator:
     def interrupt(self):
         """Interrupt the streaming process."""
         if self.is_streaming:
-            logging.debug(f"Interrupting stream, setting interrupt_flag")
+            logging.debug("Interrupting stream, setting interrupt_flag")
             self.interrupt_flag.set()
         else:
             logging.debug("Interrupt called but no active stream")
@@ -847,7 +847,7 @@ WWApiAggregator = LLMAPIAggregator()
 def main():
     """Example usage of the LLM API Aggregator."""
     aggregator = LLMAPIAggregator()
-    
+
     overrides = {
         "api_key": "AIFakeKey123",
     }
@@ -861,7 +861,7 @@ def main():
 
     providers = aggregator.get_llm_providers()
     print(f"Supported providers: {providers}")
-    
+
     try:
         response = aggregator.send_prompt_to_llm("Hello, tell me a short story about a robot.")
         print(f"Response: {response}")

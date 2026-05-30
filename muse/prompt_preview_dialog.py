@@ -1,14 +1,26 @@
 from gettext import gettext as _
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QTextEdit, QLabel
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtGui import QFont, QKeySequence
-from PyQt5.QtWidgets import QShortcut
-from settings.theme_manager import ThemeManager
-import muse.prompt_handler as prompt_handler
+
 import tiktoken
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QFont, QKeySequence
+from PyQt5.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QShortcut,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+)
+
+import muse.prompt_handler as prompt_handler
+from settings.theme_manager import ThemeManager
+
 
 class PromptPreviewDialog(QDialog):
-    def __init__(self, controller, conversation_payload=None, prompt_config=None, user_input=None, 
+    def __init__(self, controller, conversation_payload=None, prompt_config=None, user_input=None,
                  additional_vars=None, current_scene_text=None, extra_context=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Prompt Preview"))
@@ -142,7 +154,7 @@ class PromptPreviewDialog(QDialog):
         sections = {}
         current_header = None
         current_content = []
-        
+
         for line in prompt_text.splitlines():
             if line.strip().startswith("###"):
                 if current_header and current_content:
@@ -151,13 +163,13 @@ class PromptPreviewDialog(QDialog):
                 current_content = []
             elif current_header:
                 current_content.append(line)
-        
+
         if current_header and current_content:
             sections[current_header] = "\n".join(current_content).strip()
-        
+
         if not sections:
             sections["Prompt"] = prompt_text.strip()
-        
+
         return sections
 
     def zoom_in(self):

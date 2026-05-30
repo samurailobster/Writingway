@@ -5,13 +5,15 @@ text_analysis_fi.py
 Finnish-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -77,9 +79,9 @@ FINNISH_DATA = {
     "speech_verbs": {"sanoa", "kysyä", "kuiskata", "huutaa", "mumista", "karjaista"},
     "filter_words": {"näki", "kuuli", "tunsi", "huomasi", "ajatteli", "mietti", "tarkkaili", "katsoi", "kuunteli", "aisti", "päätti", "harkitsi", "tuntui", "ilmestyi", "havaitsi", "koki", "käsitti", "kuvitteli"},
     "telling_verbs": {"olla", "tuntea", "vaikuttaa", "näyttää", "ilmestyä", "tulla"},
-    "emotion_words": {"vihainen", "surullinen", "onnellinen", "innostunut", "hermostunut", "kauhistunut", "huolestunut", "häpeissään", "pettynyt", "turhautunut", "ärsyyntynyt", "levoton", "peloissaan", "iloinen", "masentunut", "onneton", "ekstaattinen", "hermostunut", "raivoissaan", "ihastunut", "järkyttynyt", "yllättynyt", "hämmentynyt", "ylpeä", "tyytyväinen", "tyydyttynyt", "innostunut", "kateellinen"},
+    "emotion_words": {"vihainen", "surullinen", "onnellinen", "innostunut", "hermostunut", "kauhistunut", "huolestunut", "häpeissään", "pettynyt", "turhautunut", "ärsyyntynyt", "levoton", "peloissaan", "iloinen", "masentunut", "onneton", "ekstaattinen", "raivoissaan", "ihastunut", "järkyttynyt", "yllättynyt", "hämmentynyt", "ylpeä", "tyytyväinen", "tyydyttynyt", "kateellinen"},
     "weak_verbs": {"olla"},
-    "common_words": {"ja", "että", "on", "ei", "hän", "se", "ovat", "oli", "olivat", "mutta", "tai", "kun", "jos", "koska", "mikä", "joka", "tämä", "nämä", "tuo", "nuo", "minun", "sinun", "hänen", "meidän", "teidän", "heidän", "ei", "kyllä", "miksi", "missä", "milloin", "miten", "kuka"},
+    "common_words": {"ja", "että", "on", "ei", "hän", "se", "ovat", "oli", "olivat", "mutta", "tai", "kun", "jos", "koska", "mikä", "joka", "tämä", "nämä", "tuo", "nuo", "minun", "sinun", "hänen", "meidän", "teidän", "heidän", "kyllä", "miksi", "missä", "milloin", "miten", "kuka"},
     "quote_pattern": r'"[^"]*"|\"[^\"]*\"'
 }
 
@@ -145,12 +147,12 @@ class FinnishTextAnalysis(BaseTextAnalysis, QObject):
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
         num_long_words = sum(1 for word in words if len(word) > 6)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         return (num_words / num_sentences) + (num_long_words * 100 / num_words)
-        
+
     def get_tooltips(self):
         """Returns tooltips in Finnish."""
         return TOOLTIP_TRANSLATIONS

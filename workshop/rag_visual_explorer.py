@@ -1,65 +1,84 @@
-import os
-import io
-import time
 import datetime
+import io
 import json
-from typing import List
-from PIL import Image
-import fitz
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
-from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QGroupBox, QVBoxLayout, QLineEdit, QPushButton, QTextEdit, 
-                             QSpinBox, QCheckBox, QGridLayout, QSplitter, QListWidget, QFileDialog, QMessageBox, 
-                             QScrollArea, QStackedWidget, QLabel, QProgressBar, QSizePolicy, QPlainTextEdit,
-                             QListWidgetItem)
-from PyQt5.QtGui import QPixmap, QImage
+import os
+import time
 
-from .rag_utils import LlmClient, SettingsManager, HistoryDialog, AppSettings
+import fitz
+from PIL import Image
+from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .rag_utils import LlmClient
+
 
 class ProcessingThread(QThread):
     progress_updated = pyqtSignal(int, str)
     task_completed = pyqtSignal(int, str)
     all_completed = pyqtSignal()
-    
+
     def __init__(self, parent, tasks):
         super().__init__(parent)
         self.parent = parent
         self.tasks = tasks
-        
+
     def run(self):
         total_tasks = len(self.tasks)
-        
+
         for i, task in enumerate(self.tasks):
             if self.parent.processing_cancelled:
                 self.progress_updated.emit(100, "Cancelled")
                 break
-            
+
             progress = int((i / total_tasks) * 100)
             self.progress_updated.emit(progress, f"Processing {i+1}/{total_tasks}: {task['item']['name']}")
-            
+
             try:
                 idx = task['index']
                 item = task['item']
                 prompt = task['prompt']
-                
+
                 img_bytes = self.prepare_image(item)
-                
+
                 response, err = LlmClient.send_prompt_with_image(prompt, img_bytes)
-                
+
                 if err:
                     response = f"Error: {err}"
-                
+
                 self.task_completed.emit(idx, response)
-                
+
             except Exception as e:
-                self.task_completed.emit(task['index'], f"Error: {str(e)}")
-            
+                self.task_completed.emit(task['index'], f"Error: {e!s}")
+
             time.sleep(0.1)
-        
+
         if not self.parent.processing_cancelled:
             self.progress_updated.emit(100, "Completed")
         self.all_completed.emit()
-    
+
     def prepare_image(self, item):
         """
         Prepare image or PDF page for sending to LLM based on selected format and settings.
@@ -99,7 +118,7 @@ class ProcessingThread(QThread):
             pil_img.save(buf, format="PNG", compress_level=compression)
 
         return buf.getvalue()
-    
+
 class VisualExplorerWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -354,31 +373,31 @@ class VisualExplorerWidget(QWidget):
     def update_individual_prompts(self):
         self.clear_individual_prompts()
         selected_indices = self.get_selected_indices()
-        
+
         if not selected_indices:
             label = QLabel("No items selected. Select items from the list.")
             self.prompt_container_layout.addWidget(label)
             return
-        
+
         for idx in selected_indices:
             item = self.vl_items[idx]
             name = item['name']
-            
+
             group = QGroupBox(name)
             group_layout = QVBoxLayout(group)
-            
+
             prompt_edit = QPlainTextEdit()
             prompt_edit.setPlaceholderText(f"Enter prompt for {name}...")
             if idx in self.vl_prompts:
                 prompt_edit.setPlainText(self.vl_prompts[idx])
             else:
                 prompt_edit.setPlainText(self.te_default_prompt.toPlainText())
-            
+
             prompt_edit.setObjectName(f"prompt_{idx}")
             prompt_edit.textChanged.connect(lambda idx=idx, edit=prompt_edit: self.save_individual_prompt(idx, edit))
             group_layout.addWidget(prompt_edit)
-            
-            if idx in self.vl_responses and self.vl_responses[idx]:
+
+            if self.vl_responses.get(idx):
                 response_label = QLabel("Response:")
                 group_layout.addWidget(response_label)
                 response_text = QTextEdit()
@@ -386,9 +405,9 @@ class VisualExplorerWidget(QWidget):
                 response_text.setPlainText(self.vl_responses[idx])
                 response_text.setMaximumHeight(150)
                 group_layout.addWidget(response_text)
-            
+
             self.prompt_container_layout.addWidget(group)
-        
+
         self.prompt_container_layout.addStretch()
 
     def update_progress(self, value, status):
@@ -399,19 +418,19 @@ class VisualExplorerWidget(QWidget):
         self.vl_responses[index] = response
         if not self.response_group.isVisible():
             self.response_group.setVisible(True)
-        
+
         current_text = self.te_vl_responses.toPlainText()
         item_name = self.vl_items[index]['name']
-        
+
         if current_text:
             current_text += "\n\n"
-        
+
         self.te_vl_responses.setPlainText(
-            current_text + 
+            current_text +
             f"--- {item_name} ---\n" +
             response
         )
-        
+
         self.te_vl_responses.verticalScrollBar().setValue(
             self.te_vl_responses.verticalScrollBar().maximum()
         )
@@ -445,17 +464,17 @@ class VisualExplorerWidget(QWidget):
         selected_indices = self.get_selected_indices()
         if not selected_indices:
             return
-        
+
         first_prompt = None
         for idx in selected_indices:
             prompt_edit = self.prompt_container.findChild(QPlainTextEdit, f"prompt_{idx}")
             if prompt_edit:
                 first_prompt = prompt_edit.toPlainText()
                 break
-        
+
         if not first_prompt:
             return
-        
+
         for idx in selected_indices:
             prompt_edit = self.prompt_container.findChild(QPlainTextEdit, f"prompt_{idx}")
             if prompt_edit:
@@ -535,30 +554,30 @@ class VisualExplorerWidget(QWidget):
         image_formats = "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tif *.tiff)"
         pdf_format = "PDF Files (*.pdf)"
         all_formats = f"{pdf_format};;{image_formats};;All Files (*.*)"
-        
+
         paths, selected_filter = QFileDialog.getOpenFileNames(
             self, "Open Files", "", all_formats
         )
-        
+
         if not paths:
             return
-        
+
         self.list_items.clear()
         self.vl_items = []
         self.vl_prompts = {}
         self.vl_responses = {}
-        
+
         if hasattr(self, 'vl_doc') and self.vl_doc is not None:
             self.vl_doc.close()
             self.vl_doc = None
-        
+
         for path in paths:
             file_ext = os.path.splitext(path)[1].lower()
-            
+
             if file_ext == '.pdf':
                 pdf_doc = fitz.open(path)
                 self.vl_doc = pdf_doc
-                
+
                 for i in range(pdf_doc.page_count):
                     item_name = f"{os.path.basename(path)} - Page {i+1}"
                     item = QListWidgetItem(item_name)
@@ -572,7 +591,7 @@ class VisualExplorerWidget(QWidget):
                         'doc': pdf_doc,
                         'name': item_name
                     })
-            
+
             elif file_ext in ['.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tif', '.tiff']:
                 item_name = os.path.basename(path)
                 item = QListWidgetItem(item_name)
@@ -584,42 +603,42 @@ class VisualExplorerWidget(QWidget):
                     'path': path,
                     'name': item_name
                 })
-        
+
         if self.list_items.count() > 0:
             self.list_items.setCurrentRow(0)
-        
+
         if len(paths) == 1:
             self.le_file_path.setText(paths[0])
         else:
             self.le_file_path.setText(f"{len(paths)} files selected")
-        
+
         self.clear_individual_prompts()
         self.btn_save.setEnabled(False)
 
     def on_item_selected(self, row: int):
         if row < 0 or row >= len(self.vl_items):
             return
-        
+
         item = self.vl_items[row]
-        
+
         if item['type'] == 'pdf_page':
             page = item['doc'][item['page_num']]
             pix = page.get_pixmap(dpi=75)
             img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888)
             pixmap = QPixmap.fromImage(img)
-            
+
             width_pt = page.rect.width
             height_pt = page.rect.height
             width_px = int(width_pt)
             height_px = int(height_pt)
-            
+
             self.sb_max_width.setValue(
                 max(min(width_px, self.sb_max_width.maximum()), self.sb_max_width.minimum())
             )
             self.sb_max_height.setValue(
                 max(min(height_px, self.sb_max_height.maximum()), self.sb_max_height.minimum())
             )
-            
+
         elif item['type'] == 'image':
             pixmap = QPixmap(item['path'])
             self.sb_max_width.setValue(
@@ -628,7 +647,7 @@ class VisualExplorerWidget(QWidget):
             self.sb_max_height.setValue(
                 max(min(pixmap.height(), self.sb_max_height.maximum()), self.sb_max_height.minimum())
             )
-        
+
         self.lbl_preview.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.lbl_preview.setScaledContents(False)
         self.lbl_preview.setPixmap(pixmap)
@@ -638,26 +657,26 @@ class VisualExplorerWidget(QWidget):
         if not self.vl_responses:
             QMessageBox.warning(self, "Error", "No responses to save.")
             return
-        
+
         data = {
             "source_files": [],
             "date_processed": datetime.datetime.now().isoformat(),
             "items": []
         }
-        
+
         source_files = set()
-        
+
         for idx, response in self.vl_responses.items():
             item = self.vl_items[idx]
-            
+
             if item['type'] == 'pdf_page':
                 source_files.add(item['pdf_path'])
             else:
                 source_files.add(item['path'])
-            
+
             prompt = self.vl_prompts.get(idx, self.te_default_prompt.toPlainText()) \
                 if self.cb_individual_prompts.isChecked() else self.te_default_prompt.toPlainText()
-            
+
             data["items"].append({
                 "name": item['name'],
                 "type": item['type'],
@@ -666,40 +685,40 @@ class VisualExplorerWidget(QWidget):
                 "prompt": prompt,
                 "response": response
             })
-        
+
         data["source_files"] = list(source_files)
-        
+
         if len(source_files) == 1:
             suggested_name = os.path.splitext(os.path.basename(list(source_files)[0]))[0] + "_vl_results"
         else:
             suggested_name = "multiple_files_vl_results"
-        
+
         filename, ok = QtWidgets.QInputDialog.getText(
             self,
             "Save Results",
             "Enter filename (no extension):",
             text=suggested_name
         )
-        
+
         if not ok or not filename.strip():
             return
-        
+
         filename = filename.strip() + ".json"
         save_path = os.path.join(self.parent_app.history_dir, filename)
-        
+
         with open(save_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         self.parent_app.status_bar.showMessage(f"Saved JSON to {save_path}", 5000)
-        
+
         combined = "\n\n".join([
-            f"--- {item['name']} ---\n{item['response']}" 
+            f"--- {item['name']} ---\n{item['response']}"
             for item in data["items"]
         ])
-        
+
         self.parent_app.search_history.append((filename, combined))
         self.parent_app.save_history()
         self.parent_app.status_bar.showMessage(f"History updated with {filename}", 5000)
-        
+
     def save_selected_images(self):
         """
         Save all checked items as PNG files to a user-selected directory.

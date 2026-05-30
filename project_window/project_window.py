@@ -1,43 +1,57 @@
-from gettext import gettext as _
-import os
-import time
-import tiktoken
-import re
 import logging
+import os
+import re
 import threading
+import time
+from gettext import gettext as _
+from gettext import pgettext
 
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QSplitter, QLabel, QShortcut, 
-                             QMessageBox, QInputDialog, QApplication, QDialog,
-                             QTreeWidgetItem, QTextEdit, QStackedWidget, QHBoxLayout)
-from PyQt5.QtCore import Qt, QTimer, QSettings, pyqtSlot
-from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QTextCursor, QKeySequence
-from .project_model import ProjectModel
-from .global_toolbar import GlobalToolbar
-from .project_tree_widget import ProjectTreeWidget
-from .scene_editor import SceneEditor
-from .bottom_stack import BottomStack
-from .focus_mode import FocusMode
-from .rewrite_feature import RewriteDialog
-from .activity_bar import ActivityBar
-from .search_replace_panel import SearchReplacePanel
-from .embedded_prompts_panel import EmbeddedPromptsPanel
+import PyQt5
+import tiktoken
+from PyQt5.QtCore import QSettings, Qt, QTimer, pyqtSlot
+from PyQt5.QtGui import QColor, QFont, QKeySequence, QTextCharFormat, QTextCursor
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QShortcut,
+    QSplitter,
+    QStackedWidget,
+    QTextEdit,
+    QTreeWidgetItem,
+    QWidget,
+)
+
+import muse.prompt_handler as prompt_handler
 from compendium.compendium_panel import CompendiumPanel
-from util.tts_manager import WW_TTSManager
 from settings.backup_manager import show_backup_dialog
 from settings.llm_api_aggregator import WWApiAggregator
 from settings.llm_worker import LLMWorker
 from settings.settings_manager import WWSettingsManager
 from settings.theme_manager import ThemeManager
-from workshop.workshop_controller import WorkshopController
+from util.ia_window import IAWindow
 from util.text_analysis_gui import TextAnalysisApp
+from util.tts_manager import WW_TTSManager
 from util.web_llm import MainWindow
 from util.whisper_app import WhisperApp
-from util.ia_window import IAWindow
-from .token_limit_dialog import TokenLimitDialog
-from gettext import pgettext
-import muse.prompt_handler as prompt_handler
+from workshop.workshop_controller import WorkshopController
 
-import PyQt5
+from .activity_bar import ActivityBar
+from .bottom_stack import BottomStack
+from .embedded_prompts_panel import EmbeddedPromptsPanel
+from .focus_mode import FocusMode
+from .global_toolbar import GlobalToolbar
+from .project_model import ProjectModel
+from .project_tree_widget import ProjectTreeWidget
+from .rewrite_feature import RewriteDialog
+from .scene_editor import SceneEditor
+from .search_replace_panel import SearchReplacePanel
+from .token_limit_dialog import TokenLimitDialog
+
 pyqt_dir = os.path.dirname(PyQt5.__file__)
 possible_paths = [
     os.path.join(pyqt_dir, "Qt5", "plugins", "platforms"),
@@ -343,7 +357,7 @@ class ProjectWindow(QMainWindow):
             hierarchy.insert(0, current.text(0).strip())
             current = current.parent()
         return hierarchy
-    
+
     def get_current_scene_hierarchy(self):
         current_item = self.project_tree.tree.currentItem()
         if not current_item:
@@ -371,7 +385,7 @@ class ProjectWindow(QMainWindow):
             QMessageBox.warning(self, _("Manual Save"), _("There is no content to save."))
             return
         hierarchy = self.get_item_hierarchy(current_item)
-        
+
         type_str = 'Scene'
         if self.project_tree.get_item_level(current_item) < 2:
             type_str = 'Summary'
@@ -420,7 +434,7 @@ class ProjectWindow(QMainWindow):
             is_scene
         )
         if backup_file_path:
-            with open(backup_file_path, "r", encoding="utf-8") as f:
+            with open(backup_file_path, encoding="utf-8") as f:
                 content = f.read()
             editor = self.scene_editor.editor
             if backup_file_path.endswith(".html"):
@@ -839,7 +853,7 @@ class ProjectWindow(QMainWindow):
         prompt_input_file = WWSettingsManager.get_project_path(self.model.project_name, "action-beat.txt")
         if os.path.exists(prompt_input_file):
             try:
-                with open(prompt_input_file, "r", encoding="utf-8") as f:
+                with open(prompt_input_file, encoding="utf-8") as f:
                     return f.read()
             except Exception as e:
                 print(f"Error loading prompt input: {e}")
@@ -868,8 +882,9 @@ class ProjectWindow(QMainWindow):
             self.search_panel.clear_extra_selections()
 
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
     import sys
+
+    from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     window = ProjectWindow("My Awesome Project", None)
     window.show()

@@ -1,7 +1,8 @@
-from PyQt5.QtCore import Qt, QSize, QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QIcon, QColor, QPixmap, QPainter
+from PyQt5.QtCore import QObject, QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt5.QtSvg import QSvgRenderer
+from PyQt5.QtWidgets import QApplication
+
 from .settings_manager import WWSettingsManager
 
 
@@ -15,20 +16,20 @@ class ThemeManager(QObject):
       - Apply a theme to a specific widget or the entire application.
       - Generate tinted SVG icons using QSvgRenderer.
     """
-    
+
     # Signal emitted when theme changes
     themeChanged = pyqtSignal(str)
-    
+
     _instance = None
     _icon_cache = {}  # Cache: (file_path, tint_color) -> QIcon
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(ThemeManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             # Initialize the QObject part
             cls._instance.__init_signals()
         return cls._instance
-    
+
     def __init_signals(self):
         # This ensures the QObject is properly initialized
         super().__init__()
@@ -301,7 +302,7 @@ class ThemeManager(QObject):
                 background: #c4a484;
             }
         """,
-        
+
         "Notion Light": """
             /* Enhanced Notion Light Theme with Accessibility Features */
             QWidget {
@@ -544,7 +545,7 @@ class ThemeManager(QObject):
                 color: #0066cc;
             }
         """,
-        
+
             "Warm Cream": """
             /* Warm Cream — soft paper & sepia ink */
             QWidget {
@@ -884,7 +885,7 @@ class ThemeManager(QObject):
         icon = QIcon(pixmap)
         ThemeManager._icon_cache[cache_key] = icon
         return icon
-    
+
     @classmethod
     def calculate_contrast_ratio(cls, color1, color2):
         """Calculate the contrast ratio between two QColor objects."""

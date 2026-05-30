@@ -2,6 +2,8 @@
 import faiss
 import numpy as np
 import tiktoken
+
+
 # For demonstration, we use a dummy embedding function.
 # In practice, you would replace this with a call to an embedding model/API.
 def get_embedding(text):

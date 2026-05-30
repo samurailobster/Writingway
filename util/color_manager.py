@@ -1,8 +1,10 @@
-import os
 import json
-from PyQt5.QtWidgets import QColorDialog, QMessageBox
-from PyQt5.QtGui import QColor, QTextCharFormat
+import os
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QTextCharFormat
+from PyQt5.QtWidgets import QColorDialog, QMessageBox
+
 
 class ColorManager:
     """
@@ -20,7 +22,7 @@ class ColorManager:
         """
         if os.path.exists(self.settings_file):
             try:
-                with open(self.settings_file, 'r', encoding='utf-8') as f:
+                with open(self.settings_file, encoding='utf-8') as f:
                     data = json.load(f)
                     fg = data.get('last_fg')
                     bg = data.get('last_bg')

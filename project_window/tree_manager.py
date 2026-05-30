@@ -1,10 +1,13 @@
-import os
 import json
+import os
 import re
 import uuid
-from PyQt5.QtWidgets import QTreeWidgetItem
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QTreeWidgetItem
+
 from settings.settings_manager import WWSettingsManager
+
 
 def get_structure_file_path(project_name, backward_compat=False):
     """Return the path to the project-specific structure file."""
@@ -14,7 +17,7 @@ def get_structure_file_path(project_name, backward_compat=False):
     if backward_compat:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        if os.path.exists(path): 
+        if os.path.exists(path):
             oldpath = WWSettingsManager.get_project_path(file=structure_name)
             if os.path.exists(oldpath):
                 newpath_modtime = os.path.getmtime(path)
@@ -51,9 +54,9 @@ def load_structure(project_name):
     ]}
     file_path = get_structure_file_path(project_name, True)
     if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             structure = json.load(f)
-        
+
         # Add UUIDs and has_summary to existing nodes
         def add_fields(node):
             if "uuid" not in node:

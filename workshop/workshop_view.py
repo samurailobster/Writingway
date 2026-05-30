@@ -1,19 +1,37 @@
-from gettext import gettext as _
 import os
 import re
+from gettext import gettext as _
+
 from markdown import markdown
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
-    QPushButton, QMessageBox, QInputDialog, QFormLayout,
-    QSplitter, QWidget, QLabel, QApplication, QListWidget, QListWidgetItem, 
-    QComboBox, QSizePolicy, QShortcut, QTextBrowser
-)
-from PyQt5.QtCore import Qt, QTimer, QSettings, QUrl
+from PyQt5.QtCore import QSettings, Qt, QTimer, QUrl
 from PyQt5.QtGui import QFont, QKeySequence, QTextCursor
+from PyQt5.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QSplitter,
+    QTextBrowser,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from compendium.context_panel import ContextPanel
 from muse.prompt_panel import PromptPanel
 from settings.theme_manager import ThemeManager
-from compendium.context_panel import ContextPanel
+
 from .new_chat_dialog import NewChatDialog
+
 
 class WorkshopView(QDialog):
     def __init__(self, parent, workshop_controller):
@@ -132,7 +150,7 @@ class WorkshopView(QDialog):
         self.zoom_out_shortcut = QShortcut(QKeySequence("Ctrl+-"), self)
         self.up_shortcut = QShortcut(QKeySequence("Up"), self.chat_input)
         self.up_shortcut.activated.connect(self.load_last_user_prompt)
-        
+
         # Nice default styling for markdown output
         self.chat_log.document().setDefaultStyleSheet("""
             p {
@@ -191,7 +209,7 @@ class WorkshopView(QDialog):
     def finalize_streaming_message(self):
         """Call when streaming is complete."""
         self._current_streaming_message_start = None
-        
+
     def format_chat_log_html(self):
         # Implement HTML formatting logic here if needed
         pass
@@ -203,22 +221,22 @@ class WorkshopView(QDialog):
         """Handle clicks on Edit/Delete anchors."""
         if not url:
             return
-        
+
         link = url.toString().strip()
-        
+
         if link == "edit_last":
             self.controller.edit_last_user_message()
         elif link == "delete_last":
             self.controller.delete_last_exchange()
 
-    def append_to_chat_log(self, speaker: str, text: str, is_streaming: bool = False, 
+    def append_to_chat_log(self, speaker: str, text: str, is_streaming: bool = False,
                            is_last_user: bool = False, is_edited: bool = False):
         """Enhanced append with optional Edit/Delete links for latest User message."""
         if not text:
             text = ""
-        
+
         html_text = markdown(text, extensions=['fenced_code', 'tables', 'nl2br'])
-        
+
         if is_edited:
             edited_html = re.sub(
                 r'(<p[^>]*>)',
@@ -227,7 +245,7 @@ class WorkshopView(QDialog):
                 flags=re.IGNORECASE
             )
             html_text = edited_html.replace('</p>', '</span></p>')
-            
+
         if speaker.lower() == "user" and is_last_user:
             # Add action links
             actions = (
@@ -245,7 +263,7 @@ class WorkshopView(QDialog):
                 <b>{speaker}:</b> {html_text}
             </p>
             '''
-        
+
         if is_streaming and self._current_streaming_message_start is not None:
             cursor = self.chat_log.textCursor()
             cursor.setPosition(self._current_streaming_message_start)
@@ -256,7 +274,7 @@ class WorkshopView(QDialog):
             if is_streaming:
                 self._current_streaming_message_start = self.chat_log.document().characterCount()
             self.chat_log.append(html)
-        
+
         scrollbar = self.chat_log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
@@ -267,8 +285,8 @@ class WorkshopView(QDialog):
         # This is approximate; for precision we could track positions, but simple strike for now
         # Better: use HTML with <del> or CSS
         # For simplicity, we'll re-render with strike in controller after edit
-        pass  # Enhanced in controller logic
-    
+        # Enhanced in controller logic
+
     def load_last_user_prompt(self):
         """Load last user prompt into editor if empty."""
         if self.chat_input.toPlainText().strip():
@@ -279,7 +297,7 @@ class WorkshopView(QDialog):
                 if messages[i].get("role") == "user":
                     self.chat_input.setPlainText(messages[i]["content"])
                     return
-                
+
     def get_selected_conversation(self):
         items = self.conversation_list.selectedItems()
         return items[0].text() if items else None

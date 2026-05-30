@@ -5,13 +5,15 @@ text_analysis_pl.py
 Polish-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -139,7 +141,7 @@ class PolishTextAnalysis(BaseTextAnalysis, QObject):
         if num_sentences == 0 or num_words == 0:
             return 0
         return 0.4 * ((num_words / num_sentences) + 100 * (num_difficult_words / num_words))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Polish."""
         return TOOLTIP_TRANSLATIONS

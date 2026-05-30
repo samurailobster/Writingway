@@ -1,30 +1,58 @@
-import sys
-import platform
-import math
-import tiktoken
-import os
-import json
 import datetime
+import json
 import logging
+import os
+import platform
+import sys
+
+import tiktoken
+
 logging.getLogger("boilerpy3").setLevel(logging.ERROR)
 logging.getLogger("qt.fonts").setLevel(logging.ERROR)
-from PyQt5.QtGui import QKeySequence
-from PyQt5.QtCore import QUrl, Qt, QThread, pyqtSignal, QDir
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox,
-    QGroupBox, QPlainTextEdit, QSplitter, QLabel,
-    QCheckBox, QListWidget, QDialog, QDialogButtonBox,
-    QSpinBox, QMenu, QAction, QToolButton, QComboBox,
-    QMenuBar, QShortcut, QInputDialog
-)
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineProfile, QWebEngineContextMenuData, QWebEngineSettings
-from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkRequest
+import re
+
 from boilerpy3 import extractors
 from bs4 import BeautifulSoup, NavigableString
-import re
+from PyQt5.QtCore import QDir, Qt, QThread, QUrl, pyqtSignal
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from PyQt5.QtWebEngineWidgets import (
+    QWebEngineContextMenuData,
+    QWebEnginePage,
+    QWebEngineProfile,
+    QWebEngineSettings,
+    QWebEngineView,
+)
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMenu,
+    QMenuBar,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QShortcut,
+    QSpinBox,
+    QSplitter,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
+
 from settings.llm_api_aggregator import WWApiAggregator
 from settings.theme_manager import ThemeManager
+
 
 class SilentPage(QWebEnginePage):
     def javaScriptConsoleMessage(self, level, message, lineNumber, sourceID):
@@ -86,7 +114,7 @@ class LLMWorker(QThread):
                     f"User: {item['prompt']}\nAssistant: {item['response']}"
                     for item in self.conversation_history
                 ]) + "\n\n"
-            
+
             full_prompt = f"{history_text}User: {self.prompt}\n\nWeb Content:\n{self.content}"
             response = WWApiAggregator.send_prompt_to_llm(full_prompt)
             self.finished.emit(response)
@@ -98,9 +126,9 @@ class ConversationHistoryDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Conversation History")
         self.resize(600, 400)
-        
+
         layout = QVBoxLayout(self)
-        
+
         search_layout = QHBoxLayout()
         search_label = QLabel("Search:")
         self.search_input = QLineEdit()
@@ -108,23 +136,23 @@ class ConversationHistoryDialog(QDialog):
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input)
         layout.addLayout(search_layout)
-        
+
         self.history_list = QListWidget()
         self.full_history = history
         self.update_history_list(history)
-        
+
         layout.addWidget(self.history_list)
-        
+
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-    
+
     def update_history_list(self, history):
         self.history_list.clear()
         for i, item in enumerate(history):
             self.history_list.addItem(f"Q{i+1}: {item['prompt'][:50]}...")
-    
+
     def filter_history(self, text):
         filtered = [item for item in self.full_history if text.lower() in item['prompt'].lower()]
         self.update_history_list(filtered)
@@ -134,32 +162,32 @@ class MainWindow(QWidget):
         super().__init__(parent)
         self.setWindowTitle("Web Text Extractor with LLM")
         self.resize(1100, 800)
-        
+
         # Add the use_history flag to track whether to include conversation history
         self.use_history = False
-        
+
         if platform.system() == 'Linux':
             self.check_dependencies()
-            
+
         self.web_history_dir = os.path.join(QDir.currentPath(), "web_history")
         if not os.path.exists(self.web_history_dir):
             os.makedirs(self.web_history_dir)
-            
+
         self.conversation_history = []
         history_file = os.path.join(self.web_history_dir, "history.json")
         if os.path.exists(history_file):
-            with open(history_file, 'r', encoding='utf-8') as f:
+            with open(history_file, encoding='utf-8') as f:
                 self.conversation_history = json.load(f)
-        
+
         self.init_ui()
         self.extractor = extractors.ArticleExtractor()
-        
+
         try:
             self.encoding = tiktoken.get_encoding("cl100k_base")
         except Exception as e:
             print(f"Failed to initialize tokenizer: {e}")
             self.encoding = None
-            
+
         self.current_content = ""
         self.original_content = ""
         self.current_url = ""
@@ -186,7 +214,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout(self)
         self.create_menu_bar()
         toolbar = QHBoxLayout()
-        
+
         back_btn = QToolButton()
         back_btn.setIcon(ThemeManager.get_tinted_icon("assets/icons/arrow-left.svg"))
         back_btn.clicked.connect(lambda: self.web_view.back())
@@ -216,12 +244,12 @@ class MainWindow(QWidget):
         load_btn.setIcon(ThemeManager.get_tinted_icon("assets/icons/search.svg"))
         load_btn.clicked.connect(self.load_url)
         toolbar.addWidget(load_btn)
-        
+
         self.offline_checkbox = QCheckBox("Save for Offline")
         self.offline_checkbox.stateChanged.connect(self.toggle_offline_mode)
         self.offline_checkbox.setToolTip("Automatically save copies of all visited pages.")
         toolbar.addWidget(self.offline_checkbox)
-        
+
         load_cache_btn = QPushButton("Browse Offline Library")
         load_cache_btn.clicked.connect(self.show_cache_dialog)
         toolbar.addWidget(load_cache_btn)
@@ -229,45 +257,45 @@ class MainWindow(QWidget):
         layout.addLayout(toolbar)
 
         token_bar = QHBoxLayout()
-        
+
         token_info = QVBoxLayout()
-        
+
         token_row1 = QHBoxLayout()
         self.token_label = QLabel("Original Tokens: 0")
         self.token_label.setStyleSheet("font-weight: bold;")
         token_row1.addWidget(self.token_label)
-        
+
         self.processed_token_label = QLabel("Processed Tokens: 0")
         self.processed_token_label.setStyleSheet("font-weight: bold;")
         token_row1.addWidget(self.processed_token_label)
         token_info.addLayout(token_row1)
-        
+
         token_row2 = QHBoxLayout()
         self.content_size_label = QLabel("Original Content: 0 chars")
         token_row2.addWidget(self.content_size_label)
-        
+
         self.processed_size_label = QLabel("Processed Content: 0 chars")
         token_row2.addWidget(self.processed_size_label)
         token_info.addLayout(token_row2)
-        
+
         token_bar.addLayout(token_info)
-        
+
         token_settings = QHBoxLayout()
         token_settings.addWidget(QLabel("Max Tokens:"))
-        
+
         self.max_tokens_input = QSpinBox()
         self.max_tokens_input.setRange(100, 1000000)
         self.max_tokens_input.setValue(32000)
         self.max_tokens_input.setSingleStep(500)
         self.max_tokens_input.valueChanged.connect(self.update_token_calculations)
         token_settings.addWidget(self.max_tokens_input)
-        
+
         token_bar.addLayout(token_settings)
-        
+
         layout.addLayout(token_bar)
 
         self.web_view = CustomWebView()
-        
+
         self.web_profile = QWebEngineProfile("storage", self.web_view)
         self.web_profile.setCachePath(os.path.join(self.web_history_dir, "cache"))
         self.web_profile.setPersistentStoragePath(os.path.join(self.web_history_dir, "storage"))
@@ -275,24 +303,24 @@ class MainWindow(QWidget):
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
         )
-        
+
         silent_page = SilentPage(self.web_profile, self.web_view)
         self.web_view.setPage(silent_page)
 
         llm_group = QGroupBox("LLM Interaction")
         llm_layout = QVBoxLayout()
-        
+
         history_layout = QHBoxLayout()
         history_layout.addWidget(QLabel("Conversation:"))
-        
+
         view_history_btn = QPushButton("View History")
         view_history_btn.clicked.connect(self.view_conversation_history)
         history_layout.addWidget(view_history_btn)
-        
+
         clear_history_btn = QPushButton("Clear History")
         clear_history_btn.clicked.connect(self.clear_conversation_history)
         history_layout.addWidget(clear_history_btn)
-        
+
         # Extractor ComboBox moved from toolbar to here (between Clear History and Use Original Content)
         self.extractor_combo = QComboBox()
         self.extractor_combo.addItems([
@@ -308,23 +336,23 @@ class MainWindow(QWidget):
         self.extractor_combo.setCurrentText("ArticleExtractor")  # default
         self.extractor_combo.currentTextChanged.connect(self.on_extractor_changed)
         history_layout.addWidget(self.extractor_combo)
-        
+
         self.use_original_checkbox = QCheckBox("Use Original Content")
         self.use_original_checkbox.setToolTip(
             "Send original page text instead of processed version to LLM."
         )
         self.use_original_checkbox.stateChanged.connect(self.update_total_tokens)
         history_layout.addWidget(self.use_original_checkbox)
-        
+
         history_layout.addStretch()
         llm_layout.addLayout(history_layout)
-        
+
         prompt_header = QHBoxLayout()
         prompt_header.addWidget(QLabel("Enter your question or instruction:"))
         self.prompt_token_label = QLabel("Prompt tokens: 0")
         prompt_header.addWidget(self.prompt_token_label)
         llm_layout.addLayout(prompt_header)
-        
+
         self.prompt_input = QLineEdit()
         self.prompt_input.setPlaceholderText("Enter your question or instruction...")
         self.prompt_input.textChanged.connect(self.update_prompt_tokens)
@@ -334,20 +362,20 @@ class MainWindow(QWidget):
         self.total_token_label = QLabel("Total tokens: 0")
         self.total_token_label.setStyleSheet("font-weight: bold;")
         total_token_layout.addWidget(self.total_token_label)
-        
+
         self.send_btn = QPushButton("Ask LLM")
         self.send_btn.clicked.connect(self.start_llm_query)
         total_token_layout.addWidget(self.send_btn)
-        
+
         edit_content_btn = QPushButton("Edit Content")
         edit_content_btn.clicked.connect(self.edit_content)
         edit_content_btn.setToolTip("Edit processed content of the web page before sending to LLM.")
         total_token_layout.addWidget(edit_content_btn)
-        
+
         preview_btn = QPushButton("Preview Prompt")
         preview_btn.clicked.connect(self.preview_prompt)
         total_token_layout.addWidget(preview_btn)
-        
+
         llm_layout.addLayout(total_token_layout)
 
         self.response_area = QPlainTextEdit()
@@ -368,7 +396,7 @@ class MainWindow(QWidget):
         layout.addWidget(splitter)
 
         bottom_bar = QHBoxLayout()
-        
+
         self.save_text_btn = QPushButton("Save Text")
         self.save_text_btn.setEnabled(False)
         self.save_text_btn.clicked.connect(self.on_save)
@@ -383,15 +411,15 @@ class MainWindow(QWidget):
 
         self.web_view.loadStarted.connect(self.on_load_started)
         self.web_view.loadFinished.connect(self.on_load_finished)
-        
+
     def create_menu_bar(self):
         menu_bar = QMenuBar(self)
-               
+
         help_menu = menu_bar.addMenu("Help")
         about_action = QAction("About", self)
         about_action.triggered.connect(self.show_app_info)
         help_menu.addAction(about_action)
-        
+
         self.layout().setMenuBar(menu_bar)
 
     def show_app_info(self):
@@ -456,7 +484,7 @@ class MainWindow(QWidget):
             if fn.endswith('.json') and fn != 'history.json':
                 path = os.path.join(self.web_history_dir, fn)
                 try:
-                    with open(path, 'r', encoding='utf-8') as f:
+                    with open(path, encoding='utf-8') as f:
                         d = json.load(f)
                         cache_files.append({
                             'title':    d.get('title', 'Unknown'),
@@ -531,41 +559,41 @@ class MainWindow(QWidget):
 
     def load_from_cache(self, filepath):
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding='utf-8') as f:
                 data = json.load(f)
-                
+
                 self.url_input.setText(data.get('url', ''))
                 self.current_url = data.get('url', '')
-                
+
                 self.original_content = data.get('original_content', '')
                 self.current_content = data.get('processed_content', '')
-                
-                # When loading from cache, we should reset use_history flag 
+
+                # When loading from cache, we should reset use_history flag
                 # as we're starting a new browsing session
                 self.use_history = False
-                
+
                 if self.original_content:
                     orig_token_count = self.count_tokens(self.original_content)
                     self.token_label.setText(f"Original Tokens: {orig_token_count:,}")
                     self.content_size_label.setText(f"Original Content: {len(self.original_content):,} chars")
-                
+
                 if self.current_content:
                     processed_token_count = self.count_tokens(self.current_content)
                     self.processed_token_label.setText(f"Processed Tokens: {processed_token_count:,}")
                     self.processed_size_label.setText(f"Processed Content: {len(self.current_content):,} chars")
-                    
+
                     self.save_text_btn.setEnabled(True)
                     self.update_total_tokens()
-                    
+
                 if data.get('html'):
                     self.web_view.setHtml(data.get('html'), QUrl(data.get('url', '')))
                 else:
                     self.web_view.setHtml(f"<html><body><h1>{data.get('title', 'Cached Content')}</h1><p>Content loaded from cache</p></body></html>")
-                
+
                 QMessageBox.information(self, "Cache", "Content loaded from cache successfully.")
-                
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to load cached content: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to load cached content: {e!s}")
 
     def save_to_cache(self, html, url, title, original_content, processed_content):
         """
@@ -578,7 +606,7 @@ class MainWindow(QWidget):
             if fn.endswith('.json') and fn != 'history.json':
                 path = os.path.join(self.web_history_dir, fn)
                 try:
-                    with open(path, 'r', encoding='utf-8') as f:
+                    with open(path, encoding='utf-8') as f:
                         existing = json.load(f)
                         if existing.get('url', '').rstrip('/') == normalized_url:
                             # already cached → skip
@@ -651,7 +679,7 @@ class MainWindow(QWidget):
         if ok:
             # When loading a new page, reset use_history to False
             self.use_history = False
-            
+
             self.save_text_btn.setEnabled(True)
             self.save_pdf_btn.setEnabled(True)
             self.web_view.page().toHtml(self.process_html_content)
@@ -669,34 +697,34 @@ class MainWindow(QWidget):
     def process_html_content(self, html: str):
         title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
         page_title = title_match.group(1) if title_match else "Unknown Page"
-        
+
         soup = BeautifulSoup(html, 'html.parser')
         original_text = soup.get_text(separator='\n', strip=True)
         self.original_content = original_text
-        
+
         orig_token_count = self.count_tokens(original_text)
-        
+
         self.token_label.setText(f"Original Tokens: {orig_token_count:,}")
         self.content_size_label.setText(f"Original Content: {len(original_text):,} chars")
-        
+
         try:
             content = self.extract_cleaned_text(html)
             max_tokens = self.max_tokens_input.value()
             if self.count_tokens(content) > max_tokens:
                 content = self.truncate_to_token_limit(content, max_tokens)
             self.current_content = content
-            
+
             processed_token_count = self.count_tokens(content)
             self.processed_token_label.setText(f"Processed Tokens: {processed_token_count:,}")
             self.processed_size_label.setText(f"Processed Content: {len(content):,} chars")
-            
+
             if self.offline_checkbox.isChecked():
                 if self.current_url:
                     self.save_to_cache(html, self.current_url, page_title, original_text, content)
-            
+
             self.update_total_tokens()
         except Exception as e:
-            self.processed_token_label.setText(f"Processed Tokens: Error")
+            self.processed_token_label.setText("Processed Tokens: Error")
             self.processed_size_label.setText("Processed Content: Error")
             print(f"Error calculating tokens: {e}")
 
@@ -796,10 +824,10 @@ class MainWindow(QWidget):
 
     def extract_cleaned_text(self, html):
         soup = BeautifulSoup(html, "html.parser")
-        
+
         for elem in soup.find_all(["span", "sup"], class_=re.compile(r"mw-editsection|reference")):
             elem.decompose()
-            
+
         for table in soup.find_all("table", class_=lambda c: c and ("infobox" in c or "wikitable" in c)):
             rows = ["\t".join([cell.get_text(strip=True) for cell in row.find_all(["th", "td"])])
                    for row in table.find_all("tr")]
@@ -825,7 +853,7 @@ class MainWindow(QWidget):
                         f.write(data)
                     QMessageBox.information(self, "Success", f"PDF saved to:\n{path}")
                 except Exception as e:
-                    QMessageBox.critical(self, "Error", f"Failed to write PDF: {str(e)}")
+                    QMessageBox.critical(self, "Error", f"Failed to write PDF: {e!s}")
             else:
                 QMessageBox.critical(self, "Error", "Failed to generate PDF content.")
 
@@ -894,7 +922,7 @@ class MainWindow(QWidget):
             self.processed_size_label.setText(f"Processed Content: {len(self.current_content):,} chars")
             self.response_area.setPlainText(selected['response'])
             self.update_total_tokens()
-            
+
             # Set the use_history flag to True when loading from history
             # This ensures that subsequent queries will include conversation history
             self.use_history = True

@@ -8,12 +8,14 @@ It uses the spaCy model "ro_core_news_sm" and provides language-specific data,
 tooltip translations (translated to Romanian) and a custom readability index function.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-import re
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
 
 # Romanian tooltip translations
@@ -89,7 +91,7 @@ ROMANIAN_DATA = {
         "îngrijorat", "rușinat", "dezamăgit", "frustrat", "iritat", "neliniștit",
         "înspăimântat", "bucuros", "deprimat", "nefericit", "extatic", "agitat",
         "mânie", "încântat", "șocat", "surprins", "confuz", "mândru", "mulțumit",
-        "satisfăcut", "entuziasmat", "invidios"
+        "satisfăcut", "invidios"
     },
     "weak_verbs": {"a fi"},
     "common_words": {

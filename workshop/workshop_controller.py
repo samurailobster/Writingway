@@ -1,18 +1,21 @@
-from gettext import gettext as _
 import datetime
-import logging
 import re
+from gettext import gettext as _
+
 from PyQt5.QtGui import QCursor, QPixmap
 from PyQt5.QtWidgets import QMessageBox
+
 from muse.prompt_preview_dialog import PromptPreviewDialog
-from settings.llm_worker import LLMWorker
 from settings.llm_api_aggregator import WWApiAggregator
+from settings.llm_worker import LLMWorker
+
+from .audio_utils import AudioRecorder, TranscriptionWorker
+from .chat_session import RolePlaySession, WritingCoachSession
+from .project_context_provider import ProjectContextProvider
 from .rag_pdf import PdfRagApp
-from .chat_session import WritingCoachSession, RolePlaySession
 from .workshop_model import WorkshopModel
 from .workshop_view import WorkshopView
-from .project_context_provider import ProjectContextProvider
-from .audio_utils import AudioRecorder, TranscriptionWorker
+
 
 class WorkshopController:
     def __init__(self, parent=None):
@@ -61,45 +64,45 @@ class WorkshopController:
         # 1. Save the previous session's context before switching
         if hasattr(self, '_current_chat_name') and self._current_chat_name:
             self.save_context_to_manager(self._current_chat_name)
-        
+
         name = self.view.get_selected_conversation()
         if not name:
             return
-        
+
         self._current_chat_name = name # Track current name for lifecycle
         conv = self.model.conversation_manager.get_conversation(name)
         chat_project = conv.get("project_name")
-        
+
         # === TEMPORARILY LOAD THE CHAT SO USER CAN SEE IT ===
         self.current_session = self.create_session(conv["mode"], conv["messages"])
         self.update_chat_log("Coach")  # Temporary display with default speaker
-        
+
         # Project might have been renamed or deleted
         if not chat_project or chat_project not in self.model.conversation_manager.project_names:
             chat_project = self._prompt_for_project_association(name)
             if not chat_project:
                 # User cancelled → fallback to current project
                 chat_project = self.model.project_name
-        
+
         # Switch ContextPanel if needed
         if chat_project != self.view.context_panel.project_name:
             structure = self.model.load_project_structure(chat_project)
             provider = ProjectContextProvider(chat_project)   # ← Clean injection
             self.view.context_panel.switch_to_project(chat_project, structure=structure, context_provider=provider)
-            
+
         selections = self.model.conversation_manager.get_context_selections(name)
-        
+
         # Determine mandatory items (POV Character)
         mandatory = []
         self.char_name = "Coach"
         if conv.get("mode") == "Role Play" and conv.get("pov_character"):
-            # Note: This assumes we can find which category the character is in, 
+            # Note: This assumes we can find which category the character is in,
             # or we store the full path. If POV is just a name, we find the first match.
             self.char_name = conv["pov_character"]
             mandatory = self._find_compendium_path_by_name(self.char_name)
 
         self.view.context_panel.set_selections(
-            selections["project"], 
+            selections["project"],
             selections["compendium"],
             mandatory_compendium_paths=mandatory
         )
@@ -121,7 +124,7 @@ class WorkshopController:
         """Helper to turn a POV character name into a 'Category/Name' path."""
         if not self.view or not self.view.context_panel:
             return []
-    
+
         root = self.view.context_panel.compendium_tree.invisibleRootItem()
         for i in range(root.childCount()):
             cat_item = root.child(i)
@@ -143,7 +146,7 @@ class WorkshopController:
             return
         messages = self.current_session.messages
         n = len(messages)
-        
+
         for idx, msg in enumerate(messages):
             role = msg.get("role", "Unknown").capitalize()
             content = msg.get("content", "")
@@ -152,7 +155,7 @@ class WorkshopController:
             is_last_user = (role.lower() == "user" and idx == len(messages) - 2)  # Before last assistant
             self.view.append_to_chat_log(speaker, content, is_last_user=is_last_user, is_edited=is_edited)
         self.view.format_chat_log_html()
-        
+
         # Ensure scroll to bottom
         scrollbar = self.view.chat_log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
@@ -225,7 +228,7 @@ class WorkshopController:
         """Handle Edit for last user message."""
         if not self.current_session or not self.current_session.messages:
             return
-        
+
         # Find last user message
         messages = self.current_session.messages
         last_user_idx = None
@@ -236,12 +239,12 @@ class WorkshopController:
 
         if last_user_idx is None:
             return
-        
+
         last_user_msg = messages[last_user_idx]["content"]
         # Confirm
         confirm = QMessageBox.question(
-            self.view, 
-            _("Edit Message"), 
+            self.view,
+            _("Edit Message"),
             _("This will replace the current chat input with the previous prompt.\n"
             "The last User + Assistant exchange will be marked as edited (struck out).\n"
             "They will be removed only after you send a new message.\n\n"
@@ -260,10 +263,10 @@ class WorkshopController:
         """Permanently delete last User + Assistant pair."""
         if not self.current_session or len(self.current_session.messages) < 2:
             return
-        
+
         confirm = QMessageBox.question(
-            self.view, 
-            _("Delete Exchange"), 
+            self.view,
+            _("Delete Exchange"),
             _("Permanently delete the last User message and Assistant response?\n"
             "This cannot be undone."),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
@@ -283,7 +286,7 @@ class WorkshopController:
         # Re-render chat log with strike-through for last messages
         self.update_chat_log(self.char_name)  # For now, full refresh; enhance later with <del>
         # TODO: Implement specific strike by modifying last HTML entries if needed
-        
+
     def send_message(self):
         user_input = self.view.chat_input.toPlainText().strip()
         if not user_input or not self.current_session.validate():
@@ -292,7 +295,7 @@ class WorkshopController:
             return
 
         self._remove_edited_messages()
-                    
+
         self.current_assistant_response = ""
         payload = self.current_session.construct_message(user_input)
         if payload:
@@ -301,20 +304,20 @@ class WorkshopController:
             self.view.start_new_streaming_message(self.char_name)
             self.view.chat_input.clear()
             self.start_llm(payload)
-            
+
     def _remove_edited_messages(self):
         """Remove any messages marked as edited before adding a new user message."""
         if not self.current_session:
             return
-        
+
         # Keep only messages that are NOT marked as edited
         cleaned_messages = [
-            msg for msg in self.current_session.messages 
+            msg for msg in self.current_session.messages
             if not msg.get("edited", False)
         ]
-        
+
         self.current_session.messages = cleaned_messages
-        
+
         # Also clear the 'edited' flag from any remaining messages (defensive)
         for msg in self.current_session.messages:
             msg.pop("edited", None)
@@ -336,19 +339,19 @@ class WorkshopController:
             return
         self.current_assistant_response += data
         self.view.append_to_chat_log(self.char_name, self.current_assistant_response, is_streaming=True)
-        
+
     def handle_stream_finished(self):
         if self.current_session and self.current_assistant_response:
             self.current_session.append_message("assistant", self.current_assistant_response)
-            
+
             current_chat = self.model.conversation_manager.last_viewed_chat
             self.model.conversation_manager.update_messages(current_chat, self.current_session.messages)
             self.model.conversation_manager.save()
-        
+
         self.view.finalize_streaming_message()
         self.update_chat_log(self.char_name)
         self._reset_stream_state()
-        
+
     def _reset_stream_state(self):
         """Clean up after streaming ends."""
         self.current_assistant_response = ""
@@ -363,14 +366,14 @@ class WorkshopController:
     def stop_llm(self):
         if self.worker:
             self.worker.stop()
-            
+
         # Save partial response if any
         if self.current_assistant_response and self.current_session:
             self.current_session.append_message("assistant", self.current_assistant_response + " [Response stopped by user]")
             current_chat = self.model.conversation_manager.last_viewed_chat
             self.model.conversation_manager.update_messages(current_chat, self.current_session.messages)
             self.model.conversation_manager.save()
-        
+
         self.view.finalize_streaming_message()
         self._reset_stream_state()
 
@@ -482,17 +485,17 @@ class WorkshopController:
         self.model.conversation_manager.save()
         self.view.write_settings()
         event.accept()
-        
+
     def _prompt_for_project_association(self, chat_name: str):
         """Ask user which project this chat belongs to (one-time)."""
         projects = self.model.conversation_manager.project_names or [self.model.project_name]
-        
+
         if len(projects) <= 1:
             project = projects[0]
         else:
             from PyQt5.QtWidgets import QInputDialog
             project, ok = QInputDialog.getItem(
-                self.view, 
+                self.view,
                 _("Associate Chat with Project"),
                 f"Chat '{chat_name}' has no associated project.\n"
                 "Please select the project this conversation belongs to:",

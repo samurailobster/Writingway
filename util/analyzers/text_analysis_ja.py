@@ -5,14 +5,15 @@ text_analysis_ja.py
 Japanese-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
-import math
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -141,24 +142,24 @@ class JapaneseTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[。！？]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Count characters (excluding spaces)
         num_chars = len(re.sub(r'\s', '', text))
-        
+
         # Count kanji characters (complex characters)
         # Kanji Unicode range: U+4E00 to U+9FFF
         num_kanji = len(re.findall(r'[\u4e00-\u9fff]', text))
-        
+
         if num_sentences == 0 or num_chars == 0:
             return 0
-            
+
         # Calculate characters per sentence and kanji ratio
         chars_per_sentence = num_chars / num_sentences
         kanji_ratio = num_kanji / num_chars
-        
+
         # Calculate Obi readability score (modified for Japanese)
         return 0.5 * (chars_per_sentence + 100 * kanji_ratio)
-        
+
     def get_tooltips(self):
         """Returns tooltips in Japanese."""
         return TOOLTIP_TRANSLATIONS

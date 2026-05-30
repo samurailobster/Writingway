@@ -1,9 +1,19 @@
 from gettext import gettext as _
+
 from PyQt5.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QFormLayout,
-    QPushButton, QTextEdit, QLineEdit, QComboBox, QDialog, QMessageBox
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
 )
-from .compendium_manager import CompendiumManager, CompendiumEventBus
+
+from .compendium_manager import CompendiumEventBus, CompendiumManager
+
 
 class POVComboBox(QComboBox):
     def __init__(self, project_name, initial_pov="Character", parent=None):
@@ -60,16 +70,16 @@ class POVComboBox(QComboBox):
             return
         if project_name != self.project_name:
             return
-    
+
         previous_index = self.currentIndex()
         previous_text = self.selected_pov
-        
+
         self.blockSignals(True)
         try:
             self.populate_combo()  # Rebuild list
         finally:
             self.blockSignals(False)
-            
+
         self.set_to_selected_pov()
         if self.currentIndex() < 0:
             index = self.findText(previous_text)
@@ -90,7 +100,7 @@ class POVComboBox(QComboBox):
         elif self.count() > 0:
             value = self.currentText()
             if (value and value != _("Custom...")):
-                self.selected_pov = value 
+                self.selected_pov = value
             else: # User Canceled custom char
                 self.blockSignals(True)
                 self.setCurrentIndex(0)
@@ -114,30 +124,30 @@ class CustomPOVDialog(QDialog):
         self.setWindowTitle(_("Custom POV Character"))
         self.setModal(True)
         layout = QVBoxLayout(self)
-        
+
         form_layout = QFormLayout()
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText(_("Enter character name"))
         form_layout.addRow(_("Name:"), self.name_input)
-        
+
         self.description_input = QTextEdit()
         self.description_input.setPlaceholderText(_("(Optional) Enter details for new compendium entry..."))
         self.description_input.setMinimumHeight(100)
         form_layout.addRow(_("Description:"), self.description_input)
-        
+
         layout.addLayout(form_layout)
-        
+
         buttons = QHBoxLayout()
         self.ok_button = QPushButton(_("OK"))
         self.cancel_button = QPushButton(_("Cancel"))
         buttons.addWidget(self.ok_button)
         buttons.addWidget(self.cancel_button)
         layout.addLayout(buttons)
-        
+
         self.ok_button.clicked.connect(self.ok_button_pressed)
         self.cancel_button.clicked.connect(self.reject)
-        
+
     def ok_button_pressed(self):
         if not self.name_input.text().strip():
             QMessageBox.warning(self, _("Custom POV Character"), _("Character name cannot be empty."))

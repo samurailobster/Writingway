@@ -1,16 +1,19 @@
-from typing import Callable, Dict, List, Optional, Any
-from uuid import uuid4
 import json
 import os
 import re
 import weakref
+from collections.abc import Callable
+from typing import Any
+from uuid import uuid4
+
 from settings.settings_manager import WWSettingsManager
+
 
 class CompendiumEventBus:
     _instance = None
 
     def __init__(self):
-        self.updated_listeners: List[Callable[[str], None]] = []
+        self.updated_listeners: list[Callable[[str], None]] = []
         self._weak_refs: weakref.WeakSet = weakref.WeakSet()
 
     @classmethod
@@ -50,7 +53,7 @@ class CompendiumEventBus:
 class CompendiumManager:
     """Manages compendium data loading, retrieval, and reference parsing for a project."""
 
-    def __init__(self, project_name: Optional[str] = None, event_bus: Optional[CompendiumEventBus] = None):
+    def __init__(self, project_name: str | None = None, event_bus: CompendiumEventBus | None = None):
         """
         Initialize the CompendiumManager with an optional project name.
 
@@ -83,7 +86,7 @@ class CompendiumManager:
             }
             self._save_data(default_data)
 
-    def _load_data(self) -> Dict[str, Any]:
+    def _load_data(self) -> dict[str, Any]:
         """
         Load compendium data from the project-specific file, converting legacy formats if needed.
 
@@ -94,7 +97,7 @@ class CompendiumManager:
             self._ensure_file_exists()
 
         try:
-            with open(self._filepath, "r", encoding="utf-8") as f:
+            with open(self._filepath, encoding="utf-8") as f:
                 data = json.load(f)
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON from {self._filepath}: {e}. Initializing empty compendium.")
@@ -142,10 +145,10 @@ class CompendiumManager:
 
         return data
 
-    def load_data(self) -> Dict[str, Any]:
+    def load_data(self) -> dict[str, Any]:
         return self._load_data()
 
-    def _save_data(self, compendium_data: Dict[str, Any]) -> None:
+    def _save_data(self, compendium_data: dict[str, Any]) -> None:
         """
         Save compendium data to the file.
 
@@ -161,10 +164,10 @@ class CompendiumManager:
         except Exception as e:
             print(f"Error saving compendium data to {self._filepath}: {e}")
 
-    def save_data(self, compendium_data: Dict[str, Any]) -> None:
+    def save_data(self, compendium_data: dict[str, Any]) -> None:
         self._save_data(compendium_data)
 
-    def get_category(self, category: str) -> List[Dict[str, str]]:
+    def get_category(self, category: str) -> list[dict[str, str]]:
         data = self._load_data()
         categories = data.get("categories", [])
         for cat in categories:
@@ -172,12 +175,12 @@ class CompendiumManager:
                 return cat.get("entries", [])
         return []
 
-    def get_characters(self) -> List[str]:
+    def get_characters(self) -> list[str]:
         character_dicts = self.get_category("Characters")
         characters = [d['name'] for d in character_dicts]
         characters.sort()
         return characters
-    
+
     def get_text(self, category: str, entry: str) -> str:
         """
         Retrieve the text content for a given category and entry.
@@ -198,7 +201,7 @@ class CompendiumManager:
                         return e.get("content", f"[No content for {entry} in category {category}]")
         return f"[No content for {entry} in category {category}]"
 
-    def parse_references(self, message: str) -> List[str]:
+    def parse_references(self, message: str) -> list[str]:
         """
         Parse compendium references from a message by matching entry names.
 
@@ -212,7 +215,7 @@ class CompendiumManager:
         refs = []
         if os.path.exists(filename):
             try:
-                with open(filename, "r", encoding="utf-8") as f:
+                with open(filename, encoding="utf-8") as f:
                     compendium = json.load(f)
                 names = []
                 cats = compendium.get("categories", [])
@@ -232,7 +235,7 @@ class CompendiumManager:
     def add_character(self, name, description) -> None:
         """Add a new character to the compendium.json file."""
         compendium_data = self._load_data()
-        
+
         # Find or create Characters category
         characters_cat = None
         for cat in compendium_data.get("categories", []):
@@ -242,7 +245,7 @@ class CompendiumManager:
         if not characters_cat:
             characters_cat = {"name": "Characters", "entries": []}
             compendium_data["categories"].append(characters_cat)
-        
+
         # Check if character already exists
         for entry in characters_cat.get("entries", []):
             if entry.get("name") == name:
@@ -251,20 +254,20 @@ class CompendiumManager:
         else:
             # Add new character entry
             characters_cat["entries"].append({"name": name, "content": description})
-        
+
         # Ensure extensions section exists
         if "extensions" not in compendium_data:
             compendium_data["extensions"] = {"entries": {}}
         elif "entries" not in compendium_data["extensions"]:
             compendium_data["extensions"]["entries"] = {}
-        
+
         # Add minimal extended data
         if name not in compendium_data["extensions"]["entries"]:
             compendium_data["extensions"]["entries"][name] = {"details": "", "tags": [], "relationships": [], "images": []}
-        
+
         self._save_data(compendium_data)
 
-    def upsert_data(self, compendium_data: Dict[str, Any]) -> None:
+    def upsert_data(self, compendium_data: dict[str, Any]) -> None:
         """ Merge compendium_data with the existing compendium content. """
         existing_data = self._load_data()
 

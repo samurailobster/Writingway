@@ -1,13 +1,39 @@
-from gettext import gettext as _
 import re
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QToolBar, QSplitter, QTreeWidget, QTextEdit, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QLineEdit, QComboBox, QPushButton, QListWidget, QTabWidget, QFileDialog, QMessageBox, QTreeWidgetItem,
-                             QScrollArea, QFormLayout, QGroupBox, QInputDialog, QMenu, QColorDialog, QSizePolicy, QListWidgetItem)
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont
-from compendium.compendium_manager import CompendiumManager, CompendiumEventBus
-from settings.theme_manager import ThemeManager
 import uuid
+from gettext import gettext as _
+
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QBrush, QColor, QFont, QPixmap
+from PyQt5.QtWidgets import (
+    QColorDialog,
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSplitter,
+    QTabWidget,
+    QTextEdit,
+    QToolBar,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
+from compendium.compendium_manager import CompendiumEventBus, CompendiumManager
+from settings.theme_manager import ThemeManager
 
 DEBUG = False
 

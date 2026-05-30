@@ -5,13 +5,15 @@ text_analysis_fr.py
 French-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -75,7 +77,7 @@ FRENCH_DATA = {
     "weak_terms": {"peut-être", "probablement", "sans doute", "semble", "comme si", "un peu", "légèrement"},
     "standard_speech_verbs": {"dire", "demander"},
     "speech_verbs": {"dire", "demander", "chuchoter", "crier", "murmurer", "s'exclamer", "hurler"},
-    "filter_words": {"voyait", "entendait", "sentait", "remarquait", "pensait", "se demandait", "observait", "regardait", "écoutait", "ressentait", "décidait", "considérait", "semblait", "apparaissait", "observait", "percevait", "imaginait"},
+    "filter_words": {"voyait", "entendait", "sentait", "remarquait", "pensait", "se demandait", "observait", "regardait", "écoutait", "ressentait", "décidait", "considérait", "semblait", "apparaissait", "percevait", "imaginait"},
     "telling_verbs": {"être", "se sentir", "sembler", "paraître", "apparaître", "devenir"},
     "emotion_words": {"en colère", "triste", "heureux", "excité", "nerveux", "terrifié", "inquiet", "gêné", "déçu", "frustré", "irrité", "anxieux", "effrayé", "joyeux", "déprimé", "malheureux", "extatique", "contrarié", "furieux", "ravi", "choqué", "surpris", "confus", "fier", "content", "satisfait", "enthousiaste", "jaloux"},
     "weak_verbs": {"être", "avoir", "faire"},
@@ -140,7 +142,7 @@ class FrenchTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Estimate syllables (simplified approach)
         def count_syllables(word):
             # Count vowel groups as an approximation for French syllables
@@ -148,7 +150,7 @@ class FrenchTextAnalysis(BaseTextAnalysis, QObject):
             word = word.lower()
             count = 0
             in_vowel_group = False
-            
+
             for char in word:
                 if char in vowels:
                     if not in_vowel_group:
@@ -156,30 +158,30 @@ class FrenchTextAnalysis(BaseTextAnalysis, QObject):
                         in_vowel_group = True
                 else:
                     in_vowel_group = False
-                    
+
             # Handle silent e at the end
             if word.endswith('e') and len(word) > 1 and word[-2] not in vowels:
                 count = max(1, count - 1)
-                
+
             # Ensure at least one syllable
             return max(1, count)
-        
+
         total_syllables = sum(count_syllables(word) for word in words)
-        
+
         # Avoid division by zero
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         asl = num_words / num_sentences
         asw = total_syllables / num_words
-        
+
         # Flesch Reading Ease adapted for French
         # Scale is 0-100, where higher is easier to read
         score = 206.835 - (1.015 * asl) - (73.6 * asw)
-        
+
         # Clamp the score to a reasonable range
         return max(0, min(100, score))
-        
+
     def get_tooltips(self):
         """Returns tooltips in French."""
         return TOOLTIP_TRANSLATIONS
