@@ -5,6 +5,7 @@ import threading
 import time
 from gettext import gettext as _
 from gettext import pgettext
+from typing import TYPE_CHECKING, Optional
 
 import PyQt5
 import tiktoken
@@ -25,6 +26,9 @@ from PyQt5.QtWidgets import (
     QTreeWidgetItem,
     QWidget,
 )
+
+if TYPE_CHECKING:
+    from compendium.enhanced_compendium import EnhancedCompendiumWindow
 
 import muse.prompt_handler as prompt_handler
 from compendium.compendium_panel import CompendiumPanel
@@ -67,7 +71,32 @@ if plugin_path:
 
 
 class ProjectWindow(QMainWindow):
-    def __init__(self, project_name, compendium_window):
+    # ---------------------------------------------------------------------------
+    # Class-level attribute declarations — lets PyCharm resolve member types even
+    # for attributes that are assigned inside init_ui() / setup_*() helpers rather
+    # than directly in __init__.
+    # ---------------------------------------------------------------------------
+    model: "ProjectModel"
+    global_toolbar: "GlobalToolbar"
+    main_splitter: QSplitter
+    left_widget: QWidget
+    activity_bar: "ActivityBar"
+    scene_editor: "SceneEditor"
+    side_bar: QStackedWidget
+    project_tree: "ProjectTreeWidget"
+    search_panel: "SearchReplacePanel"
+    compendium_panel: "CompendiumPanel"
+    prompts_panel: "EmbeddedPromptsPanel"
+    compendium_editor: QTextEdit
+    prompts_editor: QWidget
+    editor_stack: QStackedWidget
+    bottom_stack: "BottomStack"
+    word_count_label: QLabel
+    last_save_label: QLabel
+    focus_mode_shortcut: QShortcut
+    autosave_timer: QTimer
+
+    def __init__(self, project_name: str, compendium_window: Optional["EnhancedCompendiumWindow"]):
         super().__init__()
         self.model = ProjectModel(project_name)
         self.current_theme = WWSettingsManager.get_appearance_settings()["theme"]
@@ -75,7 +104,7 @@ class ProjectWindow(QMainWindow):
         self.tts_playing = False
         self.unsaved_preview = False
         self.enhanced_window = compendium_window
-        self.worker = None
+        self.worker: LLMWorker | None = None
         self.last_sidebar_width = 250
         self.init_ui()
         self.setup_connections()

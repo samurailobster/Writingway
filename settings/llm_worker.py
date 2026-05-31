@@ -10,7 +10,7 @@ class LLMWorker(QThread):
     finished = pyqtSignal()
     token_limit_exceeded = pyqtSignal(str)
 
-    def __init__(self, prompt, overrides=None, conversation_history=None):
+    def __init__(self, prompt: str, overrides: dict | None = None, conversation_history: list | None = None):
         super().__init__()
         self.prompt = prompt
         self.overrides = overrides

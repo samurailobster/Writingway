@@ -1,4 +1,5 @@
 from gettext import gettext as _
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtGui import QColor
@@ -26,10 +27,14 @@ from .focus_mode import PlainTextEdit
 from .summary_controller import SummaryController, SummaryMode
 from .summary_model import SummaryModel
 
+if TYPE_CHECKING:
+    from .project_model import ProjectModel
+    from .project_window import ProjectWindow
+
 
 class BottomStack(QWidget):
     """Stacked widget for summary and LLM panels."""
-    def __init__(self, controller, model, tint_color=QColor("black")):
+    def __init__(self, controller: "ProjectWindow", model: "ProjectModel", tint_color: QColor = QColor("black")):
         super().__init__()
         self.controller = controller
         self.model = model

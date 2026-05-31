@@ -1,5 +1,6 @@
 import re
 from gettext import gettext as _
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QFont, QTextCursor, QTextDocument
@@ -19,6 +20,10 @@ from PyQt5.QtWidgets import (
 )
 
 from settings.theme_manager import ThemeManager
+
+if TYPE_CHECKING:
+    from .project_model import ProjectModel
+    from .project_window import ProjectWindow
 
 SEARCH_DELAY = 500
 MATCH_CONTEXT_LENGTH = 20  # Number of characters to show before and after the match
@@ -100,7 +105,7 @@ class MatchItemWidget(QWidget):
 
 class SearchReplacePanel(QWidget):
     """Panel for searching text across the latest scene files."""
-    def __init__(self, controller, model, tint_color=QColor("black")):
+    def __init__(self, controller: "ProjectWindow", model: "ProjectModel", tint_color: QColor = QColor("black")):
         super().__init__()
         self.controller = controller
         self.model = model

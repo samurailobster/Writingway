@@ -1,5 +1,6 @@
 from gettext import gettext as _
 from gettext import pgettext
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QEvent, QPoint, QSize, Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPen
@@ -18,6 +19,10 @@ from PyQt5.QtWidgets import (
 import project_window.project_structure_manager as psm
 import project_window.tree_manager as tree_manager
 from settings.theme_manager import ThemeManager
+
+if TYPE_CHECKING:
+    from .project_model import ProjectModel
+    from .project_window import ProjectWindow
 
 
 class _DropIndicatorOverlay(QWidget):
@@ -78,7 +83,7 @@ class ProjectTreeWidget(QWidget):
     _DND_SCROLL_INTERVAL = 50  # ms
     _DND_EXTRA_DROP_ROWS = 1  # allow ~1 extra row of empty bottom drag space
 
-    def __init__(self, controller, model):
+    def __init__(self, controller: "ProjectWindow", model: "ProjectModel"):
         super().__init__()
         self.controller = controller
         self.model = model

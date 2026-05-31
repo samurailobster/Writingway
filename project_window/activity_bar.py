@@ -1,4 +1,5 @@
 from gettext import gettext as _
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
@@ -6,10 +7,13 @@ from PyQt5.QtWidgets import QAction, QToolBar, QVBoxLayout, QWidget
 
 from settings.theme_manager import ThemeManager
 
+if TYPE_CHECKING:
+    from .project_window import ProjectWindow
+
 
 class ActivityBar(QWidget):
     """Vertical icon panel for switching between views, similar to VS Code Activity Bar."""
-    def __init__(self, controller, tint_color=QColor("black"), position="left"):
+    def __init__(self, controller: "ProjectWindow", tint_color: QColor = QColor("black"), position: str = "left"):
         super().__init__()
         self.controller = controller  # Reference to ProjectWindow
         self.tint_color = tint_color

@@ -18,7 +18,7 @@ class ProjectModel(QObject):
     structureChanged = pyqtSignal(list, str)
     errorOccurred = pyqtSignal(str)
 
-    def __init__(self, project_name):
+    def __init__(self, project_name: str):
         super().__init__()
         self.project_name = project_name
         self.structure = load_structure(project_name)

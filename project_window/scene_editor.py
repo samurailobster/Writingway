@@ -4,6 +4,7 @@ import os
 import re
 import sys
 from gettext import gettext as _
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor, QFont, QIcon, QKeySequence, QPen, QPixmap, QTextCharFormat, QTextCursor
@@ -29,11 +30,38 @@ from util.find_dialog import FindDialog
 
 from .focus_mode import PlainTextEdit
 
+if TYPE_CHECKING:
+    from .project_window import ProjectWindow
+
 
 class SceneEditor(QWidget):
     """Scene editor with toolbar, text area, and spellchecking support."""
 
-    def __init__(self, controller, tint_color=QColor("black")):
+    # ---------------------------------------------------------------------------
+    # Class-level attribute declarations.
+    # Attributes created via setattr(...) in setup_toolbar() and those assigned
+    # inside init_ui()/setup_editor() are listed here so PyCharm can resolve them.
+    # ---------------------------------------------------------------------------
+    toolbar: QToolBar
+    editor: "PlainTextEdit"
+    font_combo: QFontComboBox
+    font_size_combo: QComboBox
+    lang_combo: QComboBox
+    spellcheck_timer: QTimer
+    # Formatting / alignment actions (set via setattr in setup_toolbar)
+    bold_action: QAction
+    italic_action: QAction
+    underline_action: QAction
+    color_action: QAction
+    tts_action: QAction
+    align_left_action: QAction
+    align_center_action: QAction
+    align_right_action: QAction
+    manual_save_action: QAction
+    oh_shit_action: QAction
+    analysis_editor_action: QAction
+
+    def __init__(self, controller: "ProjectWindow", tint_color: QColor = QColor("black")):
         super().__init__()
         self.controller = controller
         self.tint_color = tint_color
