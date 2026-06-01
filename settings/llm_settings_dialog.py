@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QComboBox, QSpinBox, QPushButton, QGroupBox
+from PyQt5.QtWidgets import QComboBox, QDialog, QFormLayout, QPushButton, QSpinBox, QVBoxLayout
+
 from settings.llm_api_aggregator import WWApiAggregator
+
 
 class LLMSettingsDialog(QDialog):
     """A reusable modal dialog for selecting LLM provider overrides."""
-    
+
     def __init__(self, parent=None, default_provider=None, default_model=None, default_timeout=30, default_max_tokens=1024):
         super().__init__(parent)
         self.setWindowTitle("LLM Settings")
@@ -33,7 +35,7 @@ class LLMSettingsDialog(QDialog):
 
         # Tokens and Timeout row
         tokens_timeout_layout = QVBoxLayout()
-        
+
         # Max Tokens selection
         self.max_tokens_spin = QSpinBox()
         self.max_tokens_spin.setRange(1, 16384)  # Reasonable range for most LLMs
@@ -90,6 +92,6 @@ class LLMSettingsDialog(QDialog):
     def show_dialog(parent=None, default_provider=None, default_model=None, default_timeout=60, default_max_tokens=3000):
         """Static method to show the dialog and return settings if accepted."""
         dialog = LLMSettingsDialog(parent, default_provider, default_model, default_timeout, default_max_tokens)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             return dialog.get_settings()
         return None

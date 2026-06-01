@@ -6,9 +6,11 @@ Base module containing common text analysis logic that can be used across langua
 Language-specific data is provided by the respective language modules.
 """
 
-import spacy
-from collections import Counter, defaultdict
 import re
+from collections import Counter, defaultdict
+
+import spacy
+
 
 class BaseTextAnalysis:
     def __init__(self, model_name, language_data):
@@ -68,16 +70,16 @@ class BaseTextAnalysis:
         spans = []
         weak_patterns = self.language_data.get("weak_patterns", [])
         weak_terms = self.language_data.get("weak_terms", set())
-        
+
         for pattern in weak_patterns:
             for match in re.finditer(pattern, sentence_text, re.IGNORECASE):
                 spans.append((match.start(), match.end()))
-        
+
         for term in weak_terms:
             pattern = r'\b' + re.escape(term) + r'\b'
             for match in re.finditer(pattern, sentence_text, re.IGNORECASE):
                 spans.append((match.start(), match.end()))
-        
+
         spans.sort(key=lambda span: span[0])
         return spans
 
@@ -229,12 +231,12 @@ class BaseTextAnalysis:
         dialogue_ratio, dialogue_heavy_sections = self.analyze_dialogue_balance(text)
         results["dialogue_ratio"] = dialogue_ratio
         results["dialogue_heavy_sections"] = dialogue_heavy_sections
-        
+
         for sent_data in sentence_analysis:
             sent_doc = sent_data["doc"]
             sent_start = sent_data["start"]
             sent_text = sent_data["sentence"]
-            
+
             for start, end in self.detect_weak_formulations(sent_text, sent_doc):
                 results["weak_formulations"].append((sent_start + start, sent_start + end))
             for start, end in self.detect_passive(sent_text, sent_doc):
@@ -245,5 +247,5 @@ class BaseTextAnalysis:
                 results["telling_not_showing"].append((sent_start + start, sent_start + end, phrase))
             for start, end, construction, verb_type in self.analyze_verb_strength(sent_doc):
                 results["weak_verbs"].append((sent_start + start, sent_start + end, construction, verb_type))
-        
+
         return results

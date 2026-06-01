@@ -1,8 +1,25 @@
-from PyQt5.QtWidgets import QWidget, QGroupBox, QFormLayout, QLineEdit, QComboBox, QTextEdit, QHBoxLayout, QPushButton, QCheckBox, QScrollArea, QVBoxLayout, QMessageBox, QFileDialog, QLabel
-from PyQt5.QtGui import QFontMetrics
-from internetarchive import upload, modify_metadata, delete
 import re
 from pathlib import Path
+
+from internetarchive import delete, modify_metadata, upload
+from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 class ManageTab(QWidget):
     def __init__(self, session=None, parent=None):
@@ -202,68 +219,68 @@ class ManageTab(QWidget):
         if not hasattr(self, 'upload_file_paths') or not self.upload_file_paths:
             QMessageBox.warning(self, "Warning", "Select files or a folder to upload")
             return
-            
+
         identifier = self.upload_identifier.text().strip()
         if not identifier:
             QMessageBox.warning(self, "Warning", "Identifier is required")
             return
-            
+
         if not re.match(r'^[a-zA-Z0-9_\-]+$', identifier):
             QMessageBox.warning(self, "Error", "Invalid identifier format. Use only characters: a-z, 0-9, _ and -")
             return
-            
+
         metadata = {}
         metadata['title'] = self.upload_title.text().strip()
         metadata['mediatype'] = self.upload_mediatype.currentText()
-        
+
         if self.upload_collection.text().strip():
             metadata['collection'] = self.upload_collection.text().strip()
-            
+
         additional_metadata = self.upload_metadata.toPlainText().strip()
         if additional_metadata:
             for line in additional_metadata.split('\n'):
                 if ':' in line:
                     key, value = line.split(':', 1)
                     metadata[key.strip()] = value.strip()
-        
+
         total_size = sum(os.path.getsize(file) for file in self.upload_file_paths)
         if total_size > 100 * 1024 * 1024 * 1024:
             response = QMessageBox.question(
                 self,
                 "Large Upload",
                 "You have selected files with a total size over 100GB. According to Archive.org recommendations, items should not exceed 100GB. Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if response == QMessageBox.No:
+            if response == QMessageBox.StandardButton.No:
                 return
-                
+
         if len(self.upload_file_paths) > 10000:
             response = QMessageBox.question(
                 self,
                 "Too Many Files",
                 "You have selected over 10,000 files. According to Archive.org recommendations, items should not contain more than 10,000 files. Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-            if response == QMessageBox.No:
+            if response == QMessageBox.StandardButton.No:
                 return
-        
+
         try:
             if self.session:
                 upload(identifier, files=self.upload_file_paths, metadata=metadata, archive_session=self.session)
             else:
                 upload(identifier, files=self.upload_file_paths, metadata=metadata)
-                
+
             QMessageBox.information(self, "Success", "Files have been successfully uploaded")
-            
+
             self.upload_identifier.clear()
             self.upload_title.clear()
             self.upload_collection.clear()
             self.upload_metadata.clear()
             self.selected_files_label.setText("No files selected")
             delattr(self, 'upload_file_paths')
-            
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Upload failed: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Upload failed: {e!s}")
 
     def modify_metadata(self):
         """Modify metadata for the specified item."""
@@ -272,21 +289,21 @@ class ManageTab(QWidget):
         value = self.metadata_value.text().strip()
         target = self.metadata_target.currentText().strip()
         operation = self.metadata_operation.currentText()
-        
+
         if not identifier or not key:
             QMessageBox.warning(self, "Warning", "Identifier and key are required")
             return
-            
+
         append = False
         append_list = False
-        
+
         if operation == "Append to existing value":
             append = True
         elif operation == "Append to list":
             append_list = True
         elif operation == "Remove":
             value = "REMOVE_TAG"
-                
+
         if target.startswith("files/") and "{filename}" in target:
             filename, ok = QFileDialog.getOpenFileName(self, "Choose target file", "", "All Files (*)")
             if ok and filename:
@@ -295,7 +312,7 @@ class ManageTab(QWidget):
             else:
                 QMessageBox.warning(self, "Warning", "No target file selected")
                 return
-            
+
         try:
             if self.session:
                 response = modify_metadata(
@@ -314,35 +331,35 @@ class ManageTab(QWidget):
                     append=append,
                     append_list=append_list
                 )
-                
+
             if response.status_code == 200:
                 QMessageBox.information(self, "Success", "Metadata has been successfully modified")
             else:
                 QMessageBox.warning(self, "Warning", f"Server error: {response.status_code} - {response.text}")
-                
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Metadata modification failed: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Metadata modification failed: {e!s}")
 
     def delete_file(self):
         """Delete a file from an Archive.org item."""
         identifier = self.delete_identifier.text().strip()
         filename = self.delete_filename.text().strip()
         cascade = self.cascade_delete.isChecked()
-        
+
         if not identifier or not filename:
             QMessageBox.warning(self, "Warning", "Identifier and filename are required")
             return
-            
+
         response = QMessageBox.question(
             self,
             "Delete Confirmation",
             f"Are you sure you want to delete the file '{filename}' from item '{identifier}'?",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
-        if response == QMessageBox.No:
+
+        if response == QMessageBox.StandardButton.No:
             return
-            
+
         try:
             if self.session:
                 response = delete(
@@ -357,7 +374,7 @@ class ManageTab(QWidget):
                     files=filename,
                     cascade_delete=cascade
                 )
-                
+
             if all(r.status_code == 200 for r in response):
                 QMessageBox.information(self, "Success", "File was successfully deleted")
                 self.delete_filename.clear()
@@ -369,6 +386,6 @@ class ManageTab(QWidget):
                     "Warning",
                     f"Some delete operations failed:\n{failed_messages}"
                 )
-                
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"File deletion failed: {str(e)}")
+            QMessageBox.critical(self, "Error", f"File deletion failed: {e!s}")

@@ -5,13 +5,15 @@ text_analysis_nb.py
 Norwegian-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -77,7 +79,7 @@ NORWEGIAN_DATA = {
     "speech_verbs": {"si", "spørre", "hviske", "rope", "mumle", "utbryte"},
     "filter_words": {"så", "hørte", "følte", "la merke til", "tenkte", "lurte på", "observerte", "kikket", "lyttet", "kjente", "bestemte", "vurderte", "syntes", "dukket opp", "iakttok", "oppfattet", "forestilte seg"},
     "telling_verbs": {"være", "føle", "virke", "se ut", "fremstå", "bli"},
-    "emotion_words": {"sint", "trist", "glad", "begeistret", "nervøs", "redd", "bekymret", "flau", "skuffet", "frustrert", "irritert", "urolig", "skremt", "lykkelig", "nedtrykt", "ulykkelig", "henrykt", "opprørt", "rasende", "henrykt", "sjokkert", "overrasket", "forvirret", "stolt", "fornøyd", "tilfreds", "entusiastisk", "sjalu"},
+    "emotion_words": {"sint", "trist", "glad", "begeistret", "nervøs", "redd", "bekymret", "flau", "skuffet", "frustrert", "irritert", "urolig", "skremt", "lykkelig", "nedtrykt", "ulykkelig", "henrykt", "opprørt", "rasende", "sjokkert", "overrasket", "forvirret", "stolt", "fornøyd", "tilfreds", "entusiastisk", "sjalu"},
     "weak_verbs": {"være"},
     "common_words": {"og", "i", "på", "med", "til", "om", "men", "eller", "som", "er", "var", "har", "dette", "den", "det", "de", "der", "her", "min", "din", "hans", "hennes", "vår", "deres", "seg", "ikke", "ja", "nei", "fordi", "når", "hvis", "siden", "hvilken", "hvilket"},
     "quote_pattern": r'«[^»]*»|"[^"]*"'
@@ -110,8 +112,8 @@ class NorwegianTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("The model 'nb_core_news_sm' was not found. Do you want to download it?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """
@@ -147,24 +149,24 @@ class NorwegianTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Count words with more than 6 characters
         num_long_words = sum(1 for word in words if len(word) > 6)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         # Average sentence length
         avg_sentence_length = num_words / num_sentences
-        
+
         # Percentage of long words
         percentage_long_words = (num_long_words / num_words) * 100
-        
+
         # Calculate LIX
         lix = avg_sentence_length + percentage_long_words
-        
+
         return lix
-        
+
     def get_tooltips(self):
         """Returns tooltips in Norwegian."""
         return TOOLTIP_TRANSLATIONS

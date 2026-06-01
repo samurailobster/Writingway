@@ -1,8 +1,10 @@
-import os
 import json
-from PyQt5.QtWidgets import QColorDialog, QMessageBox
-from PyQt5.QtGui import QColor, QTextCharFormat
+import os
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QTextCharFormat
+from PyQt5.QtWidgets import QColorDialog, QMessageBox
+
 
 class ColorManager:
     """
@@ -10,8 +12,8 @@ class ColorManager:
     """
     def __init__(self, settings_path):
         self.settings_file = settings_path
-        self.default_fg = QColor(Qt.black)
-        self.default_bg = QColor(Qt.transparent)
+        self.default_fg = QColor(Qt.GlobalColor.black)
+        self.default_bg = QColor(Qt.GlobalColor.transparent)
         self.load_colors()
 
     def load_colors(self):
@@ -20,7 +22,7 @@ class ColorManager:
         """
         if os.path.exists(self.settings_file):
             try:
-                with open(self.settings_file, 'r', encoding='utf-8') as f:
+                with open(self.settings_file, encoding='utf-8') as f:
                     data = json.load(f)
                     fg = data.get('last_fg')
                     bg = data.get('last_bg')
@@ -52,13 +54,13 @@ class ColorManager:
         Returns tuple (fg, bg) QColor or None if canceled.
         """
         dialog = QColorDialog(parent)
-        dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+        dialog.setOption(QColorDialog.ColorDialogOption.ShowAlphaChannel, True)
         dialog.setCurrentColor(self.default_fg)
         if dialog.exec_() != QColorDialog.Accepted:
             return None
         fg = dialog.selectedColor()
 
-        bg = QColorDialog.getColor(self.default_bg, parent, "Background Color", QColorDialog.ShowAlphaChannel)
+        bg = QColorDialog.getColor(self.default_bg, parent, "Background Color", QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if not bg.isValid():
             return None
 

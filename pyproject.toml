@@ -1,0 +1,142 @@
+[project]
+name = "writingway"
+version = "0.0.0" # not distributed; version is required by build tools.
+requires-python = ">=3.11,<3.12"
+
+# Dev-only tools
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pyright>=1.1",
+    "PyQt5-stubs"
+]
+
+# Ruff: linter + formatter
+# Run "ruff check --fix" to apply auto-fixes. These are all fixes that Ruff can apply
+# automatically and safely (i.e. should not break anything).
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes — undefined names, unused imports, shadowed builtins
+    "I",    # isort — import ordering
+    "N",    # pep8-naming
+    "UP",   # pyupgrade — modernise syntax automatically
+    "B",    # flake8-bugbear — likely bugs & footguns
+    "C4",   # flake8-comprehensions — simpler comprehensions
+    "PIE",  # flake8-pie — misc unnecessary code
+    "SIM",  # flake8-simplify — idiomatic simplifications
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    # Qt overrides methods/signals with camelCase; don't flag inherited names.
+    "N802",   # function name should be lowercase
+    "N803",   # argument name should be lowercase
+    "N806",   # variable in function should be lowercase
+    "N815",   # mixedCase variable in class scope (Qt attributes)
+    # Line-length is enforced by the formatter, not the linter.
+    "E501",
+    # `assert` is useful in Qt slots and tests; bugbear is too aggressive here.
+    "B011",   # assert False should be raise …
+    # Bare `except:` (without type) is E722; broad `except Exception` is fine in Qt code.
+    "E722",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Entry-point: unused imports are fine (re-exported symbols, side-effect imports).
+"main.py" = ["F401"]
+# __init__.py files may legitimately re-export names.
+"**/__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "compendium", "muse", "project_window",
+    "settings", "util", "workshop",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# Mypy: type checking
+# Run "mypy ." to check types.
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false       # too noisy for an existing codebase; enable incrementally
+disallow_incomplete_defs = false
+check_untyped_defs = true           # still type-check bodies even without annotations
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+# Don't error on missing stubs for third-party libs — use per-module overrides below.
+ignore_missing_imports = false
+
+# Qt — bundled stubs are incomplete; silence them globally.
+[[tool.mypy.overrides]]
+module = ["PyQt5.*", "PyQtChart.*", "PyQtWebEngine.*"]
+ignore_missing_imports = true
+
+# LangChain ecosystem — no stubs.
+[[tool.mypy.overrides]]
+module = [
+    "langchain.*", "langchain_core.*", "langchain_openai.*",
+    "langchain_anthropic.*", "langchain_google_genai.*",
+    "langchain_ollama.*", "langchain_community.*", "langchain_together.*",
+]
+ignore_missing_imports = true
+
+# Audio / media stack — no stubs.
+[[tool.mypy.overrides]]
+module = [
+    "whisper", "pyaudio", "pydub.*", "pydub",
+    "moviepy.*", "imageio.*", "noisereduce",
+    "demucs.*", "soundfile",
+]
+ignore_missing_imports = true
+
+# NLP / ML — partial stubs.
+[[tool.mypy.overrides]]
+module = ["spacy.*", "tiktoken", "faiss"]
+ignore_missing_imports = true
+
+# Document / web processing — no stubs.
+[[tool.mypy.overrides]]
+module = [
+    "fitz", "pymupdf4llm",
+    "internetarchive.*", "boilerpy3.*",
+    "spylls.*", "ebooklib.*",
+    "bs4", "docx", "markdown",
+]
+ignore_missing_imports = true
+
+# Pyright: type checking
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["*.py", "**/*.py"]
+exclude = ["**/venv", "**/__pycache__", "build", "dist"]
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = "warning"
+reportOptionalSubscript = "warning"
+# Qt overrides make many "possibly None" reports spurious.
+reportAttributeAccessIssue = "warning"
+
+# Only used to install the development dependencies.
+# Run: pip install .[dev]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Nothing to install from the repo itself. This is not a distributed package.
+# Declaring an empty list bypasses setuptools' flat-layout guard.
+packages = []

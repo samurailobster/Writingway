@@ -5,13 +5,15 @@ text_analysis_es.py
 Spanish-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -75,11 +77,11 @@ SPANISH_DATA = {
     "weak_terms": {"quizás", "tal vez", "probablemente", "posiblemente", "parece", "como si", "un poco", "algo"},
     "standard_speech_verbs": {"decir", "preguntar"},
     "speech_verbs": {"decir", "preguntar", "susurrar", "gritar", "murmurar", "exclamar"},
-    "filter_words": {"vio", "oyó", "sintió", "notó", "pensó", "se preguntó", "observó", "miró", "escuchó", "percibió", "decidió", "consideró", "parecía", "apareció", "observó", "percibió", "percibió", "imaginó"},
+    "filter_words": {"vio", "oyó", "sintió", "notó", "pensó", "se preguntó", "observó", "miró", "escuchó", "percibió", "decidió", "consideró", "parecía", "apareció", "imaginó"},
     "telling_verbs": {"ser", "estar", "sentirse", "parecer", "lucir", "aparecer", "volverse"},
     "emotion_words": {"enojado", "triste", "feliz", "emocionado", "nervioso", "asustado", "preocupado", "avergonzado", "decepcionado", "frustrado", "irritado", "inquieto", "aterrorizado", "alegre", "deprimido", "infeliz", "extático", "molesto", "furioso", "encantado", "conmocionado", "sorprendido", "confundido", "orgulloso", "contento", "satisfecho", "entusiasta", "celoso"},
     "weak_verbs": {"ser", "estar", "haber", "tener"},
-    "common_words": {"y", "en", "a", "de", "para", "con", "por", "o", "pero", "si", "como", "es", "son", "fue", "era", "tiene", "tienen", "esto", "este", "esta", "estos", "estas", "aquel", "aquella", "aquello", "aquellos", "aquellas", "mi", "tu", "su", "nuestro", "vuestro", "sus", "se", "no", "sí", "porque", "cuando", "si", "pues", "que", "cual", "cuales"},
+    "common_words": {"y", "en", "a", "de", "para", "con", "por", "o", "pero", "si", "como", "es", "son", "fue", "era", "tiene", "tienen", "esto", "este", "esta", "estos", "estas", "aquel", "aquella", "aquello", "aquellos", "aquellas", "mi", "tu", "su", "nuestro", "vuestro", "sus", "se", "no", "sí", "porque", "cuando", "pues", "que", "cual", "cuales"},
     "quote_pattern": r'«[^»]*»|"[^"]*"'
 }
 
@@ -110,8 +112,8 @@ class SpanishTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("The model 'es_core_news_sm' was not found. Do you want to download it?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """
@@ -135,7 +137,7 @@ class SpanishTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # Count syllables for Spanish
         syllables = 0
         for word in words:
@@ -144,32 +146,32 @@ class SpanishTextAnalysis(BaseTextAnalysis, QObject):
             word = re.sub(r'[^\w\s]', '', word)
             if not word:
                 continue
-                
+
             # Count syllables by counting vowel groups
             vowels = "aeiouáéíóúüy"
             count = 0
             prev_is_vowel = False
-            
+
             for char in word:
                 is_vowel = char in vowels
                 if is_vowel and not prev_is_vowel:
                     count += 1
                 prev_is_vowel = is_vowel
-                
+
             # Ensure each word has at least one syllable
             syllables += max(1, count)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-            
+
         # Fernández-Huerta formula: 206.84 - 0.60 * P - 1.02 * F
         # P = average number of syllables per 100 words
         # F = average sentence length in words
         P = (syllables / num_words) * 100
         F = num_words / num_sentences
-        
+
         return 206.84 - (0.60 * P) - (1.02 * F)
-        
+
     def get_tooltips(self):
         """Returns tooltips in Spanish."""
         return TOOLTIP_TRANSLATIONS

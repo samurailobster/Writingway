@@ -1,10 +1,13 @@
-import os
 import json
+import os
 import re
 import uuid
-from PyQt5.QtWidgets import QTreeWidgetItem
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QTreeWidgetItem
+
 from settings.settings_manager import WWSettingsManager
+
 
 def get_structure_file_path(project_name, backward_compat=False):
     """Return the path to the project-specific structure file."""
@@ -14,7 +17,7 @@ def get_structure_file_path(project_name, backward_compat=False):
     if backward_compat:
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        if os.path.exists(path): 
+        if os.path.exists(path):
             oldpath = WWSettingsManager.get_project_path(file=structure_name)
             if os.path.exists(oldpath):
                 newpath_modtime = os.path.getmtime(path)
@@ -51,9 +54,9 @@ def load_structure(project_name):
     ]}
     file_path = get_structure_file_path(project_name, True)
     if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             structure = json.load(f)
-        
+
         # Add UUIDs and has_summary to existing nodes
         def add_fields(node):
             if "uuid" not in node:
@@ -100,15 +103,15 @@ def populate_tree(tree, structure):
     for act in structure.get("acts", []):
         act = ensure_dict(act)
         act_item = QTreeWidgetItem(tree, [act.get("name", "Unnamed Act")])
-        act_item.setData(0, Qt.UserRole, act)
+        act_item.setData(0, Qt.ItemDataRole.UserRole, act)
         for chapter in act.get("chapters", []):
             chapter = ensure_dict(chapter)
             chapter_item = QTreeWidgetItem(act_item, [chapter.get("name", "Unnamed Chapter")])
-            chapter_item.setData(0, Qt.UserRole, chapter)
+            chapter_item.setData(0, Qt.ItemDataRole.UserRole, chapter)
             for scene in chapter.get("scenes", []):
                 scene = ensure_dict(scene)
                 scene_item = QTreeWidgetItem(chapter_item, [scene.get("name", "Unnamed Scene")])
-                scene_item.setData(0, Qt.UserRole, scene)
+                scene_item.setData(0, Qt.ItemDataRole.UserRole, scene)
     tree.expandAll()
 
 def update_structure_from_tree(tree, project_name):
@@ -120,15 +123,15 @@ def update_structure_from_tree(tree, project_name):
     root = tree.invisibleRootItem()
     for i in range(root.childCount()):
         act_item = root.child(i)
-        act = act_item.data(0, Qt.UserRole)
+        act = act_item.data(0, Qt.ItemDataRole.UserRole)
         chapters = []
         for j in range(act_item.childCount()):
             chapter_item = act_item.child(j)
-            chapter = chapter_item.data(0, Qt.UserRole)
+            chapter = chapter_item.data(0, Qt.ItemDataRole.UserRole)
             scenes = []
             for k in range(chapter_item.childCount()):
                 scene_item = chapter_item.child(k)
-                scene = scene_item.data(0, Qt.UserRole)
+                scene = scene_item.data(0, Qt.ItemDataRole.UserRole)
                 scenes.append(scene)
             chapter["scenes"] = scenes
             chapters.append(chapter)

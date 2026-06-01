@@ -1,6 +1,7 @@
-import sys
-import logging
 import importlib.metadata
+import logging
+import sys
+from gettext import gettext as _
 
 # Save the original metadata function
 _orig_version = importlib.metadata.version
@@ -49,8 +50,10 @@ def hooked_version(distribution_name):
 importlib.metadata.version = hooked_version
 
 import whisper
-from settings.translation_manager import TranslationManager
+
 from settings.settings_manager import WWSettingsManager
+from settings.translation_manager import TranslationManager
+
 
 def exception_hook(exctype, value, traceback):
     logging.error("Unhandled exception", exc_info=(exctype, value, traceback))
@@ -68,7 +71,7 @@ def check_dependencies():
         import pyttsx3
     except ImportError:
         missing.append("pyttsx3")
-    
+
     if missing:
         try:
             import tkinter as tk
@@ -94,8 +97,10 @@ translation_manager.set_language(WWSettingsManager.get_general_settings().get("l
 check_dependencies()
 
 from PyQt5.QtWidgets import QApplication
-from workbench import WorkbenchWindow
+
 from settings.theme_manager import ThemeManager
+from workbench import WorkbenchWindow
+
 
 def writingway_preload_settings(app):
     theme = WWSettingsManager.get_appearance_settings()["theme"]
@@ -106,7 +111,7 @@ def writingway_preload_settings(app):
         theme_manager.themeChanged.connect(on_theme_changed)
     except Exception as e:
         print("Error applying theme:", e)
-    
+
     fontsize = WWSettingsManager.get_appearance_settings()["text_size"]
     if fontsize:
         font = app.font()
@@ -117,7 +122,6 @@ def on_theme_changed(theme_name):
     """Callback when theme changes to refresh all project windows."""
     # This will be called when any project window changes the theme
     # The theme manager will emit this signal and all windows should refresh
-    pass
 
 def main():
     app = QApplication(sys.argv)

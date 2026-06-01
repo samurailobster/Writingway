@@ -1,47 +1,60 @@
-from abc import ABC, abstractmethod
-import os
-import ebooklib
-from ebooklib import epub
-from bs4 import BeautifulSoup
-import docx
-import json
-import re
-import math
 import base64
-from typing import Any, List, Dict, Optional, Tuple, Union
+import json
+import math
+import os
+import re
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from langchain_core.messages import HumanMessage
-from settings.llm_api_aggregator import WWSettingsManager, WWApiAggregator
-import tiktoken
+from typing import Any
+
+import docx
+import ebooklib
 import fitz
 import pymupdf4llm
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QListWidget, QMessageBox, QMenu, QAction, QInputDialog, QTextEdit, QHBoxLayout, QCheckBox, QListWidgetItem, QWidget, QShortcut
-from PyQt5.QtGui import QTextDocument, QTextCursor, QKeySequence
-
-from abc import ABC, abstractmethod
-import os
-import ebooklib
-from ebooklib import epub
+import tiktoken
 from bs4 import BeautifulSoup
-import docx
+from ebooklib import epub
+from langchain_core.messages import HumanMessage
+from PyQt5.QtCore import QPoint, Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QKeySequence, QTextCursor, QTextDocument
+from PyQt5.QtWidgets import (
+    QAction,
+    QCheckBox,
+    QDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from settings.llm_api_aggregator import WWApiAggregator, WWSettingsManager
+
 
 # Abstract base class for all document processors
 class DocumentProcessor(ABC):
     @abstractmethod
-    def load_document(self, file_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(self, file_path: str) -> tuple[int, str | None]:
         # Returns the number of sections (pages, chapters, etc.) and an optional error message
         pass
-    
+
     @abstractmethod
-    def convert_to_markdown(self, file_path: str, pages_or_sections: List[int]) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(self, file_path: str, pages_or_sections: list[int]) -> tuple[str, str | None]:
         # Converts specified sections to markdown, returns markdown text and an optional error message
         pass
 
 # EPUB processor using ebooklib and BeautifulSoup
 class EpubProcessor(DocumentProcessor):
     @staticmethod
-    def load_document(epub_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(epub_path: str) -> tuple[int, str | None]:
         # Load EPUB and count chapters as sections
         try:
             book = epub.read_epub(epub_path)
@@ -49,9 +62,9 @@ class EpubProcessor(DocumentProcessor):
             return len(chapters), None
         except Exception as e:
             return 0, f"Error loading EPUB: {e}"
-    
+
     @staticmethod
-    def convert_to_markdown(epub_path: str, chapters: List[int] = None) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(epub_path: str, chapters: list[int] = None) -> tuple[str, str | None]:
         """
         For each chapter indicated:
         - parses the HTML
@@ -66,8 +79,8 @@ class EpubProcessor(DocumentProcessor):
                 selected = [all_items[i] for i in chapters if 0 <= i < len(all_items)]
             else:
                 selected = all_items
-            
-            markdown_sections: List[str] = []
+
+            markdown_sections: list[str] = []
             for chap in selected:
                 raw = chap.get_content().decode('utf-8')
                 soup = BeautifulSoup(raw, 'html.parser')
@@ -78,11 +91,11 @@ class EpubProcessor(DocumentProcessor):
                         markdown_sections.append(text)
                 # optional: insert separator between chapters
                 markdown_sections.append('---')
-            
+
             # remove the last separator, if any
             if markdown_sections and markdown_sections[-1] == '---':
                 markdown_sections.pop()
-            
+
             return '\n\n'.join(markdown_sections), None
         except Exception as e:
             return "", f"Error converting EPUB: {e}"
@@ -90,26 +103,26 @@ class EpubProcessor(DocumentProcessor):
 # DOCX processor using python-docx
 class DocxProcessor(DocumentProcessor):
     @staticmethod
-    def load_document(docx_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(docx_path: str) -> tuple[int, str | None]:
         # Load DOCX and count paragraphs as sections
         try:
             doc = docx.Document(docx_path)
             return len(doc.paragraphs), None
         except Exception as e:
             return 0, f"Error loading DOCX: {e}"
-    
+
     @staticmethod
-    def convert_to_markdown(docx_path: str, paragraphs: List[int] = None) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(docx_path: str, paragraphs: list[int] = None) -> tuple[str, str | None]:
         # Convert specified paragraphs (or all if None) to markdown
         try:
             doc = docx.Document(docx_path)
             all_paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-            
+
             if paragraphs is not None:
                 selected_paragraphs = [all_paragraphs[i] for i in paragraphs if i < len(all_paragraphs)]
             else:
                 selected_paragraphs = all_paragraphs
-            
+
             return '\n\n'.join(selected_paragraphs), None
         except Exception as e:
             return "", f"Error converting DOCX: {e}"
@@ -117,28 +130,28 @@ class DocxProcessor(DocumentProcessor):
 # TXT/Markdown processor for plain text files
 class TextProcessor(DocumentProcessor):
     @staticmethod
-    def load_document(text_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(text_path: str) -> tuple[int, str | None]:
         # Load text file and count lines as sections
         try:
-            with open(text_path, 'r', encoding='utf-8') as f:
+            with open(text_path, encoding='utf-8') as f:
                 content = f.read()
             lines = content.splitlines()
             return len(lines), None
         except Exception as e:
             return 0, f"Error loading text file: {e}"
-    
+
     @staticmethod
-    def convert_to_markdown(text_path: str, lines: List[int] = None) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(text_path: str, lines: list[int] = None) -> tuple[str, str | None]:
         # Convert specified lines (or all if None) to markdown (essentially pass-through)
         try:
-            with open(text_path, 'r', encoding='utf-8') as f:
+            with open(text_path, encoding='utf-8') as f:
                 all_lines = f.readlines()
-            
+
             if lines is not None:
                 selected_lines = [all_lines[i] for i in lines if i < len(all_lines)]
             else:
                 selected_lines = all_lines
-            
+
             return ''.join(selected_lines), None
         except Exception as e:
             return "", f"Error converting text file: {e}"
@@ -146,33 +159,33 @@ class TextProcessor(DocumentProcessor):
 # HTML processor using BeautifulSoup
 class HtmlProcessor(DocumentProcessor):
     @staticmethod
-    def load_document(html_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(html_path: str) -> tuple[int, str | None]:
         # Load HTML and count significant sections (p, div, section tags) as sections
         try:
-            with open(html_path, 'r', encoding='utf-8') as f:
+            with open(html_path, encoding='utf-8') as f:
                 soup = BeautifulSoup(f, 'html.parser')
             return len(soup.find_all(['p', 'div', 'section'])), None
         except Exception as e:
             return 0, f"Error loading HTML: {e}"
-    
+
     @staticmethod
-    def convert_to_markdown(html_path: str, sections: List[int] = None) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(html_path: str, sections: list[int] = None) -> tuple[str, str | None]:
         # Convert specified sections (or all if None) to markdown
         try:
-            with open(html_path, 'r', encoding='utf-8') as f:
+            with open(html_path, encoding='utf-8') as f:
                 soup = BeautifulSoup(f, 'html.parser')
             all_sections = soup.find_all(['p', 'div', 'section'])
-            
+
             if sections is not None:
                 selected_sections = [all_sections[i] for i in sections if i < len(all_sections)]
             else:
                 selected_sections = all_sections
-            
+
             markdown_content = []
             for section in selected_sections:
                 text = section.get_text(separator='\n\n')
                 markdown_content.append(text)
-            
+
             return '\n\n---\n\n'.join(markdown_content), None
         except Exception as e:
             return "", f"Error converting HTML: {e}"
@@ -183,7 +196,7 @@ class DocumentProcessorFactory:
     def get_processor(file_path: str) -> DocumentProcessor:
         # Determine file extension and return appropriate processor
         extension = os.path.splitext(file_path)[1].lower()
-        
+
         if extension == '.pdf':
             return PdfProcessor()
         elif extension == '.epub':
@@ -205,10 +218,10 @@ class AppSettings:
     last_to_page_manual: int = 0
     last_chunk_size: int = 20000
     default_prompt: str = ""
-    
+
 class VisionMessage(HumanMessage):
     """Custom Message class for vision-based LLMs"""
-    def __init__(self, content: Union[str, List[Dict[str, Any]]]):
+    def __init__(self, content: str | list[dict[str, Any]]):
         super().__init__(content=content)
 
 class TokenCounter:
@@ -228,7 +241,7 @@ class PdfProcessor(DocumentProcessor):
     PARAGRAPH_SPLIT_REGEX = re.compile(r'\n{2,}')
 
     @staticmethod
-    def load_document(pdf_path: str) -> Tuple[int, Optional[str]]:
+    def load_document(pdf_path: str) -> tuple[int, str | None]:
         # Load PDF and count pages (unchanged implementation)
         try:
             doc = fitz.open(pdf_path)
@@ -239,7 +252,7 @@ class PdfProcessor(DocumentProcessor):
             return 0, f"Error loading PDF: {e}"
 
     @staticmethod
-    def convert_to_markdown(pdf_path: str, pages: List[int]) -> Tuple[str, Optional[str]]:
+    def convert_to_markdown(pdf_path: str, pages: list[int]) -> tuple[str, str | None]:
         # Convert specified pages to markdown (unchanged implementation)
         try:
             markdown_text = pymupdf4llm.to_markdown(pdf_path, pages=pages)
@@ -255,10 +268,10 @@ class PdfProcessor(DocumentProcessor):
         return re.sub(r'-\n\s*', '', text)
 
     @classmethod
-    def split_paragraphs(cls, text: str) -> List[str]:
+    def split_paragraphs(cls, text: str) -> list[str]:
         # Split text into paragraphs
         parts = re.split(r'\n{2,}|\.(?=\s+[A-Z])|(?<=[.!?])\s+(?=[A-Z])', text)
-        paragraphs: List[str] = []
+        paragraphs: list[str] = []
         current_paragraph = ""
 
         for part in parts:
@@ -288,10 +301,10 @@ class PdfProcessor(DocumentProcessor):
         return False
 
     @classmethod
-    def split_sentences(cls, text: str) -> List[str]:
+    def split_sentences(cls, text: str) -> list[str]:
         # Split text into sentences, preserving abbreviations
         parts = cls.SENTENCE_SPLIT_REGEX.split(text)
-        sentences: List[str] = []
+        sentences: list[str] = []
         i = 0
         while i < len(parts):
             segment = parts[i]
@@ -305,7 +318,7 @@ class PdfProcessor(DocumentProcessor):
         return sentences
 
     @staticmethod
-    def chunk_text_intelligently(text: str, max_tokens: int) -> List[str]:
+    def chunk_text_intelligently(text: str, max_tokens: int) -> list[str]:
         # Chunk text intelligently based on token count
         encoder = TokenCounter.get_encoder()
         text = PdfProcessor.preprocess(text)
@@ -315,7 +328,7 @@ class PdfProcessor(DocumentProcessor):
 
         desired_chunks = math.ceil(total_tokens / max_tokens)
         paragraphs = PdfProcessor.split_paragraphs(text)
-        chunks: List[str] = []
+        chunks: list[str] = []
         current = ''
         current_tokens = 0
 
@@ -377,7 +390,7 @@ class PdfProcessor(DocumentProcessor):
 
 class LlmClient:
     @staticmethod
-    def send_prompt(full_prompt: str) -> Tuple[str, Optional[str]]:
+    def send_prompt(full_prompt: str) -> tuple[str, str | None]:
         try:
             response = WWApiAggregator.send_prompt_to_llm(full_prompt)
             return response, None
@@ -385,11 +398,11 @@ class LlmClient:
             return "", f"Error calling LLM API: {e}"
 
     @staticmethod
-    def send_prompt_with_image(prompt: str, image_bytes: bytes) -> tuple[str, Optional[str]]:
+    def send_prompt_with_image(prompt: str, image_bytes: bytes) -> tuple[str, str | None]:
         try:
             provider_name = WWSettingsManager.get_active_llm_name()
             base64_image = base64.b64encode(image_bytes).decode('utf-8')
-            
+
             if provider_name == "LMStudio" or provider_name == "OpenAI":
                 vision_content = [
                     {"type": "text", "text": prompt},
@@ -422,7 +435,7 @@ class LlmClient:
                 vision_content = [
                     {"type": "text", "text": prompt},
                     {
-                        "type": "image_url", 
+                        "type": "image_url",
                         "image_url": f"data:image/jpeg;base64,{base64_image}"
                     }
                 ]
@@ -442,7 +455,7 @@ class LlmClient:
             else:
                 final_prompt = f"{prompt}\n\n![Image](data:image/jpeg;base64,{base64_image})"
                 response = WWApiAggregator.send_prompt_to_llm(final_prompt)
-            
+
             return response, None
         except Exception as e:
             return "", f"Error calling LLM API: {e}"
@@ -450,15 +463,15 @@ class LlmClient:
 class PdfProcessingWorker(QThread):
     finished = pyqtSignal(str, list, str)
     progress = pyqtSignal(int)
-    
-    def __init__(self, file_path: str, pages: List[int], max_tokens: int = None):
+
+    def __init__(self, file_path: str, pages: list[int], max_tokens: int = None):
         # Initialize with file path, sections, and optional max tokens
         super().__init__()
         self.file_path = file_path
         self.pages = pages  # Now interpreted as sections (pages, chapters, etc.) depending on processor
         self.max_tokens = max_tokens
         self.processor = DocumentProcessorFactory.get_processor(file_path)
-    
+
     def run(self):
         # Process document using the appropriate processor
         try:
@@ -472,7 +485,7 @@ class PdfProcessingWorker(QThread):
                 chunks = []
             self.finished.emit(markdown, chunks, "")
         except Exception as e:
-            self.finished.emit("", [], f"Error processing document: {str(e)}")
+            self.finished.emit("", [], f"Error processing document: {e!s}")
 
 class EpubProcessingWorker(QThread):
     """
@@ -482,7 +495,7 @@ class EpubProcessingWorker(QThread):
     """
     finished = pyqtSignal(str, list, str)
 
-    def __init__(self, file_path: str, chapters: List[int]):
+    def __init__(self, file_path: str, chapters: list[int]):
         super().__init__()
         self.file_path = file_path
         self.chapters  = chapters
@@ -520,7 +533,7 @@ class GenericProcessingWorker(QThread):
     """
     finished = pyqtSignal(str, list, str)
 
-    def __init__(self, file_path: str, sections: List[int]):
+    def __init__(self, file_path: str, sections: list[int]):
         super().__init__()
         self.file_path = file_path
         self.sections  = sections
@@ -541,22 +554,23 @@ class GenericProcessingWorker(QThread):
 
             # 2) TXT or MD: split by lines, ignore empties
             elif ext in ['.txt', '.md']:
-                with open(self.file_path, 'r', encoding='utf-8') as f:
+                with open(self.file_path, encoding='utf-8') as f:
                     lines = f.read().splitlines()
                 blocks = [line.strip() for line in lines if line.strip()]
 
             # 3) HTML: extract semantic tags via BeautifulSoup
             elif ext == '.html':
                 from bs4 import BeautifulSoup as _BS
-                with open(self.file_path, 'r', encoding='utf-8') as f:
+                with open(self.file_path, encoding='utf-8') as f:
                     soup = _BS(f, 'html.parser')
                 tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li', 'blockquote', 'div'])
                 blocks = [tag.get_text(strip=True) for tag in tags if tag.get_text(strip=True)]
 
             # 4) Fallback: use DocumentProcessorFactory + split markdown
             else:
-                from .rag_utils import DocumentProcessorFactory
                 import re as _re
+
+                from .rag_utils import DocumentProcessorFactory
                 processor = DocumentProcessorFactory.get_processor(self.file_path)
                 full_md, err = processor.convert_to_markdown(self.file_path, chapters=self.sections)
                 if err:
@@ -577,12 +591,12 @@ class GenericProcessingWorker(QThread):
 
 class SettingsManager:
     SETTINGS_FILE = "pdf_rag_settings.json"
-    
+
     @staticmethod
     def load_settings() -> AppSettings:
         try:
             if os.path.exists(SettingsManager.SETTINGS_FILE):
-                with open(SettingsManager.SETTINGS_FILE, 'r') as f:
+                with open(SettingsManager.SETTINGS_FILE) as f:
                     data = json.load(f)
                     return AppSettings(
                         last_pdf_path_manual=data.get('last_pdf_path_manual', ""),
@@ -593,9 +607,9 @@ class SettingsManager:
                         default_prompt=data.get('default_prompt', "")
                     )
         except Exception as e:
-            print(f"Error loading settings: {str(e)}")
+            print(f"Error loading settings: {e!s}")
         return AppSettings()
-    
+
     @staticmethod
     def save_settings(settings: AppSettings) -> None:
         try:
@@ -609,7 +623,7 @@ class SettingsManager:
                     'default_prompt': settings.default_prompt
                 }, f)
         except Exception as e:
-            print(f"Error saving settings: {str(e)}")
+            print(f"Error saving settings: {e!s}")
 
 class HistoryDialog(QDialog):
     def __init__(self, parent=None, history=None):
@@ -627,7 +641,7 @@ class HistoryDialog(QDialog):
         layout.addWidget(self.search_field)
 
         self.history_list = QListWidget()
-        self.history_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.history_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.history_list.customContextMenuRequested.connect(self.show_context_menu)
         self.history_list.itemDoubleClicked.connect(self.load_article)
         layout.addWidget(self.history_list)
@@ -666,7 +680,7 @@ class HistoryDialog(QDialog):
             try:
                 os.remove(file_path)
             except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to delete file from disk: {str(e)}")
+                QMessageBox.warning(self, "Error", f"Failed to delete file from disk: {e!s}")
         self.history = [(t, txt) for t, txt in self.history if t != title]
         self.parent().search_history = self.history
         self.parent().save_history()
@@ -706,7 +720,7 @@ class HistoryDialog(QDialog):
             return
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load JSON:\n{e}")
@@ -805,11 +819,11 @@ class HistoryDialog(QDialog):
                 return
             flags = QTextDocument.FindFlags()
             if case_checkbox.isChecked():
-                flags |= QTextDocument.FindCaseSensitively
+                flags |= QTextDocument.FindFlag.FindCaseSensitively
             if whole_words_checkbox.isChecked():
-                flags |= QTextDocument.FindWholeWords
+                flags |= QTextDocument.FindFlag.FindWholeWords
             if direction < 0:
-                flags |= QTextDocument.FindBackward
+                flags |= QTextDocument.FindFlag.FindBackward
 
             cursor = editor.textCursor()
             if direction < 0 and cursor.hasSelection():
@@ -822,9 +836,9 @@ class HistoryDialog(QDialog):
                 temp_cursor = editor.textCursor()
                 cursor = editor.textCursor()
                 if direction > 0:
-                    cursor.movePosition(QTextCursor.Start)
+                    cursor.movePosition(QTextCursor.MoveOperation.Start)
                 else:
-                    cursor.movePosition(QTextCursor.End)
+                    cursor.movePosition(QTextCursor.MoveOperation.End)
                 editor.setTextCursor(cursor)
                 found = editor.find(search_text, flags)
                 if not found:
@@ -899,7 +913,7 @@ class HistoryDialog(QDialog):
         shortcut_prev = QShortcut(QKeySequence("Shift+F3"), dlg)
         shortcut_prev.activated.connect(lambda: find_text(-1))
         shortcut_close = QShortcut(QKeySequence("Escape"), dlg)
-        shortcut_close.activated.connect(lambda: 
+        shortcut_close.activated.connect(lambda:
             search_container.setVisible(False) if search_container.isVisible() else None
         )
 

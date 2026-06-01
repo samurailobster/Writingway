@@ -1,13 +1,16 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QMenuBar, QAction, QMessageBox, QDialog, QScrollArea, QLabel
-from PyQt5.QtCore import Qt
-from internetarchive import get_session
-from pathlib import Path
-from .ia_search_download_tab import SearchDownloadTab
-from .ia_downloaded_tab import DownloadedTab
-from .ia_manage_tab import ManageTab
-from .ia_login_tab import LoginTab
 import configparser
 import os
+from pathlib import Path
+
+from internetarchive import get_session
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QAction, QDialog, QLabel, QMenuBar, QScrollArea, QTabWidget, QVBoxLayout, QWidget
+
+from .ia_downloaded_tab import DownloadedTab
+from .ia_login_tab import LoginTab
+from .ia_manage_tab import ManageTab
+from .ia_search_download_tab import SearchDownloadTab
+
 
 class IAWindow(QWidget):
     def __init__(self):
@@ -169,7 +172,7 @@ class IAWindow(QWidget):
 
         label = QLabel(about_text)
         label.setWordWrap(True)
-        label.setTextFormat(Qt.RichText)
+        label.setTextFormat(Qt.TextFormat.RichText)
         label.setOpenExternalLinks(True)
 
         layout.addWidget(label)

@@ -5,13 +5,15 @@ text_analysis_pt.py
 Portuguese-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -75,11 +77,11 @@ PORTUGUESE_DATA = {
     "weak_terms": {"talvez", "possivelmente", "provavelmente", "aparentemente", "parece", "como se", "um pouco", "ligeiramente"},
     "standard_speech_verbs": {"dizer", "perguntar"},
     "speech_verbs": {"dizer", "perguntar", "sussurrar", "gritar", "murmurar", "exclamar"},
-    "filter_words": {"viu", "ouviu", "sentiu", "notou", "pensou", "perguntou-se", "observou", "olhou", "escutou", "percebeu", "decidiu", "considerou", "parecia", "apareceu", "observou", "sentiu", "percebia", "imaginou"},
+    "filter_words": {"viu", "ouviu", "sentiu", "notou", "pensou", "perguntou-se", "observou", "olhou", "escutou", "percebeu", "decidiu", "considerou", "parecia", "apareceu", "percebia", "imaginou"},
     "telling_verbs": {"ser", "estar", "sentir", "parecer", "aparecer", "tornar-se"},
     "emotion_words": {"bravo", "triste", "feliz", "animado", "nervoso", "aterrorizado", "preocupado", "envergonhado", "desapontado", "frustrado", "irritado", "inquieto", "assustado", "alegre", "deprimido", "infeliz", "extasiado", "chateado", "furioso", "encantado", "chocado", "surpreso", "confuso", "orgulhoso", "satisfeito", "contente", "entusiasmado", "ciumento"},
     "weak_verbs": {"ser", "estar"},
-    "common_words": {"e", "em", "no", "na", "de", "do", "da", "a", "o", "mas", "ou", "como", "é", "são", "foi", "era", "tem", "têm", "isso", "desse", "esse", "essa", "este", "esta", "lá", "aqui", "meu", "seu", "dele", "dela", "nosso", "seu", "deles", "se", "não", "sim", "que", "porque", "quando", "se", "pois", "qual", "quem", "onde"},
+    "common_words": {"e", "em", "no", "na", "de", "do", "da", "a", "o", "mas", "ou", "como", "é", "são", "foi", "era", "tem", "têm", "isso", "desse", "esse", "essa", "este", "esta", "lá", "aqui", "meu", "seu", "dele", "dela", "nosso", "deles", "se", "não", "sim", "que", "porque", "quando", "pois", "qual", "quem", "onde"},
     "quote_pattern": r'"[^"]*"|\'[^\']*\''
 }
 
@@ -110,8 +112,8 @@ class PortugueseTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("The model 'pt_core_news_sm' was not found. Do you want to download it?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """
@@ -150,13 +152,13 @@ class PortugueseTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-        
+
         # Calculate average sentence length
         asl = num_words / num_sentences
-        
+
         # Count syllables (approximation for Portuguese)
         def count_syllables(word):
             word = word.lower()
@@ -164,7 +166,7 @@ class PortugueseTextAnalysis(BaseTextAnalysis, QObject):
             vowels = "aeiouáàâãéèêíìóòôõúù"
             count = 0
             in_vowel_group = False
-            
+
             for char in word:
                 if char in vowels:
                     if not in_vowel_group:
@@ -172,24 +174,24 @@ class PortugueseTextAnalysis(BaseTextAnalysis, QObject):
                         in_vowel_group = True
                 else:
                     in_vowel_group = False
-            
+
             # Handle special cases for Portuguese
             # If word ends with 'r', 'l', 'm', 'z' and has more than one syllable, reduce by one
             if len(word) > 2 and word[-1] in 'rlmz' and count > 1:
                 count -= 1
-            
+
             # Ensure at least one syllable
             return max(1, count)
-        
+
         total_syllables = sum(count_syllables(word) for word in words)
         asw = total_syllables / num_words
-        
+
         # Calculate Flesch Index adapted for Portuguese
         flesch_index = 206.835 - (1.015 * asl) - (84.6 * asw)
-        
+
         # Ensure index is within bounds
         return max(0, min(100, flesch_index))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Portuguese."""
         return TOOLTIP_TRANSLATIONS

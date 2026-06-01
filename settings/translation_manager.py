@@ -1,6 +1,7 @@
 import gettext
-import os
 import logging
+import os
+
 from PyQt5.QtCore import QObject, pyqtSignal
 
 # List of supported languages
@@ -23,25 +24,25 @@ class TranslationManager(QObject):
         if language not in LANGUAGES:
             print(f"Invalid language '{language}', falling back to 'en'")
             language = "en"
-        
+
         self.current_language = language
         logging.debug(f"Setting up gettext: language={language}, domain={self.domain}, locale_dir={self.locale_dir}")
-        
+
         if language == "en":
             gettext.install(self.domain)
             return gettext.NullTranslations()
-        
+
         if not os.path.exists(self.locale_dir):
             print(f"Error: locale directory does not exist: {self.locale_dir}")
             gettext.install(self.domain)
             return gettext.NullTranslations()
-        
+
         mo_file = os.path.join(self.locale_dir, language, "LC_MESSAGES", f"{self.domain}.mo")
         if not os.path.exists(mo_file):
             print(f"Error: .mo file not found for language '{language}'")
             gettext.install(self.domain)
             return gettext.NullTranslations()
-        
+
         try:
             translation = gettext.translation(self.domain, localedir=self.locale_dir, languages=[language], fallback=True)
             translation.install()

@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QSplitter, QTreeWidget, QTreeWidgetItem, QTextEdit
-from PyQt5.QtCore import Qt, pyqtSlot
-from compendium.compendium_manager import CompendiumManager, CompendiumEventBus
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QHBoxLayout, QSplitter, QTextEdit, QTreeWidget, QTreeWidgetItem, QWidget
+
+from compendium.compendium_manager import CompendiumEventBus, CompendiumManager
 from settings.selection_manager import SelectionManager
+
 
 class ContextPanel(QWidget):
     """
@@ -239,7 +241,7 @@ class ContextPanel(QWidget):
         for uuid, item in self.uuid_map.items():
             if item.checkState(0) == Qt.Checked:
                 project_uuids.append(uuid)
-        
+
         compendium_paths = []
         root = self.compendium_tree.invisibleRootItem()
         for i in range(root.childCount()):
@@ -257,18 +259,18 @@ class ContextPanel(QWidget):
 
         self.project_name = project_name
         self.project_structure = structure or {}
-        
+
         if context_provider:
             self.context_provider = context_provider
-            
+
         # Reinitialize managers for the new project
         self.compendium_manager = CompendiumManager(project_name, event_bus=self.event_bus)
         self.selection_manager = SelectionManager(project_name, self.__class__.__name__)
-        
+
         self.build_project_tree()
         self.build_compendium_tree()
         return True
-    
+
     def set_selections(self, project_uuids, compendium_paths, mandatory_compendium_paths=None):
         """
         Updates the UI state. 
@@ -291,7 +293,7 @@ class ContextPanel(QWidget):
             for j in range(cat_item.childCount()):
                 entry_item = cat_item.child(j)
                 path = f"{cat_name}/{entry_item.text(0)}"
-                
+
                 if path in mandatory:
                     entry_item.setCheckState(0, Qt.Checked)
                     entry_item.setFlags(entry_item.flags() & ~Qt.ItemIsEnabled)
@@ -305,9 +307,9 @@ class ContextPanel(QWidget):
                     font = entry_item.font(0)
                     font.setBold(False)
                     entry_item.setFont(0, font)
-        
+
         self._building_tree = False
-        
+
     def _load_content(self, data_type, data, hierarchy):
         """Helper method to load content consistently for summaries and scenes."""
         if data_type == "summary":
@@ -352,7 +354,7 @@ class ContextPanel(QWidget):
             hierarchy.insert(0, current.text(0).strip())
             current = current.parent()
         return hierarchy
-    
+
     def on_structure_changed(self, hierarchy, uuid):
         """Handle structure changes by updating the project tree."""
         if self.isHidden():

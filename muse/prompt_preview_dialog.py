@@ -1,13 +1,26 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QTextEdit, QLabel
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtGui import QFont, QKeySequence
-from PyQt5.QtWidgets import QShortcut
-from settings.theme_manager import ThemeManager
-import muse.prompt_handler as prompt_handler
+from gettext import gettext as _
+
 import tiktoken
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QFont, QKeySequence
+from PyQt5.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QShortcut,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+)
+
+import muse.prompt_handler as prompt_handler
+from settings.theme_manager import ThemeManager
+
 
 class PromptPreviewDialog(QDialog):
-    def __init__(self, controller, conversation_payload=None, prompt_config=None, user_input=None, 
+    def __init__(self, controller, conversation_payload=None, prompt_config=None, user_input=None,
                  additional_vars=None, current_scene_text=None, extra_context=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Prompt Preview"))
@@ -56,7 +69,7 @@ class PromptPreviewDialog(QDialog):
         # Token count label (centered)
         self.token_count_label = QLabel(_("Token Count: 0"))
         self.token_count_label.setFont(QFont("Arial", self.font_size))
-        self.token_count_label.setAlignment(Qt.AlignCenter)  # Center the text
+        self.token_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the text
         button_layout.addStretch()  # Add stretch before to push label to center
         button_layout.addWidget(self.token_count_label)
         button_layout.addStretch()  # Add stretch after to center the label
@@ -88,7 +101,7 @@ class PromptPreviewDialog(QDialog):
             # Create a top-level item for the header
             header_item = QTreeWidgetItem(self.tree)
             header_item.setText(0, header)
-            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Bold))
+            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Weight.Bold))
 
             # Create a child item to hold the QTextEdit
             content_item = QTreeWidgetItem(header_item)
@@ -141,7 +154,7 @@ class PromptPreviewDialog(QDialog):
         sections = {}
         current_header = None
         current_content = []
-        
+
         for line in prompt_text.splitlines():
             if line.strip().startswith("###"):
                 if current_header and current_content:
@@ -150,13 +163,13 @@ class PromptPreviewDialog(QDialog):
                 current_content = []
             elif current_header:
                 current_content.append(line)
-        
+
         if current_header and current_content:
             sections[current_header] = "\n".join(current_content).strip()
-        
+
         if not sections:
             sections["Prompt"] = prompt_text.strip()
-        
+
         return sections
 
     def zoom_in(self):
@@ -175,7 +188,7 @@ class PromptPreviewDialog(QDialog):
         """Apply the current font size to all tree items and widgets."""
         for i in range(self.tree.topLevelItemCount()):
             header_item = self.tree.topLevelItem(i)
-            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Bold))
+            header_item.setFont(0, QFont("Arial", self.font_size, QFont.Weight.Bold))
             content_widget = self.tree.itemWidget(header_item.child(0), 1)
             if content_widget:
                 content_widget.setFont(QFont("Arial", self.font_size))

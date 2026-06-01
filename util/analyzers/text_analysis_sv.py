@@ -5,12 +5,14 @@ text_analysis_sv.py
 Swedish-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-import re
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
 
 TOOLTIP_TRANSLATIONS = {
@@ -73,12 +75,12 @@ SWEDISH_DATA = {
     "speech_verbs": {"säga", "fråga", "viska", "skrika", "mumla"},
     "filter_words": {"såg", "hörde", "kände", "noterade", "tänkte", "observerade"},
     "telling_verbs": {"vara", "känna sig", "verka", "se ut", "framträda", "bli"},
-    "emotion_words": {"arg", "ledsen", "glad", "upphetsad", "nervös", "skrämd", "bekymrad", 
-                      "skamsen", "besviken", "frustrerad", "irriterad", "orolig", "rädd", 
-                      "lycklig", "deprimerad", "olycklig", "extatisk", "upprörd", "förvånad", 
+    "emotion_words": {"arg", "ledsen", "glad", "upphetsad", "nervös", "skrämd", "bekymrad",
+                      "skamsen", "besviken", "frustrerad", "irriterad", "orolig", "rädd",
+                      "lycklig", "deprimerad", "olycklig", "extatisk", "upprörd", "förvånad",
                       "förbryllad", "stolt", "nöjd"},
     "weak_verbs": {"vara"},
-    "common_words": {"och", "i", "på", "av", "att", "det", "en", "den", "som", "är", 
+    "common_words": {"och", "i", "på", "av", "att", "det", "en", "den", "som", "är",
                      "var", "varit", "har", "med", "för", "om", "men"},
     "quote_pattern": r'“[^”]*”|\"[^\"]*\"'
 }
@@ -111,8 +113,8 @@ class SwedishTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("The model 'sv_core_news_sm' was not found. Do you want to download it?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """

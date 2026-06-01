@@ -1,12 +1,18 @@
-from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QVBoxLayout
-from PyQt5.QtGui import QColor
-from settings.theme_manager import ThemeManager
 from gettext import gettext as _
+from typing import TYPE_CHECKING
+
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QAction, QToolBar, QVBoxLayout, QWidget
+
+from settings.theme_manager import ThemeManager
+
+if TYPE_CHECKING:
+    from .project_window import ProjectWindow
 
 
 class GlobalToolbar(QWidget):
     """Global actions toolbar at the top of the window."""
-    def __init__(self, controller, tint_color=QColor("black")):
+    def __init__(self, controller: "ProjectWindow", tint_color: QColor = QColor("black")):
         super().__init__()
         self.controller = controller  # Reference to ProjectWindow for callbacks
         self.tint_color = tint_color

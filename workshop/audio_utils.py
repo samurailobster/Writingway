@@ -1,13 +1,15 @@
 ## file: audio_utils.py
 import datetime
-import pyaudio
 import wave
+
+import pyaudio
 import whisper
 from PyQt5.QtCore import QThread, pyqtSignal
 
+
 class AudioRecorder(QThread):
     finished = pyqtSignal(str)
-    
+
     def __init__(self):
         super().__init__()
         self.is_recording = False
@@ -26,21 +28,21 @@ class AudioRecorder(QThread):
         CHANNELS = 1
         RATE = 16000
         CHUNK = 1024
-        
+
         audio = pyaudio.PyAudio()
         stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
         frames = []
-        
+
         while self.is_recording:
             data = stream.read(CHUNK)
             if not self.is_paused:
                 frames.append(data)
             self.msleep(10)
-            
+
         stream.stop_stream()
         stream.close()
         audio.terminate()
-        
+
         if frames:
             wf = wave.open(self.output_file, 'wb')
             wf.setnchannels(CHANNELS)
@@ -61,7 +63,7 @@ class AudioRecorder(QThread):
 
 class TranscriptionWorker(QThread):
     finished = pyqtSignal(str)
-    
+
     def __init__(self, file_path, model_name="tiny", language=None):
         super().__init__()
         self.file_path = file_path
@@ -74,4 +76,4 @@ class TranscriptionWorker(QThread):
             result = model.transcribe(self.file_path, language=self.language)
             self.finished.emit(result["text"])
         except Exception as e:
-            self.finished.emit(f"Error: {str(e)}")
+            self.finished.emit(f"Error: {e!s}")

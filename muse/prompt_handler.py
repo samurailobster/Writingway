@@ -1,8 +1,7 @@
-# prompt_handler.py
-import json
-import os
+from gettext import gettext as _
 
 from langchain.prompts import PromptTemplate
+
 from settings.llm_api_aggregator import WWApiAggregator
 
 
@@ -43,7 +42,7 @@ def assemble_final_prompt(prompt_config, user_input, additional_vars=None, curre
     if additional_vars:
         for var_name, var_value in additional_vars.items():
             base_template += f"\n### {var_name.capitalize()}\n{{{var_name}}}"
-    
+
 #    full_prompt_text = prompt_text + "\n" + base_template
 
     # Define default variables

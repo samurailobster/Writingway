@@ -1,15 +1,33 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QScrollArea, QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton, QComboBox, QListView, QProgressBar, QProgressDialog, QMessageBox, QTextEdit, QSizePolicy, QAbstractItemView, QMenu, QSlider, QShortcut
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSortFilterProxyModel, QObject, QUrl, QPoint, QMutex
-from PyQt5.QtGui import QPixmap, QImage, QStandardItemModel, QStandardItem, QDesktopServices, QKeySequence
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from internetarchive import get_item, download
 import logging
 import time
 from pathlib import Path
-from typing import List
-from PIL import Image
-from io import BytesIO
+
 import pymupdf as fitz
+from internetarchive import download, get_item
+from PyQt5.QtCore import QMutex, QObject, QPoint, QSortFilterProxyModel, Qt, QThread, QUrl, pyqtSignal
+from PyQt5.QtGui import QDesktopServices, QImage, QKeySequence, QPixmap, QStandardItem, QStandardItemModel
+from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListView,
+    QMenu,
+    QMessageBox,
+    QProgressBar,
+    QProgressDialog,
+    QPushButton,
+    QScrollArea,
+    QShortcut,
+    QSizePolicy,
+    QSlider,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Configure logging to track application events and errors
 logging.basicConfig(
@@ -27,7 +45,7 @@ class DownloadWorker(QThread):
     progress_signal = pyqtSignal(int, int)  # Signal for download progress
     finished_signal = pyqtSignal(bool, str)  # Signal for download completion
 
-    def __init__(self, identifier: str, files: List[str], session, dest_dir: Path):
+    def __init__(self, identifier: str, files: list[str], session, dest_dir: Path):
         super().__init__()
         self.identifier = identifier
         self.files = files
@@ -113,7 +131,7 @@ class PageRenderer(QThread):
             if self.page_queue:
                 page_num = self.page_queue.pop(0)
             self.mutex.unlock()
-            
+
             if page_num is not None:
                 try:
                     page = self.doc.load_page(page_num)
@@ -124,7 +142,7 @@ class PageRenderer(QThread):
                         pix.width,
                         pix.height,
                         pix.stride,
-                        QImage.Format_RGB888
+                        QImage.Format.Format_RGB888
                     )
                     pixmap = QPixmap.fromImage(img)
                     self.page_rendered.emit(pixmap, page_num)
@@ -140,10 +158,10 @@ class PageRenderer(QThread):
         if page_num not in self.page_queue:
             self.page_queue.append(page_num)
         self.mutex.unlock()
-        
+
         if not self.isRunning():
             self.start()
-    
+
     def stop(self):
         """Stop the rendering thread safely."""
         self.running = False
@@ -175,7 +193,7 @@ class DocumentRenderer(QObject):
                 return False
             return True
         except Exception as e:
-            self.render_error.emit(f"Error opening document: {str(e)}")
+            self.render_error.emit(f"Error opening document: {e!s}")
             return False
 
     def render_page(self, page_num):
@@ -200,12 +218,12 @@ class DocumentRenderer(QObject):
         """Handle a successfully rendered page."""
         cache_key = (page_num, self.zoom_level)
         self.page_cache[cache_key] = pixmap
-        
+
         # Manage cache size
         if len(self.page_cache) > self.MAX_CACHE_SIZE:
             oldest_key = list(self.page_cache.keys())[0]  # Get the first inserted key
             del self.page_cache[oldest_key]
-            
+
         self.page_rendered.emit(pixmap, page_num, self.doc.page_count)
 
     def on_render_error(self, error_msg, page_num):
@@ -219,7 +237,7 @@ class DocumentRenderer(QObject):
             self.zoom_level = zoom_level
             # Clear cache for pages at the old zoom level
             self.page_cache.clear()
-            
+
             # Update zoom level in the renderer thread if it exists
             if self.renderer_thread:
                 # Stop the current thread and create a new one with the updated zoom level
@@ -242,7 +260,7 @@ class ProgressDialog(QProgressDialog):
     def __init__(self, title, message, cancel_button_text, parent=None):
         super().__init__(message, cancel_button_text, 0, 0, parent)
         self.setWindowTitle(title)
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.setMinimumDuration(0)
         self.setCancelButton(None)
         self.setAutoClose(False)
@@ -296,11 +314,11 @@ class ItemDetailsDialog(QDialog):
 
         lbl_title = QLabel(f"<b>Title:</b> {title}")
         lbl_title.setWordWrap(True)
-        lbl_title.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        lbl_title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         lbl_desc = QLabel(f"<b>Description:</b> {desc}")
         lbl_desc.setWordWrap(True)
-        lbl_desc.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        lbl_desc.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         content_layout.addWidget(lbl_title)
         content_layout.addWidget(lbl_desc)
@@ -342,14 +360,14 @@ class ItemDetailsDialog(QDialog):
         self.files_model = QStandardItemModel()
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.files_model)
-        self.proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
         self.files_list = QListView()
         self.files_list.setModel(self.proxy_model)
-        self.files_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.files_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.files_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.files_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.files_list.customContextMenuRequested.connect(self.show_context_menu)
-        self.files_list.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.files_list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         self.files_data = []
 
@@ -357,8 +375,8 @@ class ItemDetailsDialog(QDialog):
             for file_info in self.item.files:
                 item = QStandardItem(file_info['name'])
                 item.setCheckable(True)
-                item.setCheckState(Qt.Unchecked)
-                item.setData(file_info.get('size', 0), Qt.UserRole)
+                item.setCheckState(Qt.CheckState.Unchecked)
+                item.setData(file_info.get('size', 0), Qt.ItemDataRole.UserRole)
                 self.files_model.appendRow(item)
                 self.files_data.append({
                     'name': file_info['name'],
@@ -409,31 +427,31 @@ class ItemDetailsDialog(QDialog):
         selected_type = self.type_combo.currentText()
         model = self.proxy_model.sourceModel()
         model.clear()
-        
+
         # Filter files based on search text and type
         self.filtered_files_data = []
         for file_data in self.files_data:
             name = file_data['name']
             ext = Path(name).suffix.lower().lstrip('.')
             if selected_type == "All Files" or (
-                selected_type == "Images" and ext in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'webp', 'ico', 'heic', 'raw'} or
-                selected_type == "Ebooks" and ext in {'epub', 'mobi', 'fb2', 'pdf', 'xps'} or
-                selected_type == "Documents" and ext in {'txt', 'md', 'tex', 'doc', 'docx', 'odt', 'rtf'} or
-                selected_type == "Audio" and ext in {'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus'} or
-                selected_type == "Video" and ext in {'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'mpeg', 'mpg'} or
-                selected_type == "Archive" and ext in {'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'iso', 'xz'} or
-                selected_type == "Other" and ext in {'sqlite', 'torrent', 'csv', 'xml', 'json', 'html', 'htm'}
+                (selected_type == "Images" and ext in {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'webp', 'ico', 'heic', 'raw'}) or
+                (selected_type == "Ebooks" and ext in {'epub', 'mobi', 'fb2', 'pdf', 'xps'}) or
+                (selected_type == "Documents" and ext in {'txt', 'md', 'tex', 'doc', 'docx', 'odt', 'rtf'}) or
+                (selected_type == "Audio" and ext in {'mp3', 'wav', 'ogg', 'flac', 'aac', 'wma', 'm4a', 'opus'}) or
+                (selected_type == "Video" and ext in {'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'mpeg', 'mpg'}) or
+                (selected_type == "Archive" and ext in {'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'iso', 'xz'}) or
+                (selected_type == "Other" and ext in {'sqlite', 'torrent', 'csv', 'xml', 'json', 'html', 'htm'})
             ):
                 if search_text.lower() in name.lower():
                     # Add file to filtered list if it matches criteria
                     self.filtered_files_data.append(file_data)
-        
+
         # Update the model with filtered data
         self.update_model_from_filtered_data()
-        
+
         # Apply current sort after filtering
         self.sort_files(preserve_filter=True)
-        
+
     def sort_files(self, preserve_filter=False):
         """
         Sort the file list based on the selected option.
@@ -443,10 +461,10 @@ class ItemDetailsDialog(QDialog):
                                    If False, sort all files and reapply filter
         """
         sort_index = self.sort_combo.currentIndex()
-        
+
         # Use the appropriate data source based on preserve_filter
         source_data = self.filtered_files_data if preserve_filter else self.files_data
-        
+
         if sort_index == 0:  # A-Z
             source_data.sort(key=lambda x: x['name'].lower())
         elif sort_index == 1:  # Z-A
@@ -455,7 +473,7 @@ class ItemDetailsDialog(QDialog):
             source_data.sort(key=lambda x: x['size'])
         elif sort_index == 3:  # Size descending
             source_data.sort(key=lambda x: x['size'], reverse=True)
-        
+
         # If we're not preserving the filter, we need to refilter after sorting
         if not preserve_filter:
             self.filter_files()
@@ -470,40 +488,40 @@ class ItemDetailsDialog(QDialog):
         for file_data in self.files_data:
             item = QStandardItem(file_data['name'])
             item.setCheckable(True)
-            item.setCheckState(check_states.get(file_data['name'], Qt.Unchecked))
-            item.setData(file_data['size'], Qt.UserRole)
+            item.setCheckState(check_states.get(file_data['name'], Qt.CheckState.Unchecked))
+            item.setData(file_data['size'], Qt.ItemDataRole.UserRole)
             self.files_model.appendRow(item)
-            
+
     def update_model_from_filtered_data(self):
         """Update the model using the current filtered_files_data."""
         # Save current check states
         model = self.proxy_model.sourceModel()
-        check_states = {model.item(i).text(): model.item(i).checkState() 
+        check_states = {model.item(i).text(): model.item(i).checkState()
                         for i in range(model.rowCount())} if model.rowCount() > 0 else {}
-        
+
         # Clear and rebuild model
         model.clear()
-        
+
         for file_data in self.filtered_files_data:
             item = QStandardItem(file_data['name'])
             item.setCheckable(True)
-            item.setCheckState(check_states.get(file_data['name'], Qt.Unchecked))
-            item.setData(file_data['size'], Qt.UserRole)
+            item.setCheckState(check_states.get(file_data['name'], Qt.CheckState.Unchecked))
+            item.setData(file_data['size'], Qt.ItemDataRole.UserRole)
             model.appendRow(item)
 
     def select_all_files(self):
         """Check all files in the list."""
         for i in range(self.files_model.rowCount()):
-            self.files_model.item(i).setCheckState(Qt.Checked)
+            self.files_model.item(i).setCheckState(Qt.CheckState.Checked)
 
     def select_no_files(self):
         """Uncheck all files in the list."""
         for i in range(self.files_model.rowCount()):
-            self.files_model.item(i).setCheckState(Qt.Unchecked)
+            self.files_model.item(i).setCheckState(Qt.CheckState.Unchecked)
 
     def download_selected_files(self):
         """Initiate download of selected files."""
-        selected = [self.files_model.item(i).text() for i in range(self.files_model.rowCount()) if self.files_model.item(i).checkState() == Qt.Checked]
+        selected = [self.files_model.item(i).text() for i in range(self.files_model.rowCount()) if self.files_model.item(i).checkState() == Qt.CheckState.Checked]
         if not selected:
             QMessageBox.warning(self, "Warning", "No files selected for download")
             return
@@ -672,8 +690,8 @@ class ItemDetailsDialog(QDialog):
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             image_label = QLabel()
-            image_label.setAlignment(Qt.AlignCenter)
-            image_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+            image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            image_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
             scroll_area.setWidget(image_label)
             layout.addWidget(scroll_area)
 
@@ -692,7 +710,7 @@ class ItemDetailsDialog(QDialog):
             def update_image():
                 new_width = int(original_pixmap.width() * zoom_level)
                 new_height = int(original_pixmap.height() * zoom_level)
-                scaled_pixmap = original_pixmap.scaled(new_width, new_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                scaled_pixmap = original_pixmap.scaled(new_width, new_height, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                 image_label.setPixmap(scaled_pixmap)
                 image_label.resize(scaled_pixmap.size())
 
@@ -734,7 +752,7 @@ class ItemDetailsDialog(QDialog):
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
             image_label = QLabel()
-            image_label.setAlignment(Qt.AlignCenter)
+            image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             scroll_area.setWidget(image_label)
             layout.addWidget(scroll_area)
 
@@ -747,12 +765,12 @@ class ItemDetailsDialog(QDialog):
             nav_layout.addWidget(page_label)
             btn_go = QPushButton("Go")
             nav_layout.addWidget(btn_go)
-            
+
             # Add fullscreen button next to Go button
             btn_fullscreen = QPushButton("Full Screen (F11)")
             btn_fullscreen.setToolTip("Toggle fullscreen mode (F11)")
             nav_layout.addWidget(btn_fullscreen)
-            
+
             nav_layout.addStretch()
             btn_prev = QPushButton("◀ Previous")
             btn_next = QPushButton("Next ▶")
@@ -797,7 +815,7 @@ class ItemDetailsDialog(QDialog):
             current_page = 0
             self.doc_renderer = DocumentRenderer()
 
-            def update_document_ui(dialog, label, input_field, page_lbl, prev_btn, next_btn, 
+            def update_document_ui(dialog, label, input_field, page_lbl, prev_btn, next_btn,
                                   pixmap, page_num, total_pages, doc_name):
                 """Update the UI with the rendered page and navigation state."""
                 label.setPixmap(pixmap)
@@ -893,49 +911,49 @@ class ItemDetailsDialog(QDialog):
         dlg = QDialog(self)
         dlg.setWindowTitle(f"Text Preview: {filename}")
         layout = QVBoxLayout(dlg)
-        
+
         # Configure text editor with monospace font
         editor = QTextEdit()
         editor.setPlainText(text)
         editor.setReadOnly(True)
-        editor.setLineWrapMode(QTextEdit.NoWrap)
+        editor.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         editor.setStyleSheet("""
             QTextEdit {
                 font-family: monospace;
                 font-size: 12pt;
             }
         """)
-        
+
         # Create button layout
         button_layout = QHBoxLayout()
-        
+
         # Fullscreen toggle button
         btn_fullscreen = QPushButton("Full Screen (F11)")
         btn_fullscreen.clicked.connect(lambda: self.toggle_fullscreen(dlg, btn_fullscreen))
-        
+
         # Close dialog button
         btn_close = QPushButton("Close")
         btn_close.clicked.connect(dlg.accept)
-        
+
         # Add widgets to layouts
         button_layout.addWidget(btn_fullscreen)
         button_layout.addStretch()
         button_layout.addWidget(btn_close)
-        
+
         layout.addWidget(editor)
         layout.addLayout(button_layout)
-        
+
         # Window configuration
         dlg.resize(800, 600)
         dlg.setMinimumSize(400, 300)
-        
+
         # Keyboard shortcut for fullscreen
-        QShortcut(Qt.Key_F11, dlg).activated.connect(
+        QShortcut(Qt.Key.Key_F11, dlg).activated.connect(
             lambda: self.toggle_fullscreen(dlg, btn_fullscreen)
         )
-        
+
         dlg.exec_()
-        
+
     def toggle_fullscreen(self, dialog: QDialog, button: QPushButton):
         """Toggle fullscreen mode for the dialog."""
         if dialog.isFullScreen():
@@ -953,7 +971,7 @@ class ItemDetailsDialog(QDialog):
             dialog.setWindowTitle(f"Audio Player: {file_obj.name}")
             dialog.setMinimumWidth(400)
             layout = QVBoxLayout()
-            
+
             # Create AudioPlayerHandler to manage player lifecycle
             class AudioPlayerHandler(QObject):
                 def __init__(self, parent_dialog):
@@ -962,12 +980,12 @@ class ItemDetailsDialog(QDialog):
                     self.parent_dialog = parent_dialog
                     # Store signal connections for safe disconnection
                     self.connections = []
-                    
+
                 def connect_signal(self, signal, slot):
                     # Connect signal and store the connection for later disconnection
                     signal.connect(slot)
                     self.connections.append((signal, slot))
-                    
+
                 def cleanup(self):
                     # Safely disconnect all stored connections
                     for signal, slot in self.connections:
@@ -977,13 +995,13 @@ class ItemDetailsDialog(QDialog):
                             # Ignore disconnection errors
                             pass
                     self.player.stop()
-                    
+
             # Create handler and keep reference to prevent deletion
             player_handler = AudioPlayerHandler(dialog)
             dialog.player_handler = player_handler  # Store reference in dialog
             player = player_handler.player
             player.setMedia(QMediaContent(QUrl(audio_url)))
-            
+
             # Add time display
             time_layout = QHBoxLayout()
             current_time_label = QLabel("0:00")
@@ -992,24 +1010,24 @@ class ItemDetailsDialog(QDialog):
             time_layout.addStretch()
             time_layout.addWidget(duration_label)
             layout.addLayout(time_layout)
-            
+
             # Add progress slider
-            progress_slider = QSlider(Qt.Horizontal)
+            progress_slider = QSlider(Qt.Orientation.Horizontal)
             progress_slider.setRange(0, 0)
-            
+
             # Connect slider position change with specific function
             def on_slider_moved(position):
                 player.setPosition(position)
             progress_slider.sliderMoved.connect(on_slider_moved)
             layout.addWidget(progress_slider)
-            
+
             # Control buttons layout
             controls_layout = QHBoxLayout()
-            
+
             # Play/Pause button with icon switching
             play_pause_btn = QPushButton("Play")
             is_playing = False
-            
+
             def toggle_play_pause():
                 nonlocal is_playing
                 if is_playing:
@@ -1020,10 +1038,10 @@ class ItemDetailsDialog(QDialog):
                     player.play()
                     play_pause_btn.setText("Pause")
                     is_playing = True
-                    
+
             play_pause_btn.clicked.connect(toggle_play_pause)
             controls_layout.addWidget(play_pause_btn)
-            
+
             # Stop button
             stop_btn = QPushButton("Stop")
             def stop_playback():
@@ -1031,34 +1049,34 @@ class ItemDetailsDialog(QDialog):
                 player.stop()
                 play_pause_btn.setText("Play")
                 is_playing = False
-                
+
             stop_btn.clicked.connect(stop_playback)
             controls_layout.addWidget(stop_btn)
-            
+
             # Volume control
             volume_layout = QHBoxLayout()
             volume_label = QLabel("Volume:")
-            volume_slider = QSlider(Qt.Horizontal)
+            volume_slider = QSlider(Qt.Orientation.Horizontal)
             volume_slider.setRange(0, 100)
             volume_slider.setValue(70)  # Default volume at 70%
             player.setVolume(70)
-            
+
             # Connect volume slider with specific function
             def on_volume_changed(value):
                 player.setVolume(value)
             volume_slider.valueChanged.connect(on_volume_changed)
-            
+
             volume_layout.addWidget(volume_label)
             volume_layout.addWidget(volume_slider)
-            
+
             # Add layouts to main layout
             layout.addLayout(controls_layout)
             layout.addLayout(volume_layout)
-            
+
             # Status label
             status_label = QLabel("Ready")
             layout.addWidget(status_label)
-            
+
             # Signal handlers with safety checks
             def update_duration(duration):
                 # Only update if dialog is still visible
@@ -1066,7 +1084,7 @@ class ItemDetailsDialog(QDialog):
                     progress_slider.setRange(0, duration)
                     minutes, seconds = divmod(duration // 1000, 60)
                     duration_label.setText(f"{minutes}:{seconds:02d}")
-                
+
             def update_position(position):
                 # Only update if dialog is still visible
                 if dialog.isVisible():
@@ -1075,39 +1093,39 @@ class ItemDetailsDialog(QDialog):
                     if current_time_label.isVisible():
                         minutes, seconds = divmod(position // 1000, 60)
                         current_time_label.setText(f"{minutes}:{seconds:02d}")
-                
+
             def handle_state_changed(state):
                 # Only update if dialog is still visible
                 if dialog.isVisible() and status_label.isVisible():
-                    if state == QMediaPlayer.PlayingState:
+                    if state == QMediaPlayer.PlaybackState.PlayingState:
                         status_label.setText("Playing")
-                    elif state == QMediaPlayer.PausedState:
+                    elif state == QMediaPlayer.PlaybackState.PausedState:
                         status_label.setText("Paused")
-                    elif state == QMediaPlayer.StoppedState:
+                    elif state == QMediaPlayer.PlaybackState.StoppedState:
                         status_label.setText("Stopped")
-                    
+
             def handle_error():
                 # Only update if dialog is still visible
                 if dialog.isVisible() and status_label.isVisible():
                     error_msg = player.errorString()
                     status_label.setText(f"Error: {error_msg}")
                     logger.error(f"Media player error: {error_msg}")
-            
+
             # Connect signals using our tracking method
             player_handler.connect_signal(player.durationChanged, update_duration)
             player_handler.connect_signal(player.positionChanged, update_position)
             player_handler.connect_signal(player.stateChanged, handle_state_changed)
             player_handler.connect_signal(player.error, handle_error)
-            
+
             # Set layout and execute dialog
             dialog.setLayout(layout)
-            
+
             # Important: Properly clean up when dialog is closed or rejected
             dialog.finished.connect(player_handler.cleanup)
             dialog.rejected.connect(player_handler.cleanup)
-            
+
             dialog.exec_()
-            
+
         except Exception as e:
             logger.error(f"Error playing audio: {e}")
             QMessageBox.critical(self, "Error", f"Error playing audio: {e}")

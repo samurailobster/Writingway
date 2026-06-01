@@ -5,13 +5,15 @@ text_analysis_uk.py
 Ukrainian-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 # Ukrainian tooltip translations
 TOOLTIP_TRANSLATIONS = {
@@ -77,7 +79,7 @@ UKRAINIAN_DATA = {
     "weak_terms": {"може", "можливо", "ймовірно", "напевно", "схоже", "як ніби", "трохи", "дещо"},
     "standard_speech_verbs": {"сказати", "запитати"},
     "speech_verbs": {"сказати", "запитати", "шепотіти", "закричати", "бурмотіти", "вигукнути"},
-    "filter_words": {"бачив", "чуяв", "відчував", "зауважив", "подумав", "розмірковував", "здавалось", "з'явився", "спостерігав", "дивився", "слухав", "відчув", "вирішив", "розглядав", "здалося", "з'явилося", "помітив", "відчував", "восприймав", "уявляв собі"},
+    "filter_words": {"бачив", "чуяв", "відчував", "зауважив", "подумав", "розмірковував", "здавалось", "з'явився", "спостерігав", "дивився", "слухав", "відчув", "вирішив", "розглядав", "здалося", "з'явилося", "помітив", "восприймав", "уявляв собі"},
     "telling_verbs": {"бути", "відчувати себе", "здаватися", "виглядати", "з'являтися", "ставати"},
     "emotion_words": {"злий", "сумний", "щасливий", "збуджений", "нервовий", "переляканий", "схвильований", "сором'язливий", "розчарований", "розлючений", "тривожний", "зляканий", "радісний", "пригнічений", "невдоволений", "екстатичний", "знервований", "розгніваний", "захоплений", "приголомшений", "здивований", "спантеличений", "гордий", "задоволений", "вдоволений", "ентузіастичний", "заздрісний"},
     "weak_verbs": {"бути"},
@@ -112,8 +114,8 @@ class UkrainianTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("Не знайдено модель 'uk_core_news_sm'. Бажаєте завантажити її?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """
@@ -147,12 +149,12 @@ class UkrainianTextAnalysis(BaseTextAnalysis, QObject):
         for word in words:
             # Count vowels in each word as a rough estimate of syllables
             syllable_count += sum(1 for char in word.lower() if char in vowels)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
         reading_ease = 206.835 - 1.015 * (num_words / num_sentences) - 84.6 * (syllable_count / num_words)
         return reading_ease
-        
+
     def get_tooltips(self):
         """Returns tooltips in Ukrainian."""
         return TOOLTIP_TRANSLATIONS

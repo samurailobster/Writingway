@@ -1,18 +1,37 @@
 import os
 import re
+from gettext import gettext as _
+
 from markdown import markdown
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
-    QPushButton, QMessageBox, QInputDialog, QFormLayout,
-    QSplitter, QWidget, QLabel, QApplication, QListWidget, QListWidgetItem, 
-    QComboBox, QSizePolicy, QShortcut, QTextBrowser
-)
-from PyQt5.QtCore import Qt, QTimer, QSettings, QUrl
+from PyQt5.QtCore import QSettings, Qt, QTimer, QUrl
 from PyQt5.QtGui import QFont, QKeySequence, QTextCursor
+from PyQt5.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QSplitter,
+    QTextBrowser,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from compendium.context_panel import ContextPanel
 from muse.prompt_panel import PromptPanel
 from settings.theme_manager import ThemeManager
-from compendium.context_panel import ContextPanel
+
 from .new_chat_dialog import NewChatDialog
+
 
 class WorkshopView(QDialog):
     def __init__(self, parent, workshop_controller):
@@ -38,12 +57,12 @@ class WorkshopView(QDialog):
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 10, 0)
-        self.outer_splitter = QSplitter(Qt.Horizontal)
+        self.outer_splitter = QSplitter(Qt.Orientation.Horizontal)
         conversation_container = QWidget()
         conversation_layout = QVBoxLayout(conversation_container)
         conversation_layout.setContentsMargins(0, 0, 0, 0)
         self.conversation_list = QListWidget()
-        self.conversation_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.conversation_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         conversation_layout.addWidget(self.conversation_list)
         self.new_chat_button = QPushButton(_("New Chat"))
         conversation_layout.addWidget(self.new_chat_button)
@@ -58,7 +77,7 @@ class WorkshopView(QDialog):
         self.chat_log.setReadOnly(True)
         self.chat_log.setFont(QFont("Arial", self.font_size))
         chat_layout.addWidget(self.chat_log)
-        self.inner_splitter = QSplitter(Qt.Horizontal)
+        self.inner_splitter = QSplitter(Qt.Orientation.Horizontal)
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -68,7 +87,7 @@ class WorkshopView(QDialog):
         left_layout.addWidget(self.chat_input)
         bottomrow_layout = QHBoxLayout()
         self.prompt_panel = PromptPanel("Workshop")
-        self.prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.prompt_panel.setMaximumWidth(300)
         bottomrow_layout.addWidget(self.prompt_panel)
         middle_stack = QFormLayout()
@@ -94,7 +113,7 @@ class WorkshopView(QDialog):
         bottomrow_layout.addLayout(middle_stack)
         bottomrow_layout.addStretch()
         audio_stack = QFormLayout()
-        audio_stack.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        audio_stack.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         audio_group_layout = QHBoxLayout()
         self.record_button = QPushButton()
         self.record_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/mic.svg"))
@@ -131,7 +150,7 @@ class WorkshopView(QDialog):
         self.zoom_out_shortcut = QShortcut(QKeySequence("Ctrl+-"), self)
         self.up_shortcut = QShortcut(QKeySequence("Up"), self.chat_input)
         self.up_shortcut.activated.connect(self.load_last_user_prompt)
-        
+
         # Nice default styling for markdown output
         self.chat_log.document().setDefaultStyleSheet("""
             p {
@@ -190,7 +209,7 @@ class WorkshopView(QDialog):
     def finalize_streaming_message(self):
         """Call when streaming is complete."""
         self._current_streaming_message_start = None
-        
+
     def format_chat_log_html(self):
         # Implement HTML formatting logic here if needed
         pass
@@ -202,22 +221,22 @@ class WorkshopView(QDialog):
         """Handle clicks on Edit/Delete anchors."""
         if not url:
             return
-        
+
         link = url.toString().strip()
-        
+
         if link == "edit_last":
             self.controller.edit_last_user_message()
         elif link == "delete_last":
             self.controller.delete_last_exchange()
 
-    def append_to_chat_log(self, speaker: str, text: str, is_streaming: bool = False, 
+    def append_to_chat_log(self, speaker: str, text: str, is_streaming: bool = False,
                            is_last_user: bool = False, is_edited: bool = False):
         """Enhanced append with optional Edit/Delete links for latest User message."""
         if not text:
             text = ""
-        
+
         html_text = markdown(text, extensions=['fenced_code', 'tables', 'nl2br'])
-        
+
         if is_edited:
             edited_html = re.sub(
                 r'(<p[^>]*>)',
@@ -226,7 +245,7 @@ class WorkshopView(QDialog):
                 flags=re.IGNORECASE
             )
             html_text = edited_html.replace('</p>', '</span></p>')
-            
+
         if speaker.lower() == "user" and is_last_user:
             # Add action links
             actions = (
@@ -244,30 +263,30 @@ class WorkshopView(QDialog):
                 <b>{speaker}:</b> {html_text}
             </p>
             '''
-        
+
         if is_streaming and self._current_streaming_message_start is not None:
             cursor = self.chat_log.textCursor()
             cursor.setPosition(self._current_streaming_message_start)
-            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
             cursor.removeSelectedText()
             cursor.insertHtml(html)
         else:
             if is_streaming:
                 self._current_streaming_message_start = self.chat_log.document().characterCount()
             self.chat_log.append(html)
-        
+
         scrollbar = self.chat_log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
     def strike_out_last_exchange(self):
         """Strike through the last User + Assistant messages for Edit mode."""
         cursor = self.chat_log.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         # This is approximate; for precision we could track positions, but simple strike for now
         # Better: use HTML with <del> or CSS
         # For simplicity, we'll re-render with strike in controller after edit
-        pass  # Enhanced in controller logic
-    
+        # Enhanced in controller logic
+
     def load_last_user_prompt(self):
         """Load last user prompt into editor if empty."""
         if self.chat_input.toPlainText().strip():
@@ -278,7 +297,7 @@ class WorkshopView(QDialog):
                 if messages[i].get("role") == "user":
                     self.chat_input.setPlainText(messages[i]["content"])
                     return
-                
+
     def get_selected_conversation(self):
         items = self.conversation_list.selectedItems()
         return items[0].text() if items else None
@@ -297,12 +316,12 @@ class WorkshopView(QDialog):
     def remove_conversation_item(self, row):
         self.conversation_list.takeItem(row)
 
-    def show_message_box(self, title, message, icon=QMessageBox.Warning):
+    def show_message_box(self, title, message, icon=QMessageBox.Icon.Warning):
         QMessageBox(icon, title, message, parent=self).exec_()
 
     def show_new_chat_dialog(self):
         dialog = NewChatDialog(self.parent().model.project_name, self)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_() == QDialog.DialogCode.Accepted:
             return dialog.get_selected_mode(), dialog.get_name(), dialog.get_pov()
         return None, None, None
 
@@ -310,7 +329,7 @@ class WorkshopView(QDialog):
         return QInputDialog.getText(self, _("Rename Conversation"), _("Enter new conversation name:"), text=current_name)
 
     def show_delete_confirmation(self, name):
-        return QMessageBox.question(self, _("Delete Conversation"), _("Are you sure you want to delete '{}'?").format(name)) == QMessageBox.Yes
+        return QMessageBox.question(self, _("Delete Conversation"), _("Are you sure you want to delete '{}'?").format(name)) == QMessageBox.StandardButton.Yes
 
     def toggle_context_panel_visibility(self, visible):
         self.context_panel.setVisible(visible)

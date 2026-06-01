@@ -5,13 +5,15 @@ text_analysis_lt.py
 Lithuanian-specific text analysis module inheriting from BaseTextAnalysis.
 """
 
+import re
+import threading
+
 import spacy
 import spacy.cli
-import threading
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+
 from util.base_text_analysis import BaseTextAnalysis
-import re
 
 TOOLTIP_TRANSLATIONS = {
     "complex": """
@@ -75,9 +77,9 @@ LITHUANIAN_DATA = {
     "weak_terms": {"galbūt", "gali būti", "tikriausiai", "atrodo", "tarsi", "šiek tiek", "truputį"},
     "standard_speech_verbs": {"sakyti", "klausti"},
     "speech_verbs": {"sakyti", "klausti", "šnabždėti", "šaukti", "murmėti", "sušukti"},
-    "filter_words": {"matė", "girdėjo", "jautė", "pastebėjo", "galvojo", "svarstė", "stebėjo", "žiūrėjo", "klausėsi", "užuodė", "nusprendė", "apsvarstė", "atrodė", "pasirodė", "stebėjo", "pajuto", "suvokė", "įsivaizdavo"},
+    "filter_words": {"matė", "girdėjo", "jautė", "pastebėjo", "galvojo", "svarstė", "stebėjo", "žiūrėjo", "klausėsi", "užuodė", "nusprendė", "apsvarstė", "atrodė", "pasirodė", "pajuto", "suvokė", "įsivaizdavo"},
     "telling_verbs": {"būti", "jaustis", "atrodyti", "pasirodyti", "tapti"},
-    "emotion_words": {"piktas", "liūdnas", "laimingas", "susijaudinęs", "nervingas", "išsigandęs", "susirūpinęs", "sugėdintas", "nusivylęs", "frustruotas", "suerzintas", "nerimastingas", "išsigandęs", "linksmas", "prislėgtas", "nelaimingas", "ekstaziškas", "susijaudinęs", "įsiutęs", "sužavėtas", "šokiruotas", "nustebęs", "sutrikęs", "išdidus", "patenkintas", "pasitenkinęs", "entuziastingas", "pavydus"},
+    "emotion_words": {"piktas", "liūdnas", "laimingas", "susijaudinęs", "nervingas", "išsigandęs", "susirūpinęs", "sugėdintas", "nusivylęs", "frustruotas", "suerzintas", "nerimastingas", "linksmas", "prislėgtas", "nelaimingas", "ekstaziškas", "įsiutęs", "sužavėtas", "šokiruotas", "nustebęs", "sutrikęs", "išdidus", "patenkintas", "pasitenkinęs", "entuziastingas", "pavydus"},
     "weak_verbs": {"būti"},
     "common_words": {"ir", "į", "ant", "iš", "su", "apie", "o", "bet", "arba", "kaip", "yra", "buvo", "turi", "tai", "to", "šis", "ši", "šie", "ten", "čia", "mano", "tavo", "jo", "jos", "mūsų", "jūsų", "jų", "ne", "taip", "ar", "nes", "kai", "jei", "kadangi", "kuris", "kuri", "kurie"},
     "quote_pattern": r'„[^"]*"|\"[^\"]*\"'
@@ -110,8 +112,8 @@ class LithuanianTextAnalysis(BaseTextAnalysis, QObject):
         msgBox = QMessageBox()
         msgBox.setWindowTitle("spaCy Model")
         msgBox.setText("The model 'lt_core_news_sm' was not found. Do you want to download it?")
-        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        return msgBox.exec() == QMessageBox.Yes
+        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        return msgBox.exec() == QMessageBox.StandardButton.Yes
 
     def download_and_load_model(self):
         """
@@ -140,18 +142,18 @@ class LithuanianTextAnalysis(BaseTextAnalysis, QObject):
         sentences = re.split(r'[.!?]+', text)
         sentences = [s for s in sentences if s.strip()]
         num_sentences = len(sentences)
-        
+
         # For Lithuanian, consider words with 4+ syllables as complex (adjusted from 3 for Polish)
         # Lithuanian has longer words on average
         vowels = 'aeiouyąęėįųū'
         num_difficult_words = sum(1 for word in words if len(re.findall(f'[{vowels}]', word.lower())) >= 4)
-        
+
         if num_sentences == 0 or num_words == 0:
             return 0
-        
+
         # Modified coefficient (0.4 to 0.35) to better reflect Lithuanian language characteristics
         return 0.35 * ((num_words / num_sentences) + 100 * (num_difficult_words / num_words))
-        
+
     def get_tooltips(self):
         """Returns tooltips in Lithuanian."""
         return TOOLTIP_TRANSLATIONS

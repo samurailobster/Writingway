@@ -1,17 +1,34 @@
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QTreeWidget, QTreeWidgetItem,
-                             QTableWidget, QTableWidgetItem, QComboBox, QLabel,
-                             QDialogButtonBox, QSplitter, QMessageBox, QInputDialog,
-                             QHeaderView, QPushButton, QHBoxLayout, QWidget, QLineEdit)
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QStyle
 import json
 import re
-from typing import Dict, List
+from gettext import gettext as _
+
+from PyQt5.QtCore import QSettings, Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QStyle,
+    QTableWidget,
+    QTableWidgetItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .llm_api_aggregator import WWApiAggregator
 from .settings_manager import WWSettingsManager
 from .theme_manager import ThemeManager
+
 
 class ProviderInfoDialog(QDialog):
     def __init__(self, parent=None, llm_configs=None):
@@ -29,7 +46,7 @@ class ProviderInfoDialog(QDialog):
 
     def init_ui(self):
         main_layout = QVBoxLayout()
-        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
 
         self.provider_tree = QTreeWidget()
         self.provider_tree.setHeaderLabels([_("Provider")])
@@ -74,7 +91,7 @@ class ProviderInfoDialog(QDialog):
                 padding: 5px;
             }}
         """)
-        self.model_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.model_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.model_table.verticalHeader().setVisible(False)
         right_layout.addWidget(self.model_table)
 
@@ -86,7 +103,7 @@ class ProviderInfoDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
         self.collapse_button = QPushButton()
-        self.collapse_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowUp))
+        self.collapse_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowUp))
         self.collapse_button.setToolTip(_("Collapse all providers"))
         self.collapse_button.clicked.connect(self.collapse_tree)
         button_layout.addWidget(self.collapse_button)
@@ -105,14 +122,14 @@ class ProviderInfoDialog(QDialog):
         button_layout.addWidget(self.zoom_out_button)
 
         self.reset_zoom_button = QPushButton()
-        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
+        self.reset_zoom_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
         self.reset_zoom_button.setToolTip(_("Reset table content zoom"))
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         button_layout.addWidget(self.reset_zoom_button)
 
         button_layout.addStretch()
 
-        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         button_box.rejected.connect(self.on_close_clicked)
         button_layout.addWidget(button_box)
         main_layout.addLayout(button_layout)
@@ -121,12 +138,12 @@ class ProviderInfoDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle CMD++ and CMD+- shortcuts for zooming."""
-        if event.modifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
                 self.zoom_in()
                 event.accept()
                 return
-            elif event.key() == Qt.Key_Minus:
+            elif event.key() == Qt.Key.Key_Minus:
                 self.zoom_out()
                 event.accept()
                 return
@@ -215,7 +232,7 @@ class ProviderInfoDialog(QDialog):
         finally:
             self._updating_ui = False
 
-    def flatten_dict(self, d: Dict, parent_key: str = '', sep: str = '.') -> Dict:
+    def flatten_dict(self, d: dict, parent_key: str = '', sep: str = '.') -> dict:
         items = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
@@ -227,7 +244,7 @@ class ProviderInfoDialog(QDialog):
                 items.append((new_key, str(v) if v is not None else ""))
         return dict(items)
 
-    def get_all_keys(self, models: List[Dict]) -> List[str]:
+    def get_all_keys(self, models: list[dict]) -> list[str]:
         all_keys = set()
         for model in models:
             flattened = self.flatten_dict(model)
@@ -272,7 +289,7 @@ class ProviderInfoDialog(QDialog):
                     self,
                     _("API Key Required"),
                     _("An API key is required for ") + provider_name + _(". Please enter it:"),
-                    echo=QLineEdit.Password
+                    echo=QLineEdit.EchoMode.Password
                 )
                 if ok and api_key:
                     config["api_key"] = api_key
@@ -300,7 +317,7 @@ class ProviderInfoDialog(QDialog):
                 self.group_combobox.addItem("All")
                 self.model_table.setRowCount(0)
                 self.model_table.setColumnCount(0)
-                QMessageBox.warning(self, "Error", _("Failed to fetch models for ") + provider_name + f": {str(e)}")
+                QMessageBox.warning(self, "Error", _("Failed to fetch models for ") + provider_name + f": {e!s}")
                 return
 
             # Group models
@@ -323,15 +340,7 @@ class ProviderInfoDialog(QDialog):
                     is_research = "research" in model.get("description", "").lower()
                     is_instruction = architecture.get("instruct_type") in ["alpaca", "zephyr", "general"]
 
-                    if filter_type == _("All Models"):
-                        filtered.append(model)
-                    elif filter_type == _("Free Models") and is_free:
-                        filtered.append(model)
-                    elif filter_type == _("Chat Capabilities") and is_chat:
-                        filtered.append(model)
-                    elif filter_type == _("Research Capabilities") and is_research:
-                        filtered.append(model)
-                    elif filter_type == _("Instruction Following") and is_instruction:
+                    if filter_type == _("All Models") or (filter_type == _("Free Models") and is_free) or (filter_type == _("Chat Capabilities") and is_chat) or (filter_type == _("Research Capabilities") and is_research) or (filter_type == _("Instruction Following") and is_instruction):
                         filtered.append(model)
 
                 if filtered:

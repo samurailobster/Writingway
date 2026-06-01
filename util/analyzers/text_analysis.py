@@ -6,9 +6,9 @@ English-specific text analysis module inheriting from BaseTextAnalysis.
 Provides tooltip functionality similar to text_analysis_pl.
 """
 
-import spacy
-from util.base_text_analysis import BaseTextAnalysis
 import textstat
+
+from util.base_text_analysis import BaseTextAnalysis
 
 # Tooltip translations for English, formatted as HTML strings
 TOOLTIP_TRANSLATIONS = {

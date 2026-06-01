@@ -1,11 +1,19 @@
-from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QVBoxLayout
-from PyQt5.QtGui import QColor
+from gettext import gettext as _
+from typing import TYPE_CHECKING
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QAction, QToolBar, QVBoxLayout, QWidget
+
 from settings.theme_manager import ThemeManager
+
+if TYPE_CHECKING:
+    from .project_window import ProjectWindow
+
 
 class ActivityBar(QWidget):
     """Vertical icon panel for switching between views, similar to VS Code Activity Bar."""
-    def __init__(self, controller, tint_color=QColor("black"), position="left"):
+    def __init__(self, controller: "ProjectWindow", tint_color: QColor = QColor("black"), position: str = "left"):
         super().__init__()
         self.controller = controller  # Reference to ProjectWindow
         self.tint_color = tint_color
@@ -20,23 +28,23 @@ class ActivityBar(QWidget):
         layout.addWidget(self.toolbar)
         layout.setContentsMargins(0, 0, 0, 0)
         self.toolbar.setStyleSheet("QToolBar#ActivityBar { border: 0px; }")
-        self.toolbar.setOrientation(Qt.Vertical)
+        self.toolbar.setOrientation(Qt.Orientation.Vertical)
         self.toolbar.setFixedWidth(50)  # Fixed width for icons
 
         # Actions
         self.outline_action = self.add_action(
-            "assets/icons/pen-tool.svg", 
-            _("Outline and Scene Editor"), 
+            "assets/icons/pen-tool.svg",
+            _("Outline and Scene Editor"),
             self.controller.toggle_outline_view
         )
         self.search_action = self.add_action(
-            "assets/icons/search.svg", 
-            _("Search and Replace"), 
+            "assets/icons/search.svg",
+            _("Search and Replace"),
             self.controller.toggle_search_view
         )
         self.compendium_action = self.add_action(
-            "assets/icons/book-open.svg", 
-            _("Compendium"), 
+            "assets/icons/book-open.svg",
+            _("Compendium"),
             self.controller.toggle_compendium_view
         )
         self.prompts_action = self.add_action(

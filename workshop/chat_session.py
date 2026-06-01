@@ -1,8 +1,7 @@
 ## file: chat_session.py
 import logging
-import re
+
 from .conversation_history_manager import estimate_conversation_tokens, summarize_conversation
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 TOKEN_LIMIT = 3500
 
@@ -45,7 +44,7 @@ class BaseChatSession:
             # Keep last 2 messages from history + current user message out of summarization
             history_to_summarize = payload[:-4] if len(payload) > 4 else []  # exclude last 2 history + new user msg
             summary = summarize_conversation(history_to_summarize, overrides=overrides)
-            
+
             # Rebuild payload with summary + fresh user input
             payload = [
                 {"role": "system", "content": system_prompt},
@@ -69,14 +68,14 @@ class BaseChatSession:
             content = msg.get("content", "")
             formatted.append(f"{role}: {content}")
         return "\n".join(formatted)
-    
+
     def append_message(self, role, content):
         self.messages.append({"role": role, "content": content})
 
     def get_preview_payload(self, view):
         user_input = view.chat_input.toPlainText().strip()  # Assuming access via context_panel
         return self.construct_message(user_input)
-    
+
     def mark_last_exchange_as_edited(self):
         """Mark the most recent User + Assistant pair as edited (for visual strikeout)."""
         messages = self.messages

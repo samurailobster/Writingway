@@ -1,10 +1,21 @@
-from PyQt5.QtCore import Qt, QObject, pyqtSignal
-from PyQt5.QtWidgets import QMessageBox, QApplication
-from .summary_service import SummaryService
-from muse.prompt_preview_dialog import PromptPreviewDialog
-from .progress_dialog import ProgressDialog
 import time
 from enum import Enum
+from gettext import gettext as _
+from typing import TYPE_CHECKING
+
+from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMessageBox
+
+from muse.prompt_preview_dialog import PromptPreviewDialog
+
+from .progress_dialog import ProgressDialog
+from .summary_model import SummaryModel
+from .summary_service import SummaryService
+
+if TYPE_CHECKING:
+    from .bottom_stack import BottomStack
+    from .project_tree_widget import ProjectTreeWidget
+
 
 class SummaryMode(Enum):
     """Enum for summary generation modes."""
@@ -36,7 +47,7 @@ class SummaryController(QObject):
     progress_updated = pyqtSignal(str)
     RATE_LIMIT_DELAY = 1.0  # Seconds to wait between requests to avoid throttling
 
-    def __init__(self, model, view, project_tree):
+    def __init__(self, model: SummaryModel, view: "BottomStack", project_tree: "ProjectTreeWidget"):
         super().__init__()
         self.model = model
         self.view = view
@@ -45,11 +56,11 @@ class SummaryController(QObject):
         self.service.summary_generated.connect(self._partial_update)
         self.service.error_occurred.connect(self._show_error)
         self.service.finished.connect(self._on_service_finished)
-        self.current_summary = None
-        self.progress_dialog = None
-        self.current_prompt = {}
-        self.current_overrides = {}
-        self.parent_act_summary = None  # Store the parent ActSummary during chapter processing
+        self.current_summary: ChapterSummary | ActSummary | None = None
+        self.progress_dialog: ProgressDialog | None = None
+        self.current_prompt: dict = {}
+        self.current_overrides: dict = {}
+        self.parent_act_summary: ActSummary | None = None  # Store the parent ActSummary during chapter processing
 
     def create_chapter_summary(self):
         """Generate summary for a single chapter."""
@@ -72,7 +83,7 @@ class SummaryController(QObject):
         self.current_summary = ChapterSummary(hierarchy, scenes)
         self.current_prompt = prompt
         self.current_overrides = overrides
-        
+
         self.view.scene_editor.editor.clear()
 
         self.progress_dialog = ProgressDialog(self.view)
@@ -123,10 +134,10 @@ class SummaryController(QObject):
             self.view,
             _("Delete Summary"),
             _("Are you sure you want to delete the summary for {}?").format("/".join(hierarchy)),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.view.scene_editor.editor.clear()
             if self.project_tree.model.reset_summary(hierarchy):
                 self.progress_updated.emit(_("Summary deleted for {}").format('/'.join(hierarchy)))
@@ -214,7 +225,7 @@ class SummaryController(QObject):
                 self._update_editor(summary_text)
                 if not self.parent_act_summary:
                     self.project_tree.model.save_summary(self.current_summary.hierarchy, summary_text)
-                
+
                 # If part of an act summary, send the chapter summary to LLM for further summarization
                 if self.parent_act_summary:
                     mode = self.view.summary_mode_combo.itemData(self.view.summary_mode_combo.currentIndex())
@@ -240,7 +251,7 @@ class SummaryController(QObject):
                     self.parent_act_summary = None
                     self._process_next_chapter()
                     return
-            
+
             self.current_summary = None
             self._process_next_chapter()
 

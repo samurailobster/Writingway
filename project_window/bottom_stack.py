@@ -1,21 +1,40 @@
-#!/usr/bin/env python3
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QStackedWidget, QHBoxLayout, QPushButton, 
-                            QTextEdit, QComboBox, QSizePolicy,
-                            QFormLayout, QSplitter, QCheckBox)
-from PyQt5.QtGui import QColor
+from gettext import gettext as _
+from typing import TYPE_CHECKING
+
 from PyQt5.QtCore import Qt, QVariant
-from settings.theme_manager import ThemeManager
-from .focus_mode import PlainTextEdit
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from compendium.context_panel import ContextPanel
 from compendium.pov_combobox import POVComboBox
-from .summary_controller import SummaryController, SummaryMode
-from .summary_model import SummaryModel
 from muse.prompt_panel import PromptPanel
 from muse.prompt_preview_dialog import PromptPreviewDialog
+from settings.theme_manager import ThemeManager
+
+from .focus_mode import PlainTextEdit
+from .summary_controller import SummaryController, SummaryMode
+from .summary_model import SummaryModel
+
+if TYPE_CHECKING:
+    from .project_model import ProjectModel
+    from .project_window import ProjectWindow
+
 
 class BottomStack(QWidget):
     """Stacked widget for summary and LLM panels."""
-    def __init__(self, controller, model, tint_color=QColor("black")):
+    def __init__(self, controller: "ProjectWindow", model: "ProjectModel", tint_color: QColor = QColor("black")):
         super().__init__()
         self.controller = controller
         self.model = model
@@ -47,7 +66,7 @@ class BottomStack(QWidget):
         layout = QHBoxLayout(panel)
 
         self.summary_prompt_panel = PromptPanel("Summary")
-        self.summary_prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.summary_prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.summary_prompt_panel.setMaximumWidth(300)
         layout.addWidget(self.summary_prompt_panel)
 
@@ -56,7 +75,7 @@ class BottomStack(QWidget):
         self.summary_preview_button.setToolTip(_("Preview the final prompt"))
         self.summary_preview_button.clicked.connect(self.summary_controller.preview_summary)
         layout.addWidget(self.summary_preview_button)
-        
+
         layout.addStretch()
         self.summary_mode_combo = QComboBox()
         # Populate combo box with enum values and localized display names
@@ -133,7 +152,7 @@ class BottomStack(QWidget):
 
         buttons_layout = QHBoxLayout()
         self.prose_prompt_panel = PromptPanel("Prose")
-        self.prose_prompt_panel.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.prose_prompt_panel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.prose_prompt_panel.setMaximumWidth(300)
         buttons_layout.addWidget(self.prose_prompt_panel)
 
@@ -166,7 +185,7 @@ class BottomStack(QWidget):
         pulldown_widget = QWidget()
         pulldown_layout = QFormLayout(pulldown_widget)
         pulldown_layout.setContentsMargins(0, 0, 20, 0)
-        pulldown_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        pulldown_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
 
         self.pov_character_combo = POVComboBox(self.model.project_name, initial_pov=self.model.settings.get("global_pov_character", "Character"))
         self.pov_character_combo.currentTextChanged.connect(self.handle_pov_character_change)
@@ -176,7 +195,7 @@ class BottomStack(QWidget):
         buttons_layout.addWidget(pulldown_widget)
 
         left_layout.addLayout(buttons_layout)
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_container)
 
         self.context_panel = ContextPanel(self.model.structure, self.model.project_name, self.controller, enhanced_window=self.controller.enhanced_window)
@@ -184,7 +203,7 @@ class BottomStack(QWidget):
         splitter.addWidget(self.context_panel)
         splitter.setSizes([500, 300])
 
-        left_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        left_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         action_layout.addWidget(splitter)
 
         layout.addWidget(self.preview_text)
@@ -198,14 +217,14 @@ class BottomStack(QWidget):
         combo.currentIndexChanged.connect(callback)
         layout.addRow(f"{label_text}:", combo)
         return combo
-    
+
     def handle_pov_character_change(self, text):
         if text == _("Custom..."):
             return
         self.model.settings["global_pov_character"] = text
         self.model.save_settings()
         self.update_tooltips()
-    
+
     def update_tint(self, tint_color):
         self.tint_color = tint_color
         self.apply_button.setIcon(ThemeManager.get_tinted_icon("assets/icons/save.svg", tint_color))
@@ -246,19 +265,19 @@ class BottomStack(QWidget):
             "pov_character": self.pov_character_combo.currentText(),
             "tense": self.tense_combo.currentText()
         }
-    
+
     def preview_prompt(self):
         additional_vars = self.get_additional_vars()
         prompt_config = self.prose_prompt_panel.get_prompt()
         action_beats = self.prompt_input.toPlainText().strip()
         current_scene_text = self.scene_editor.editor.toPlainText().strip() if self.controller.project_tree.tree.currentItem() and self.controller.project_tree.get_item_level(self.controller.project_tree.tree.currentItem()) >= 2 else None
         extra_context = self.context_panel.get_selected_context_text()
-        
+
         dialog = PromptPreviewDialog(
             self.controller,
-            prompt_config=prompt_config, 
-            user_input=action_beats, 
-            additional_vars=additional_vars, 
-            current_scene_text=current_scene_text, 
+            prompt_config=prompt_config,
+            user_input=action_beats,
+            additional_vars=additional_vars,
+            current_scene_text=current_scene_text,
             extra_context=extra_context)
         dialog.exec_()

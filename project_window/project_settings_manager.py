@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-import os
 import json
+import os
 
 from settings.settings_manager import WWSettingsManager
 
@@ -17,7 +16,7 @@ def load_project_settings(project_name):
 
     if os.path.exists(filepath):
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 all_settings = json.load(f)
             settings = all_settings.get(project_name, {})
         except Exception as e:
@@ -30,7 +29,7 @@ def save_project_settings(project_name, project_settings, projects=None):
     filepath = WWSettingsManager.get_project_path(file=PROJECT_SETTINGS_FILE)
     if os.path.exists(filepath):
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 settings = json.load(f)
         except Exception as e:
             print("Error loading project settings:", e)

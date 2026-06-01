@@ -1,7 +1,9 @@
-#!/usr/bin/env python3
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QHBoxLayout, QMessageBox
-from PyQt5.QtCore import Qt, pyqtSignal
+from gettext import gettext as _
+
 import tiktoken
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QTextEdit, QVBoxLayout
+
 
 class TokenLimitDialog(QDialog):
     """
@@ -12,7 +14,7 @@ class TokenLimitDialog(QDialog):
         use_summary(str): Emitted when the user chooses to use the edited summary.
         truncate_story: Emitted when the user chooses to truncate the story.
     """
-    
+
     use_summary = pyqtSignal(str)
     truncate_story = pyqtSignal()
 
@@ -66,7 +68,7 @@ class TokenLimitDialog(QDialog):
 
         # Token count display
         self.token_label = QLabel(_("Tokens: Calculating..."))
-        self.token_label.setAlignment(Qt.AlignCenter)
+        self.token_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.token_label)
 
         # Initial token count update
@@ -106,8 +108,9 @@ class TokenLimitDialog(QDialog):
 
 # Example usage (for testing standalone)
 if __name__ == "__main__":
-    from PyQt5.QtWidgets import QApplication
     import sys
+
+    from PyQt5.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
     dialog = TokenLimitDialog(

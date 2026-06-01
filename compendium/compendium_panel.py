@@ -1,14 +1,21 @@
-from PyQt5.QtWidgets import QWidget, QTreeWidget, QVBoxLayout, QMenu, QTreeWidgetItem, QMessageBox, QDialog
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QFont, QBrush
-import json, os, re, uuid
+import json
+import os
+import re
+import uuid
+from gettext import gettext as _
+
 from langchain.prompts import PromptTemplate
-from .ai_compendium_dialog import AICompendiumDialog
+from PyQt5.QtCore import QPoint, Qt
+from PyQt5.QtGui import QBrush, QFont
+from PyQt5.QtWidgets import QDialog, QMenu, QMessageBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+
+from compendium.compendium_manager import CompendiumEventBus, CompendiumManager
 from settings.llm_api_aggregator import WWApiAggregator
+from settings.llm_settings_dialog import LLMSettingsDialog
 from settings.settings_manager import WWSettingsManager
 from settings.theme_manager import ThemeManager
-from settings.llm_settings_dialog import LLMSettingsDialog
-from compendium.compendium_manager import CompendiumManager, CompendiumEventBus
+
+from .ai_compendium_dialog import AICompendiumDialog
 
 DEBUG = False
 
@@ -38,7 +45,7 @@ class CompendiumPanel(QWidget):
             if DEBUG:
                 print("Old compendium file found at", self.old_compendium_file)
             try:
-                with open(self.old_compendium_file, "r", encoding="utf-8") as f:
+                with open(self.old_compendium_file, encoding="utf-8") as f:
                     old_data = json.load(f)
                 self.manager.save_data(old_data)
                 os.remove(self.old_compendium_file)

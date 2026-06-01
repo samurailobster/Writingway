@@ -1,44 +1,30 @@
-import sys
-import os
-import io
-import logging
 import json
-import re
-import math
-import base64
-import time
-import datetime
-from pathlib import Path
-from typing import Any, List, Dict, Optional, Tuple, Union
-from dataclasses import dataclass
-from difflib import SequenceMatcher
-from PIL import Image
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from langchain_core.messages.base import BaseMessage
+import logging
+import os
+import sys
 
-import fitz
-import pymupdf4llm
-import tiktoken
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
-from PyQt5.QtGui import QTextOption, QKeySequence, QPixmap, QCursor, QTextDocument, QTextCursor, QImage
-from PyQt5.QtWidgets import (QTabWidget, QWidget, QVBoxLayout, QGroupBox, QHBoxLayout, 
-                            QLineEdit, QPushButton, QTextEdit, QSpinBox, QPlainTextEdit, 
-                            QLabel, QProgressBar, QScrollArea, QFileDialog, QMessageBox, 
-                            QGridLayout, QSplitter, QComboBox, QDoubleSpinBox, QDialog,
-                            QListWidgetItem, QMenuBar, QAction, QListWidget, QStatusBar,
-                            QMenu, QInputDialog, QShortcut, QApplication, QCheckBox,
-                            QSizePolicy, QStackedWidget)
-from settings.llm_api_aggregator import WWApiAggregator
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QKeySequence, QPixmap
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialog,
+    QLabel,
+    QMenuBar,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QShortcut,
+    QTabWidget,
+    QVBoxLayout,
+)
+
 from util.find_dialog import FindDialog
 
-from .rag_utils import SettingsManager, HistoryDialog, AppSettings
-from .rag_smart_qa import SmartQAWidget
 from .rag_manual_processing import ManualProcessingWidget
+from .rag_smart_qa import SmartQAWidget
+from .rag_utils import HistoryDialog, SettingsManager
 from .rag_visual_explorer import VisualExplorerWidget
 
 logging.basicConfig(
@@ -53,7 +39,7 @@ class PdfRagApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("PDF RAG Processor")
         self.resize(1000, 800)
-        
+
         self.shortcut_find = QShortcut(QKeySequence("Ctrl+F"), self)
         self.shortcut_find.activated.connect(self.open_find_dialog)
         self.find_dialog = None
@@ -82,13 +68,13 @@ class PdfRagApp(QtWidgets.QWidget):
         self.create_menu_bar()
 
         self.apply_loaded_settings()
-        
+
         self.active_workers = 0
         self.busy_cursor = self.load_custom_cursor("assets/icons/clock.svg")
-        
+
     def load_custom_cursor(self, path):
         pixmap = QPixmap(path)
-        return QCursor(pixmap) if not pixmap.isNull() else QCursor(Qt.WaitCursor)
+        return QCursor(pixmap) if not pixmap.isNull() else QCursor(Qt.CursorShape.WaitCursor)
 
     def set_busy_cursor(self):
         self.active_workers += 1
@@ -104,14 +90,14 @@ class PdfRagApp(QtWidgets.QWidget):
     def load_history(self):
         try:
             if os.path.exists(self.history_file):
-                with open(self.history_file, 'r', encoding='utf-8') as f:
+                with open(self.history_file, encoding='utf-8') as f:
                     self.search_history = json.load(f)
             else:
                 self.search_history = []
         except Exception as e:
             print("Error loading history:", e)
             self.search_history = []
-            
+
     def update_history_entry(self, title: str, new_text: str):
         for i, (t, txt) in enumerate(self.search_history):
             if t == title:
@@ -128,7 +114,7 @@ class PdfRagApp(QtWidgets.QWidget):
 
     def create_menu_bar(self):
         mb = QMenuBar(self)
-        
+
         hm = mb.addMenu("History")
         show = QAction("Show History", self)
         show.triggered.connect(self.show_history)
@@ -136,7 +122,7 @@ class PdfRagApp(QtWidgets.QWidget):
         clear = QAction("Clear History", self)
         clear.triggered.connect(self.clear_history)
         hm.addAction(clear)
-        
+
         help_menu = mb.addMenu("Help")
         about_action = QAction("About PDF RAG Processor", self)
         about_action.triggered.connect(self.show_app_info)
@@ -220,7 +206,7 @@ class PdfRagApp(QtWidgets.QWidget):
         scroll.setWidgetResizable(True)
 
         content = QLabel()
-        content.setTextFormat(Qt.RichText)
+        content.setTextFormat(Qt.TextFormat.RichText)
         content.setText(html)
         content.setWordWrap(True)
         content.setOpenExternalLinks(True)
@@ -232,7 +218,7 @@ class PdfRagApp(QtWidgets.QWidget):
         close_btn = QPushButton("Close")
         close_btn.setObjectName("close-btn")
         close_btn.clicked.connect(dialog.accept)
-        layout.addWidget(close_btn, alignment=Qt.AlignCenter)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         dialog.exec_()
 
@@ -243,9 +229,9 @@ class PdfRagApp(QtWidgets.QWidget):
 
     def clear_history(self):
         r = QMessageBox.question(self, "Clear History",
-                                 "Clear all history?", 
-                                 QMessageBox.Yes|QMessageBox.No, QMessageBox.No)
-        if r == QMessageBox.Yes:
+                                 "Clear all history?",
+                                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if r == QMessageBox.StandardButton.Yes:
             for title, _ in self.search_history:
                 file_path = os.path.join(self.history_dir, title)
                 if os.path.exists(file_path):
@@ -253,11 +239,11 @@ class PdfRagApp(QtWidgets.QWidget):
                         os.remove(file_path)
                     except Exception as e:
                         QMessageBox.warning(
-                            self, 
-                            "Error", 
-                            f"Failed to delete file {title}: {str(e)}"
+                            self,
+                            "Error",
+                            f"Failed to delete file {title}: {e!s}"
                         )
-            
+
             self.search_history = []
             self.save_history()
             QMessageBox.information(self, "History Cleared", "All history files removed from disk.")

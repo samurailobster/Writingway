@@ -1,6 +1,8 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QApplication
+from gettext import gettext as _
+
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QDialog, QPushButton, QTextEdit, QVBoxLayout
+
 
 class ProgressDialog(QDialog):
     def __init__(self, parent=None):
@@ -22,7 +24,7 @@ class ProgressDialog(QDialog):
 
     def append_message(self, message):
         cursor = self.text_edit.textCursor()
-        cursor.movePosition(QTextCursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         self.text_edit.setTextCursor(cursor)
         self.text_edit.insertPlainText(message + "\n")
         self.text_edit.ensureCursorVisible()
